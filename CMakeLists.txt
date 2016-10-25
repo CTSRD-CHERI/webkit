@@ -149,7 +149,7 @@ set(WebKitLegacy_LIBRARY_TYPE SHARED)
 set(WebKit_LIBRARY_TYPE SHARED)
 set(WebCoreTestSupport_LIBRARY_TYPE STATIC)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE True)
+# set(CMAKE_POSITION_INDEPENDENT_CODE True)
 
 # -----------------------------------------------------------------------------
 # Install JavaScript shell
