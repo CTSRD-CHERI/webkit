@@ -45,7 +45,7 @@ WEBKIT_ADD_TARGET_CXX_FLAGS(gtest -Wno-undef
                                   -Wno-suggest-attribute=format)
 
 if (CMAKE_USE_PTHREADS_INIT)
-    target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(gtest Threads::Threads)
     list(APPEND gtest_DEFINITIONS -DGTEST_HAS_PTHREAD=1)
 else ()
     list(APPEND gtest_DEFINITIONS -DGTEST_HAS_PTHREAD=0)
