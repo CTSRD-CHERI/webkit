@@ -63,6 +63,12 @@ namespace WTF {
 class BitVector final {
     WTF_MAKE_FAST_ALLOCATED;
 public: 
+#ifdef __CHERI_PURE_CAPABILITY__
+    typedef vaddr_t inline_storage_type;
+#else
+    typedef uintptr_t inline_storage_type;
+#endif
+
     BitVector()
         : m_bitsOrPointer(makeInlineBits(0))
     {
@@ -119,14 +125,14 @@ public:
     bool quickGet(size_t bit) const
     {
         ASSERT_WITH_SECURITY_IMPLICATION(bit < size());
-        return !!(bits()[bit / bitsInPointer()] & (static_cast<uintptr_t>(1) << (bit & (bitsInPointer() - 1))));
+        return !!(bits()[bit / bitsInPointer()] & (static_cast<inline_storage_type>(1) << (bit & (bitsInPointer() - 1))));
     }
     
     bool quickSet(size_t bit)
     {
         ASSERT_WITH_SECURITY_IMPLICATION(bit < size());
-        uintptr_t& word = bits()[bit / bitsInPointer()];
-        uintptr_t mask = static_cast<uintptr_t>(1) << (bit & (bitsInPointer() - 1));
+        inline_storage_type& word = bits()[bit / bitsInPointer()];
+        inline_storage_type mask = static_cast<inline_storage_type>(1) << (bit & (bitsInPointer() - 1));
         bool result = !!(word & mask);
         word |= mask;
         return result;
@@ -135,8 +141,8 @@ public:
     bool quickClear(size_t bit)
     {
         ASSERT_WITH_SECURITY_IMPLICATION(bit < size());
-        uintptr_t& word = bits()[bit / bitsInPointer()];
-        uintptr_t mask = static_cast<uintptr_t>(1) << (bit & (bitsInPointer() - 1));
+        inline_storage_type& word = bits()[bit / bitsInPointer()];
+        inline_storage_type mask = static_cast<inline_storage_type>(1) << (bit & (bitsInPointer() - 1));
         bool result = !!(word & mask);
         word &= ~mask;
         return result;
@@ -226,7 +232,7 @@ public:
             return;
         }
         m_bitsOrPointer &= ~other.m_bitsOrPointer;
-        m_bitsOrPointer |= (static_cast<uintptr_t>(1) << maxInlineBits());
+        m_bitsOrPointer |= (static_cast<inline_storage_type>(1) << maxInlineBits());
         ASSERT(isInline());
     }
     
@@ -289,12 +295,12 @@ public:
         // This is a very simple hash. Just xor together the words that hold the various
         // bits and then compute the hash. This makes it very easy to deal with bitvectors
         // that have a lot of trailing zero's.
-        uintptr_t value;
+        inline_storage_type value;
         if (isInline())
             value = cleanseInlineBits(m_bitsOrPointer);
         else
             value = hashSlowCase();
-        return IntHash<uintptr_t>::hash(value);
+        return IntHash<inline_storage_type>::hash(value);
     }
     
     class iterator {
@@ -355,7 +361,7 @@ private:
 
     static unsigned bitsInPointer()
     {
-        return sizeof(void*) << 3;
+        return sizeof(inline_storage_type) << 3;
     }
 
     static unsigned maxInlineBits()
@@ -368,20 +374,20 @@ private:
         return (bitCount + 7) >> 3;
     }
 
-    static uintptr_t makeInlineBits(uintptr_t bits)
+    static inline_storage_type makeInlineBits(inline_storage_type bits)
     {
-        ASSERT(!(bits & (static_cast<uintptr_t>(1) << maxInlineBits())));
-        return bits | (static_cast<uintptr_t>(1) << maxInlineBits());
+        ASSERT(!(bits & (static_cast<inline_storage_type>(1) << maxInlineBits())));
+        return bits | (static_cast<inline_storage_type>(1) << maxInlineBits());
     }
     
-    static uintptr_t cleanseInlineBits(uintptr_t bits)
+    static inline_storage_type cleanseInlineBits(inline_storage_type bits)
     {
-        return bits & ~(static_cast<uintptr_t>(1) << maxInlineBits());
+        return bits & ~(static_cast<inline_storage_type>(1) << maxInlineBits());
     }
     
-    static size_t bitCount(uintptr_t bits)
+    static size_t bitCount(inline_storage_type bits)
     {
-        if (sizeof(uintptr_t) == 4)
+        if (sizeof(inline_storage_type) == 4)
             return WTF::bitCount(static_cast<unsigned>(bits));
         return WTF::bitCount(static_cast<uint64_t>(bits));
     }
@@ -398,14 +404,14 @@ private:
         
         // value = true: casts to 1, then xors to 0, then negates to 0.
         // value = false: casts to 0, then xors to 1, then negates to -1 (i.e. all one bits).
-        uintptr_t skipValue = -(static_cast<uintptr_t>(value) ^ 1);
+        inline_storage_type skipValue = -(static_cast<inline_storage_type>(value) ^ 1);
         size_t numWords = bits->numWords();
         
         size_t wordIndex = startIndex / bitsInPointer();
         size_t startIndexInWord = startIndex - wordIndex * bitsInPointer();
         
         while (wordIndex < numWords) {
-            uintptr_t word = bits->bits()[wordIndex];
+            inline_storage_type word = bits->bits()[wordIndex];
             if (word != skipValue) {
                 size_t index = startIndexInWord;
                 if (findBitInWord(word, index, bitsInPointer(), value))
@@ -433,8 +439,8 @@ private:
     public:
         size_t numBits() const { return m_numBits; }
         size_t numWords() const { return (m_numBits + bitsInPointer() - 1) / bitsInPointer(); }
-        uintptr_t* bits() { return bitwise_cast<uintptr_t*>(this + 1); }
-        const uintptr_t* bits() const { return bitwise_cast<const uintptr_t*>(this + 1); }
+        inline_storage_type* bits() { return bitwise_cast<inline_storage_type*>(this + 1); }
+        const inline_storage_type* bits() const { return bitwise_cast<const inline_storage_type*>(this + 1); }
         
         static WTF_EXPORT_PRIVATE OutOfLineBits* create(size_t numBits);
         
@@ -467,19 +473,29 @@ private:
     WTF_EXPORT_PRIVATE bool equalsSlowCase(const BitVector& other) const;
     bool equalsSlowCaseFast(const BitVector& other) const;
     bool equalsSlowCaseSimple(const BitVector& other) const;
-    WTF_EXPORT_PRIVATE uintptr_t hashSlowCase() const;
+    WTF_EXPORT_PRIVATE inline_storage_type hashSlowCase() const;
     
-    uintptr_t* bits()
+    inline_storage_type* bits()
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+        // XXXAR: TODO: fix this later
+        abort();
+#else
         if (isInline())
             return &m_bitsOrPointer;
+#endif
         return outOfLineBits()->bits();
     }
     
-    const uintptr_t* bits() const
+    const inline_storage_type* bits() const
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+        // XXXAR: TODO: fix this later
+        abort();
+#else
         if (isInline())
             return &m_bitsOrPointer;
+#endif
         return outOfLineBits()->bits();
     }
     

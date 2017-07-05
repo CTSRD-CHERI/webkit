@@ -32,6 +32,8 @@
 #include <wtf/FastMalloc.h>
 #include <wtf/StdLibExtras.h>
 
+#warning "THIS IS COMPLETELY BROKEN FOR CHERIABI"
+
 namespace WTF {
 
 void BitVector::setSlow(const BitVector& other)
@@ -42,7 +44,8 @@ void BitVector::setSlow(const BitVector& other)
     else {
         OutOfLineBits* newOutOfLineBits = OutOfLineBits::create(other.size());
         memcpy(newOutOfLineBits->bits(), other.bits(), byteCount(other.size()));
-        newBitsOrPointer = bitwise_cast<uintptr_t>(newOutOfLineBits) >> 1;
+        // XXXAR: this will probably not work...
+        newBitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
     }
     if (!isInline() && !isEmptyOrDeletedValue())
         OutOfLineBits::destroy(outOfLineBits());
@@ -246,11 +249,11 @@ bool BitVector::equalsSlowCaseSimple(const BitVector& other) const
     return true;
 }
 
-uintptr_t BitVector::hashSlowCase() const
+BitVector::inline_storage_type BitVector::hashSlowCase() const
 {
     ASSERT(!isInline());
     const OutOfLineBits* bits = outOfLineBits();
-    uintptr_t result = 0;
+    inline_storage_type result = 0;
     for (unsigned i = bits->numWords(); i--;)
         result ^= bits->bits()[i];
     return result;
