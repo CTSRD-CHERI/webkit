@@ -32,16 +32,26 @@
 
 namespace WTF {
 
-template <uintptr_t mask>
+template <uint64_t mask>
 inline bool isAlignedTo(const void* pointer)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return !(reinterpret_cast<vaddr_t>(pointer) & mask);
+#else
     return !(reinterpret_cast<uintptr_t>(pointer) & mask);
+#endif
 }
 
 // Assuming that a pointer is the size of a "machine word", then
 // uintptr_t is an integer type that is also a machine word.
+#ifndef __CHERI_PURE_CAPABILITY__
 typedef uintptr_t MachineWord;
-const uintptr_t machineWordAlignmentMask = sizeof(MachineWord) - 1;
+#else
+// XXXAR: MachineWord only seems to be used here and doesn't seem to require storing pointers
+typedef uint64_t MachineWord;
+#endif
+
+const size_t machineWordAlignmentMask = sizeof(MachineWord) - 1;
 
 inline bool isAlignedToMachineWord(const void* pointer)
 {
@@ -50,7 +60,8 @@ inline bool isAlignedToMachineWord(const void* pointer)
 
 template<typename T> inline T* alignToMachineWord(T* pointer)
 {
-    return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(pointer) & ~machineWordAlignmentMask);
+    // XXXAR: TODO: make this work for capabilities with non-aligned bases
+    return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(pointer) & uintptr_t(~machineWordAlignmentMask));
 }
 
 template<size_t size, typename CharacterType> struct NonASCIIMask;
