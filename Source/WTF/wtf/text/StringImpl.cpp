@@ -47,7 +47,10 @@ namespace WTF {
 
 using namespace Unicode;
 
+// XXXAR: TODO: See if we can optimize this for CHERI
+#ifndef __CHERI_PURE_CAPABILITY__
 static_assert(sizeof(StringImpl) == 2 * sizeof(int) + 2 * sizeof(void*), "StringImpl should stay small");
+#endif
 
 #if STRING_STATS
 StringStats StringImpl::m_stringStats;
