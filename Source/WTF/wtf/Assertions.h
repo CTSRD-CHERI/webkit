@@ -441,6 +441,14 @@ WTF_EXPORT_PRIVATE NO_RETURN_DUE_TO_CRASH void WTFCrashWithSecurityImplication(v
 #endif
 #endif
 
+
+template<int s, int t> struct check_size {
+  static_assert(s == t, "wrong size");
+  enum {
+     value = 1
+  };
+};
+
 /* FATAL */
 
 #if FATAL_DISABLED

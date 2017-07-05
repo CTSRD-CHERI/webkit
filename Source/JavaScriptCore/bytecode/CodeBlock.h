@@ -1006,7 +1006,8 @@ private:
     RefCountedArray<ValueProfile> m_argumentValueProfiles;
 
     // Constant Pool
-    COMPILE_ASSERT(sizeof(Register) == sizeof(WriteBarrier<Unknown>), Register_must_be_same_size_as_WriteBarrier_Unknown);
+    // COMPILE_ASSERT(sizeof(Register) == sizeof(WriteBarrier<Unknown>), Register_must_be_same_size_as_WriteBarrier_Unknown);
+    static_assert(check_size<sizeof(Register), sizeof(WriteBarrier<Unknown>)>::value, "Register_must_be_same_size_as_WriteBarrier_Unknown");
     // TODO: This could just be a pointer to m_unlinkedCodeBlock's data, but the DFG mutates
     // it, so we're stuck with it for now.
     Vector<WriteBarrier<Unknown>> m_constantRegisters;
