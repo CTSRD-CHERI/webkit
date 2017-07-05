@@ -127,7 +127,7 @@ namespace WTF {
     struct PtrHashBase<T, false /* isSmartPtr */> {
         typedef T PtrType; 
 
-        static unsigned hash(PtrType key) { return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key)); }
+        static unsigned hash(PtrType key) { return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key)); }
         static bool equal(PtrType a, PtrType b) { return a == b; }
         static constexpr bool safeToCompareToEmptyOrDeleted = true;
     };
@@ -136,7 +136,7 @@ namespace WTF {
     struct PtrHashBase<T, true /* isSmartPtr */> {
         typedef typename GetPtrHelper<T>::PtrType PtrType; 
 
-        static unsigned hash(PtrType key) { return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key)); }
+        static unsigned hash(PtrType key) { return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key)); }
         static bool equal(PtrType a, PtrType b) { return a == b; }
         static constexpr bool safeToCompareToEmptyOrDeleted = true;
 
@@ -152,6 +152,19 @@ namespace WTF {
     template<typename P> struct PtrHash<Ref<P>> : PtrHashBase<Ref<P>, IsSmartPtr<Ref<P>>::value> {
         static constexpr bool safeToCompareToEmptyOrDeleted = false;
     };
+
+#ifdef __CHERI_PURE_CAPABILITY__
+    template<typename T> struct IntCapHash {
+        typedef T IntCapType;
+
+        static unsigned hash(IntCapType key) { return IntHash<vaddr_t>::hash(static_cast<vaddr_t>(key)); }
+        static bool equal(IntCapType a, IntCapType b) { return a == b; }
+        static const bool safeToCompareToEmptyOrDeleted = true;
+    };
+    template<> struct IntHash<__uintcap_t> : public IntCapHash<__uintcap_t> {};
+    template<> struct IntHash<__intcap_t> : public IntCapHash<__intcap_t> {};
+
+#endif
 
     // default hash function for each type
 
@@ -235,6 +248,10 @@ namespace WTF {
     template<> struct DefaultHash<double> { typedef FloatHash<double> Hash; };
 
     // make PtrHash the default hash function for pointer types that don't specialize
+#ifdef __CHERI_PURE_CAPABILITY__
+    template<> struct DefaultHash<__uintcap_t> { typedef IntCapHash<__uintcap_t> Hash; };
+    template<> struct DefaultHash<__intcap_t> { typedef IntCapHash<__intcap_t> Hash; };
+#endif
 
     template<typename P> struct DefaultHash<P*> { typedef PtrHash<P*> Hash; };
     template<typename P> struct DefaultHash<RefPtr<P>> { typedef PtrHash<RefPtr<P>> Hash; };
