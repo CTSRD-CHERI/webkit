@@ -108,7 +108,7 @@ public:
         
         void setParent(NodeType* newParent)
         {
-            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | (m_parentAndRed & 1);
+            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | (m_parentAndRed & uintptr_t(1));
         }
         
         NodeType* left() const
@@ -141,7 +141,7 @@ public:
         void setColor(Color value)
         {
             if (value == Red)
-                m_parentAndRed |= 1;
+                m_parentAndRed |= uintptr_t(1);
             else
                 m_parentAndRed &= ~static_cast<uintptr_t>(1);
         }
