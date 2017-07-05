@@ -86,7 +86,11 @@ struct CallData;
 enum class ConstructType : unsigned;
 struct ConstructData;
 
+#ifdef __CHERI_PURE_CAPABILITY__
+typedef __intcap_t EncodedJSValue;
+#else
 typedef int64_t EncodedJSValue;
+#endif
     
 union EncodedValueDescriptor {
     int64_t asInt64;
