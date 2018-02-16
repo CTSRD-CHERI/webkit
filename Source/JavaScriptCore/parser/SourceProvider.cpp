@@ -49,7 +49,7 @@ void SourceProvider::getID()
 {
     LockHolder lock(&providerIdLock);
     if (!m_id) {
-        static intptr_t nextProviderID = 0;
+        static unsigned long nextProviderID = 0;
         m_id = ++nextProviderID;
         RELEASE_ASSERT(m_id);
     }

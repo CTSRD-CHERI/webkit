@@ -52,7 +52,7 @@ class UnlinkedFunctionCodeBlock;
 
     class SourceProvider : public RefCounted<SourceProvider> {
     public:
-        static const intptr_t nullID = 1;
+        static const long nullID = 1;
         
         JS_EXPORT_PRIVATE SourceProvider(const SourceOrigin&, URL&&, const TextPosition& startPosition, SourceProviderSourceType);
 
@@ -78,7 +78,7 @@ class UnlinkedFunctionCodeBlock;
         TextPosition startPosition() const { return m_startPosition; }
         SourceProviderSourceType sourceType() const { return m_sourceType; }
 
-        intptr_t asID()
+        long asID()
         {
             if (!m_id)
                 getID();
@@ -97,7 +97,7 @@ class UnlinkedFunctionCodeBlock;
         String m_sourceURLDirective;
         String m_sourceMappingURLDirective;
         TextPosition m_startPosition;
-        uintptr_t m_id { 0 };
+        unsigned long m_id { 0 };
     };
 
     class StringSourceProvider : public SourceProvider {
