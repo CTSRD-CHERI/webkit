@@ -173,20 +173,19 @@ template<typename T> char (&ArrayLengthHelperFunction(T (&)[0]))[0];
 #endif
 #define WTF_ARRAY_LENGTH(array) sizeof(::WTF::ArrayLengthHelperFunction(array))
 
-ALWAYS_INLINE constexpr size_t roundUpToMultipleOfImpl(size_t divisor, size_t x)
+ALWAYS_INLINE constexpr intptr_t roundUpToMultipleOfImpl(size_t divisor, intptr_t x)
 {
-    size_t remainderMask = divisor - 1;
-    return (x + remainderMask) & ~remainderMask;
+    return __builtin_align_up(x, divisor);
 }
 
 // Efficient implementation that takes advantage of powers of two.
-inline size_t roundUpToMultipleOf(size_t divisor, size_t x)
+inline intptr_t roundUpToMultipleOf(size_t divisor, intptr_t x)
 {
     ASSERT(divisor && !(divisor & (divisor - 1)));
     return roundUpToMultipleOfImpl(divisor, x);
 }
 
-template<size_t divisor> constexpr size_t roundUpToMultipleOf(size_t x)
+template<size_t divisor> constexpr intptr_t roundUpToMultipleOf(intptr_t x)
 {
     static_assert(divisor && !(divisor & (divisor - 1)), "divisor must be a power of two!");
     return roundUpToMultipleOfImpl(divisor, x);
