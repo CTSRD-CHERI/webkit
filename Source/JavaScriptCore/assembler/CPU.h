@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,8 +32,13 @@
 namespace JSC {
 
 #if USE(JSVALUE64)
+#ifdef __CHERI_PURE_CAPABILITY__
+using CPURegister = intptr_t;
+using UCPURegister = uintptr_t;
+#else
 using CPURegister = int64_t;
 using UCPURegister = uint64_t;
+#endif
 #else
 using CPURegister = int32_t;
 using UCPURegister = uint32_t;
