@@ -57,7 +57,7 @@
 // OBJECT_OFFSETOF: Like the C++ offsetof macro, but you can use it with classes.
 // The magic number 0x4000 is insignificant. We use it to avoid using NULL, since
 // NULL can cause compiler problems, especially in cases of multiple inheritance.
-#define OBJECT_OFFSETOF(class, field) (reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<class*>(0x4000)->field)) - 0x4000)
+#define OBJECT_OFFSETOF(class, field) (reinterpret_cast<const char*>(&(reinterpret_cast<class*>(0x4000)->field))-reinterpret_cast<const char*>(0x4000))
 
 #define CAST_OFFSET(from, to) (reinterpret_cast<uintptr_t>(static_cast<to>((reinterpret_cast<from>(0x4000)))) - 0x4000)
 
