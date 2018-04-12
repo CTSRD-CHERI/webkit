@@ -93,11 +93,22 @@ Intrinsic NativeExecutable::intrinsic() const
 
 CodeBlockHash NativeExecutable::hashFor(CodeSpecializationKind kind) const
 {
-    if (kind == CodeForCall)
-        return CodeBlockHash(bitwise_cast<uintptr_t>(m_function));
+    if (kind == CodeForCall) {
+       uintptr_t function = bitwise_cast<uintptr_t>(m_function);
+#ifdef __CHERI_PURE_CAPABILITY__
+        return CodeBlockHash(static_cast<unsigned>((__cheri_addr size_t)function));
+#else
+        return CodeBlockHash(function);
+#endif
+    }
 
     RELEASE_ASSERT(kind == CodeForConstruct);
-    return CodeBlockHash(bitwise_cast<uintptr_t>(m_constructor));
+    uintptr_t constructor = bitwise_cast<uintptr_t>(m_constructor);
+#ifdef __CHERI_PURE_CAPABILITY__
+    return CodeBlockHash(static_cast<unsigned>((__cheri_addr size_t)constructor));
+#else
+    return CodeBlockHash(constructor);
+#endif
 }
 
 } // namespace JSC
