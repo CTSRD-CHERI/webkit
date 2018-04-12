@@ -876,6 +876,13 @@ intptr_t StringImpl::toIntPtrStrict(bool* ok, int base)
     return charactersToIntPtrStrict(characters16(), m_length, ok, base);
 }
 
+long StringImpl::toLongStrict(bool* ok, int base)
+{
+    if (is8Bit())
+        return charactersToLongStrict(characters8(), m_length, ok, base);
+    return charactersToLongStrict(characters16(), m_length, ok, base);
+}
+
 int StringImpl::toInt(bool* ok)
 {
     if (is8Bit())
@@ -909,6 +916,13 @@ intptr_t StringImpl::toIntPtr(bool* ok)
     if (is8Bit())
         return charactersToIntPtr(characters8(), m_length, ok);
     return charactersToIntPtr(characters16(), m_length, ok);
+}
+
+long StringImpl::toLong(bool* ok)
+{
+    if (is8Bit())
+        return charactersToLong(characters8(), m_length, ok);
+    return charactersToLong(characters16(), m_length, ok);
 }
 
 double StringImpl::toDouble(bool* ok)

@@ -52,6 +52,8 @@ WTF_EXPORT_PRIVATE uint64_t charactersToUInt64Strict(const LChar*, size_t, bool*
 WTF_EXPORT_PRIVATE uint64_t charactersToUInt64Strict(const UChar*, size_t, bool* ok = nullptr, int base = 10);
 intptr_t charactersToIntPtrStrict(const LChar*, size_t, bool* ok = nullptr, int base = 10);
 intptr_t charactersToIntPtrStrict(const UChar*, size_t, bool* ok = nullptr, int base = 10);
+long charactersToLongStrict(const LChar*, size_t, bool* ok = nullptr, int base = 10);
+long charactersToLongStrict(const UChar*, size_t, bool* ok = nullptr, int base = 10);
 
 WTF_EXPORT_PRIVATE int charactersToInt(const LChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
 WTF_EXPORT_PRIVATE int charactersToInt(const UChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
@@ -63,6 +65,8 @@ uint64_t charactersToUInt64(const LChar*, size_t, bool* ok = nullptr); // ignore
 WTF_EXPORT_PRIVATE uint64_t charactersToUInt64(const UChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
 intptr_t charactersToIntPtr(const LChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
 intptr_t charactersToIntPtr(const UChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
+long charactersToLong(const LChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
+long charactersToLong(const UChar*, size_t, bool* ok = nullptr); // ignores trailing garbage
 
 // FIXME: Like the strict functions above, these give false for "ok" when there is trailing garbage.
 // Like the non-strict functions above, these return the value when there is trailing garbage.
@@ -285,12 +289,14 @@ public:
     WTF_EXPORT_PRIVATE int64_t toInt64Strict(bool* ok = nullptr, int base = 10) const;
     WTF_EXPORT_PRIVATE uint64_t toUInt64Strict(bool* ok = nullptr, int base = 10) const;
     WTF_EXPORT_PRIVATE intptr_t toIntPtrStrict(bool* ok = nullptr, int base = 10) const;
+    WTF_EXPORT_PRIVATE long toLongStrict(bool* ok = nullptr, int base = 10) const;
 
     WTF_EXPORT_PRIVATE int toInt(bool* ok = nullptr) const;
     WTF_EXPORT_PRIVATE unsigned toUInt(bool* ok = nullptr) const;
     WTF_EXPORT_PRIVATE int64_t toInt64(bool* ok = nullptr) const;
     WTF_EXPORT_PRIVATE uint64_t toUInt64(bool* ok = nullptr) const;
     WTF_EXPORT_PRIVATE intptr_t toIntPtr(bool* ok = nullptr) const;
+    WTF_EXPORT_PRIVATE long toLong(bool* ok = nullptr) const;
 
     // FIXME: Like the strict functions above, these give false for "ok" when there is trailing garbage.
     // Like the non-strict functions above, these return the value when there is trailing garbage.

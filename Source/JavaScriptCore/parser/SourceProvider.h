@@ -97,7 +97,7 @@ class UnlinkedFunctionCodeBlock;
         String m_sourceURLDirective;
         String m_sourceMappingURLDirective;
         TextPosition m_startPosition;
-        unsigned long m_id { 0 };
+        long m_id { 0 };
     };
 
     class StringSourceProvider : public SourceProvider {

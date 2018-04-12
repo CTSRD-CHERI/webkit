@@ -93,16 +93,16 @@ class ControlFlowProfiler {
 public:
     ControlFlowProfiler();
     ~ControlFlowProfiler();
-    BasicBlockLocation* getBasicBlockLocation(intptr_t sourceID, int startOffset, int endOffset);
+    BasicBlockLocation* getBasicBlockLocation(long sourceID, int startOffset, int endOffset);
     JS_EXPORT_PRIVATE void dumpData() const;
-    Vector<BasicBlockRange> getBasicBlocksForSourceID(intptr_t sourceID, VM&) const;
+    Vector<BasicBlockRange> getBasicBlocksForSourceID(long sourceID, VM&) const;
     BasicBlockLocation* dummyBasicBlock() { return &m_dummyBasicBlock; }
-    JS_EXPORT_PRIVATE bool hasBasicBlockAtTextOffsetBeenExecuted(int, intptr_t, VM&);  // This function exists for testing.
-    JS_EXPORT_PRIVATE size_t basicBlockExecutionCountAtTextOffset(int, intptr_t, VM&); // This function exists for testing.
+    JS_EXPORT_PRIVATE bool hasBasicBlockAtTextOffsetBeenExecuted(int, long, VM&);  // This function exists for testing.
+    JS_EXPORT_PRIVATE size_t basicBlockExecutionCountAtTextOffset(int, long, VM&); // This function exists for testing.
 
 private:
     typedef HashMap<BasicBlockKey, BasicBlockLocation*> BlockLocationCache;
-    typedef HashMap<intptr_t, BlockLocationCache> SourceIDBuckets;
+    typedef HashMap<long, BlockLocationCache> SourceIDBuckets;
 
     SourceIDBuckets m_sourceIDBuckets;
     BasicBlockLocation m_dummyBasicBlock;

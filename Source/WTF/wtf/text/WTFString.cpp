@@ -559,6 +559,16 @@ intptr_t String::toIntPtrStrict(bool* ok, int base) const
     return m_impl->toIntPtrStrict(ok, base);
 }
 
+long String::toLongStrict(bool* ok, int base) const
+{
+    if (!m_impl) {
+        if (ok)
+            *ok = false;
+        return 0;
+    }
+    return m_impl->toLongStrict(ok, base);
+}
+
 int String::toInt(bool* ok) const
 {
     if (!m_impl) {
@@ -607,6 +617,16 @@ intptr_t String::toIntPtr(bool* ok) const
         return 0;
     }
     return m_impl->toIntPtr(ok);
+}
+
+long String::toLong(bool* ok) const
+{
+    if (!m_impl) {
+        if (ok)
+            *ok = false;
+        return 0;
+    }
+    return m_impl->toLong(ok);
 }
 
 double String::toDouble(bool* ok) const
@@ -962,6 +982,16 @@ intptr_t charactersToIntPtrStrict(const UChar* data, size_t length, bool* ok, in
     return toIntegralType<intptr_t, UChar>(data, length, ok, base);
 }
 
+long charactersToLongStrict(const LChar* data, size_t length, bool* ok, int base)
+{
+    return toIntegralType<long, LChar>(data, length, ok, base);
+}
+
+long charactersToLongStrict(const UChar* data, size_t length, bool* ok, int base)
+{
+    return toIntegralType<long, UChar>(data, length, ok, base);
+}
+
 int charactersToInt(const LChar* data, size_t length, bool* ok)
 {
     return toIntegralType<int, LChar>(data, lengthOfCharactersAsInteger<LChar>(data, length), ok, 10);
@@ -1010,6 +1040,16 @@ intptr_t charactersToIntPtr(const LChar* data, size_t length, bool* ok)
 intptr_t charactersToIntPtr(const UChar* data, size_t length, bool* ok)
 {
     return toIntegralType<intptr_t, UChar>(data, lengthOfCharactersAsInteger<UChar>(data, length), ok, 10);
+}
+
+long charactersToLong(const LChar* data, size_t length, bool* ok)
+{
+    return toIntegralType<long, LChar>(data, lengthOfCharactersAsInteger<LChar>(data, length), ok, 10);
+}
+
+long charactersToLong(const UChar* data, size_t length, bool* ok)
+{
+    return toIntegralType<long, UChar>(data, lengthOfCharactersAsInteger<UChar>(data, length), ok, 10);
 }
 
 enum TrailingJunkPolicy { DisallowTrailingJunk, AllowTrailingJunk };

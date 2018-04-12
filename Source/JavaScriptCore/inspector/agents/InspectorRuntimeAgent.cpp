@@ -356,7 +356,7 @@ void InspectorRuntimeAgent::getRuntimeTypesForVariablesAtOffsets(ErrorString& er
         location->getInteger("divot"_s, divot);
 
         bool okay;
-        TypeLocation* typeLocation = m_vm.typeProfiler()->findLocation(divot, sourceIDAsString.toIntPtrStrict(&okay), static_cast<TypeProfilerSearchDescriptor>(descriptor), m_vm);
+        TypeLocation* typeLocation = m_vm.typeProfiler()->findLocation(divot, sourceIDAsString.toLongStrict(&okay), static_cast<TypeProfilerSearchDescriptor>(descriptor), m_vm);
         ASSERT(okay);
 
         RefPtr<TypeSet> typeSet;
@@ -457,7 +457,7 @@ void InspectorRuntimeAgent::getBasicBlocks(ErrorString& errorString, const Strin
     }
 
     bool okay;
-    intptr_t sourceID = sourceIDAsString.toIntPtrStrict(&okay);
+    long sourceID = sourceIDAsString.toLongStrict(&okay);
     ASSERT(okay);
     const Vector<BasicBlockRange>& basicBlockRanges = m_vm.controlFlowProfiler()->getBasicBlocksForSourceID(sourceID, m_vm);
     basicBlocks = JSON::ArrayOf<Protocol::Runtime::BasicBlock>::create();
