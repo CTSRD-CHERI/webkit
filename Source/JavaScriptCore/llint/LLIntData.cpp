@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,6 +37,7 @@
 #include "MaxFrameExtentForSlowPathCall.h"
 #include "Opcode.h"
 #include "PropertyOffset.h"
+#include "Register.h"
 #include "ShadowChicken.h"
 #include "WriteBarrier.h"
 
@@ -90,7 +92,7 @@ void Data::performAssertions(VM& vm)
     const ptrdiff_t CallFrameHeaderSlots = 4;
 #endif
     const ptrdiff_t MachineRegisterSize = sizeof(CPURegister);
-    const ptrdiff_t SlotSize = 8;
+    const ptrdiff_t SlotSize = sizeof(Register);
 
     STATIC_ASSERT(sizeof(Register) == SlotSize);
     STATIC_ASSERT(CallFrame::headerSizeInRegisters == CallFrameHeaderSlots);

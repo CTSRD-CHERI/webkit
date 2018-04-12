@@ -29,6 +29,15 @@
 #include <wtf/Assertions.h>
 #include <wtf/Gigacage.h>
 
+#ifdef __CHERI_PURE_CAPABILITY__
+#if _MIPS_SZCAP == 128
+#define OFFLINE_ASM_CHERI_128_PURECAP 1
+#elif _MIPS_SZCAP == 256
+#define OFFLINE_ASM_CHERI_256_PURECAP 1
+#endif
+#endif
+
+
 #if ENABLE(C_LOOP)
 #if !OS(WINDOWS)
 #define OFFLINE_ASM_C_LOOP 1
