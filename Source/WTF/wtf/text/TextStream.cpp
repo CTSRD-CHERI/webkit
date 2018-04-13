@@ -106,6 +106,14 @@ TextStream& TextStream::operator<<(double d)
     return *this;
 }
 
+#ifdef __CHERI__
+TextStream& TextStream::operator<<(__intcap_t i)
+{
+    m_text.appendNumber(__builtin_cheri_address_get(reinterpret_cast<void*>(i)));
+    return *this;
+}
+#endif
+
 TextStream& TextStream::operator<<(const char* string)
 {
     m_text.append(string);

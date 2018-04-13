@@ -67,6 +67,9 @@ public:
     WTF_EXPORT_PRIVATE TextStream& operator<<(unsigned long long);
     WTF_EXPORT_PRIVATE TextStream& operator<<(float);
     WTF_EXPORT_PRIVATE TextStream& operator<<(double);
+#ifdef __CHERI__
+    WTF_EXPORT_PRIVATE TextStream& operator<<(__intcap_t);
+#endif
     WTF_EXPORT_PRIVATE TextStream& operator<<(const char*);
     WTF_EXPORT_PRIVATE TextStream& operator<<(const void*);
     WTF_EXPORT_PRIVATE TextStream& operator<<(const String&);
