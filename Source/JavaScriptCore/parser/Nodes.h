@@ -1767,7 +1767,7 @@ namespace JSC {
 
         const SourceCode& source() const { return m_source; }
         const String& sourceURL() const { return m_source.provider()->url(); }
-        intptr_t sourceID() const { return m_source.providerID(); }
+        long sourceID() const { return m_source.providerID(); }
 
         int startLine() const { return m_startLineNumber; }
         int startStartOffset() const { return m_startStartOffset; }

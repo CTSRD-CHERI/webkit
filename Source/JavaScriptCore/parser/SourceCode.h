@@ -66,7 +66,7 @@ namespace JSC {
         OrdinalNumber firstLine() const { return m_firstLine; }
         OrdinalNumber startColumn() const { return m_startColumn; }
 
-        intptr_t providerID() const
+        long providerID() const
         {
             if (!m_provider)
                 return SourceProvider::nullID;
