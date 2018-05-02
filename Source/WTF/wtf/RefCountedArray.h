@@ -215,7 +215,13 @@ private:
         
         static size_t size()
         {
+            // By default the size is adjusted such that the payload
+            // is 8-byte aligned. We adjust alignment for CHERI.
+#ifdef __CHERI_PURE_CAPABILITY__
+            return (sizeof(Header) + ((_MIPS_SZCAP/8)-1)) & ~((_MIPS_SZCAP/8)-1);
+#else
             return (sizeof(Header) + 7) & ~7;
+#endif
         }
         
         T* payload()
