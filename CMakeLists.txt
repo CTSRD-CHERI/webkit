@@ -19,6 +19,13 @@ else ()
     message(STATUS "The CMake build type is: ${CMAKE_BUILD_TYPE}")
 endif ()
 
+# only find static libraries
+set(CMAKE_SHARED_LIBRARY_SUFFIX ".a")
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+set(CMAKE_EXTRA_SHARED_LIBRARY_SUFFIXES ".a")
+set(CMAKE_SHARED_LIBRARY_SUFFIX ".a")
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Source/cmake")
 
 set(ENABLE_WEBCORE ON)
