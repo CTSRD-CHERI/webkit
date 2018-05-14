@@ -201,7 +201,7 @@ private:
     WeakImpl* weakImpl() const
     {
         ASSERT(isUsingSingleSlot());
-        return bitwise_cast<WeakImpl*>(m_data & ~UsingSingleSlotFlag);
+        return bitwise_cast<WeakImpl*>(qClearLowPointerBits<UsingSingleSlotFlag>(m_data));
     }
 
     void setMap(TransitionMap* map)

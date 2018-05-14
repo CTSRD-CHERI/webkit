@@ -159,7 +159,7 @@ EncodedJSValue vmEntryToNative(void* executableAddress, VM* vm, ProtoCallFrame* 
 extern "C" VMEntryRecord* vmEntryRecord(EntryFrame* entryFrame)
 {
     // The C Loop doesn't have any callee save registers, so the VMEntryRecord is allocated at the base of the frame.
-    intptr_t stackAlignment = stackAlignmentBytes();
+    unsigned stackAlignment = stackAlignmentBytes();
     intptr_t VMEntryTotalFrameSize = (sizeof(VMEntryRecord) + (stackAlignment - 1)) & ~(stackAlignment - 1);
     return reinterpret_cast<VMEntryRecord*>(reinterpret_cast<char*>(entryFrame) - VMEntryTotalFrameSize);
 }

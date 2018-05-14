@@ -61,7 +61,11 @@ inline bool isAlignedToMachineWord(const void* pointer)
 template<typename T> inline T* alignToMachineWord(T* pointer)
 {
     // XXXAR: TODO: make this work for capabilities with non-aligned bases
+ #if __has_builtin(__builtin_align_down)
+    return reinterpret_cast<T*>(__builtin_align_down(pointer, sizeof(MachineWord)));
+#else
     return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(pointer) & uintptr_t(~machineWordAlignmentMask));
+#endif
 }
 
 template<size_t size, typename CharacterType> struct NonASCIIMask;

@@ -29,7 +29,12 @@ namespace WTF {
 
 WTF_EXPORT_PRIVATE size_t pageSize();
 WTF_EXPORT_PRIVATE size_t pageMask();
+#if __has_builtin(__builtin_is_aligned)
+inline bool isPageAligned(void* address) { return __builtin_is_aligned(address, pageSize()); }
+#else
 inline bool isPageAligned(void* address) { return !(reinterpret_cast<intptr_t>(address) & (pageSize() - 1)); }
+#endif
+
 inline bool isPageAligned(size_t size) { return !(size & (pageSize() - 1)); }
 inline bool isPowerOfTwo(size_t size) { return !(size & (size - 1)); }
 

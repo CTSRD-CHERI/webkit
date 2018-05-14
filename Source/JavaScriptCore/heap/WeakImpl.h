@@ -82,13 +82,13 @@ inline WeakImpl::WeakImpl(JSValue jsValue, WeakHandleOwner* weakHandleOwner, voi
 
 inline WeakImpl::State WeakImpl::state()
 {
-    return static_cast<State>(reinterpret_cast<uintptr_t>(m_weakHandleOwner) & StateMask);
+    return static_cast<State>(qGetLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)));
 }
 
 inline void WeakImpl::setState(WeakImpl::State state)
 {
     ASSERT(state >= this->state());
-    m_weakHandleOwner = reinterpret_cast<WeakHandleOwner*>((reinterpret_cast<uintptr_t>(m_weakHandleOwner) & ~StateMask) | state);
+    m_weakHandleOwner = reinterpret_cast<WeakHandleOwner*>(qSetLowPointerBits(qClearLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)), state));
 }
 
 inline const JSValue& WeakImpl::jsValue()
@@ -98,7 +98,7 @@ inline const JSValue& WeakImpl::jsValue()
 
 inline WeakHandleOwner* WeakImpl::weakHandleOwner()
 {
-    return reinterpret_cast<WeakHandleOwner*>((reinterpret_cast<uintptr_t>(m_weakHandleOwner) & ~StateMask));
+    return reinterpret_cast<WeakHandleOwner*>(qClearLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)));
 }
 
 inline void* WeakImpl::context()

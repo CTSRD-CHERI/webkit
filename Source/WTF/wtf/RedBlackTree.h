@@ -103,12 +103,12 @@ public:
         // word. But doing so appears to reveal a bug in the compiler.
         NodeType* parent() const
         {
-            return reinterpret_cast<NodeType*>(m_parentAndRed & ~static_cast<uintptr_t>(1));
+            return reinterpret_cast<NodeType*>(qClearLowPointerBits<1u>(m_parentAndRed));
         }
         
         void setParent(NodeType* newParent)
         {
-            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | (m_parentAndRed & uintptr_t(1));
+            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | qGetLowPointerBits<1u>(m_parentAndRed);
         }
         
         NodeType* left() const
@@ -133,7 +133,7 @@ public:
         
         Color color() const
         {
-            if (m_parentAndRed & 1)
+            if (qGetLowPointerBits<1u>(m_parentAndRed))
                 return Red;
             return Black;
         }
@@ -141,9 +141,9 @@ public:
         void setColor(Color value)
         {
             if (value == Red)
-                m_parentAndRed |= uintptr_t(1);
+                m_parentAndRed = qSetLowPointerBits(m_parentAndRed, 1u);
             else
-                m_parentAndRed &= ~static_cast<uintptr_t>(1);
+                m_parentAndRed = qClearLowPointerBits<1u>(m_parentAndRed);
         }
         
         NodeType* m_left;

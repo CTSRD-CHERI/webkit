@@ -62,7 +62,11 @@ private:
 
 inline HandleBlock* HandleBlock::blockFor(HandleNode* node)
 {
+#if __has_builtin(__builtin_align_down)
+    return reinterpret_cast<HandleBlock*>(__builtin_align_down(node, blockSize));
+#else
     return reinterpret_cast<HandleBlock*>(reinterpret_cast<size_t>(node) & s_blockMask);
+#endif
 }
 
 inline HandleSet* HandleBlock::handleSet()

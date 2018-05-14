@@ -79,20 +79,20 @@ private:
     static VarOffset varOffsetFromBits(intptr_t bits)
     {
         VarKind kind;
-        intptr_t kindBits = bits & KindBitsMask;
+        intptr_t kindBits = qvaddr(bits) & KindBitsMask;
         if (kindBits <= UnwatchableScopeKindBits)
             kind = VarKind::Scope;
         else if (kindBits == StackKindBits)
             kind = VarKind::Stack;
         else
             kind = VarKind::DirectArgument;
-        return VarOffset::assemble(kind, static_cast<int>(bits >> FlagBits));
+        return VarOffset::assemble(kind, static_cast<int>(qvaddr(bits) >> FlagBits));
     }
     
     static ScopeOffset scopeOffsetFromBits(intptr_t bits)
     {
         ASSERT((bits & KindBitsMask) <= UnwatchableScopeKindBits);
-        return ScopeOffset(static_cast<int>(bits >> FlagBits));
+        return ScopeOffset(static_cast<int>(qvaddr(bits) >> FlagBits));
     }
 
 public:
@@ -115,7 +115,7 @@ public:
     
         bool isNull() const
         {
-            return !(m_bits & ~SlimFlag);
+            return !qClearLowPointerBits<SlimFlag>(m_bits);
         }
 
         VarOffset varOffset() const
@@ -133,12 +133,12 @@ public:
         
         bool isReadOnly() const
         {
-            return m_bits & ReadOnlyFlag;
+            return qGetLowPointerBits<ReadOnlyFlag>(m_bits);
         }
         
         bool isDontEnum() const
         {
-            return m_bits & DontEnumFlag;
+            return qGetLowPointerBits<DontEnumFlag>(m_bits);
         }
         
         unsigned getAttributes() const
@@ -153,7 +153,7 @@ public:
 
         bool isFat() const
         {
-            return !(m_bits & SlimFlag);
+            return !qGetLowPointerBits<SlimFlag>(m_bits);
         }
         
     private:
@@ -219,7 +219,7 @@ public:
 
     bool isNull() const
     {
-        return !(bits() & ~SlimFlag);
+        return !qClearLowPointerBits<SlimFlag>(bits());
     }
 
     VarOffset varOffset() const
@@ -229,7 +229,7 @@ public:
     
     bool isWatchable() const
     {
-        return (m_bits & KindBitsMask) == ScopeKindBits && VM::canUseJIT();
+        return (qvaddr(m_bits) & KindBitsMask) == ScopeKindBits && VM::canUseJIT();
     }
     
     // Asserts if the offset is anything but a scope offset. This structures the assertions
@@ -268,7 +268,7 @@ public:
 
     bool isReadOnly() const
     {
-        return bits() & ReadOnlyFlag;
+        return qGetLowPointerBits<ReadOnlyFlag>(bits());
     }
     
     ConstantMode constantMode() const
@@ -278,7 +278,7 @@ public:
     
     bool isDontEnum() const
     {
-        return bits() & DontEnumFlag;
+        return qGetLowPointerBits<DontEnumFlag>(bits());
     }
     
     void disableWatching(VM& vm)
@@ -320,22 +320,22 @@ public:
     }
     
 private:
-    static const intptr_t SlimFlag = 0x1;
-    static const intptr_t ReadOnlyFlag = 0x2;
-    static const intptr_t DontEnumFlag = 0x4;
-    static const intptr_t NotNullFlag = 0x8;
-    static const intptr_t KindBitsMask = 0x30;
-    static const intptr_t ScopeKindBits = 0x00;
-    static const intptr_t UnwatchableScopeKindBits = 0x10;
-    static const intptr_t StackKindBits = 0x20;
-    static const intptr_t DirectArgumentKindBits = 0x30;
-    static const intptr_t FlagBits = 6;
+    static const unsigned SlimFlag = 0x1;
+    static const unsigned ReadOnlyFlag = 0x2;
+    static const unsigned DontEnumFlag = 0x4;
+    static const unsigned NotNullFlag = 0x8;
+    static const unsigned KindBitsMask = 0x30;
+    static const unsigned ScopeKindBits = 0x00;
+    static const unsigned UnwatchableScopeKindBits = 0x10;
+    static const unsigned StackKindBits = 0x20;
+    static const unsigned DirectArgumentKindBits = 0x30;
+    static const unsigned FlagBits = 6;
     
     class FatEntry {
         WTF_MAKE_FAST_ALLOCATED;
     public:
         FatEntry(intptr_t bits)
-            : m_bits(bits & ~SlimFlag)
+            : m_bits(qClearLowPointerBits<SlimFlag>(bits))
         {
         }
         
@@ -348,7 +348,7 @@ private:
     
     bool isFat() const
     {
-        return !(m_bits & SlimFlag);
+        return !qGetLowPointerBits<SlimFlag>(m_bits);
     }
     
     const FatEntry* fatEntry() const
@@ -400,7 +400,7 @@ private:
         ASSERT(!isFat());
         intptr_t& bitsRef = bits();
         bitsRef =
-            (static_cast<intptr_t>(offset.rawOffset()) << FlagBits) | NotNullFlag | SlimFlag;
+            qSetLowPointerBits(qvaddr(offset.rawOffset()) << FlagBits, NotNullFlag | SlimFlag);
         if (readOnly)
             bitsRef |= ReadOnlyFlag;
         if (dontEnum)
@@ -426,7 +426,7 @@ private:
     
     static bool isValidVarOffset(VarOffset offset)
     {
-        return ((static_cast<intptr_t>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<intptr_t>(offset.rawOffset());
+        return (qvaddr(static_cast<qvaddr>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<intptr_t>(offset.rawOffset());
     }
 
     intptr_t m_bits;

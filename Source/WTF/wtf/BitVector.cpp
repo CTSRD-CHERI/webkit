@@ -45,7 +45,7 @@ void BitVector::setSlow(const BitVector& other)
         OutOfLineBits* newOutOfLineBits = OutOfLineBits::create(other.size());
         memcpy(newOutOfLineBits->bits(), other.bits(), byteCount(other.size()));
         // XXXAR: this will probably not work...
-        newBitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
+        newBitsOrPointer = qvaddr(newOutOfLineBits) >> 1;
     }
     if (!isInline() && !isEmptyOrDeletedValue())
         OutOfLineBits::destroy(outOfLineBits());
@@ -106,7 +106,7 @@ void BitVector::resizeOutOfLine(size_t numBits)
             memcpy(newOutOfLineBits->bits(), outOfLineBits()->bits(), newOutOfLineBits->numWords() * sizeof(void*));
         OutOfLineBits::destroy(outOfLineBits());
     }
-    m_bitsOrPointer = bitwise_cast<uintptr_t>(newOutOfLineBits) >> 1;
+    m_bitsOrPointer = qvaddr(newOutOfLineBits) >> 1;
 }
 
 void BitVector::mergeSlow(const BitVector& other)
@@ -138,7 +138,7 @@ void BitVector::filterSlow(const BitVector& other)
     if (isInline()) {
         ASSERT(!other.isInline());
         m_bitsOrPointer &= *other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (static_cast<uintptr_t>(1) << maxInlineBits());
+        m_bitsOrPointer |= (qvaddr(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }
@@ -163,7 +163,7 @@ void BitVector::excludeSlow(const BitVector& other)
     if (isInline()) {
         ASSERT(!other.isInline());
         m_bitsOrPointer &= ~*other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (static_cast<uintptr_t>(1) << maxInlineBits());
+        m_bitsOrPointer |= (qvaddr(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }

@@ -85,16 +85,16 @@ public:
     bool filterIncomingReferences(FilterFunctionType&&);
     
 private:
-    static uintptr_t singletonFlag() { return 1; }
+    static const unsigned singletonFlag = 1;
     
-    bool hasVectorOfCells() const { return !(m_encodedPointer & singletonFlag()); }
+    bool hasVectorOfCells() const { return !qGetLowPointerBits<singletonFlag>(m_encodedPointer); }
     bool hasAnyIncoming() const { return !!m_encodedPointer; }
     bool hasSingleton() const { return hasAnyIncoming() && !hasVectorOfCells(); }
     
     JSCell* singleton() const
     {
         ASSERT(hasSingleton());
-        return bitwise_cast<JSCell*>(m_encodedPointer & ~singletonFlag());
+        return bitwise_cast<JSCell*>(qClearLowPointerBits<singletonFlag>(m_encodedPointer));
     }
     
     Vector<JSCell*>* vectorOfCells() const

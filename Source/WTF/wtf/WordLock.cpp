@@ -70,19 +70,19 @@ NEVER_INLINE void WordLock::lockSlow()
     for (;;) {
         uintptr_t currentWordValue = m_word.load();
         
-        if (!(currentWordValue & isLockedBit)) {
+        if (!qGetLowPointerBits<isLockedBit>(currentWordValue)) {
             // It's not possible for someone to hold the queue lock while the lock itself is no longer
             // held, since we will only attempt to acquire the queue lock when the lock is held and
             // the queue lock prevents unlock.
-            ASSERT(!(currentWordValue & isQueueLockedBit));
-            if (m_word.compareExchangeWeak(currentWordValue, currentWordValue | isLockedBit)) {
+            ASSERT(!qGetLowPointerBits<isQueueLockedBit>(currentWordValue));
+            if (m_word.compareExchangeWeak(currentWordValue, qSetLowPointerBits(currentWordValue, isLockedBit))) {
                 // Success! We acquired the lock.
                 return;
             }
         }
 
         // If there is no queue and we haven't spun too much, we can just try to spin around again.
-        if (!(currentWordValue & ~queueHeadMask) && spinCount < spinLimit) {
+        if (!qClearLowPointerBits<queueHeadMask>(currentWordValue) && spinCount < spinLimit) {
             spinCount++;
             Thread::yield();
             continue;
@@ -98,9 +98,9 @@ NEVER_INLINE void WordLock::lockSlow()
 
         // We proceed only if the queue lock is not held, the WordLock is held, and we succeed in
         // acquiring the queue lock.
-        if ((currentWordValue & isQueueLockedBit)
-            || !(currentWordValue & isLockedBit)
-            || !m_word.compareExchangeWeak(currentWordValue, currentWordValue | isQueueLockedBit)) {
+        if (qGetLowPointerBits<isQueueLockedBit>(currentWordValue)
+            || !qGetLowPointerBits<isLockedBit>(currentWordValue)
+            || !m_word.compareExchangeWeak(currentWordValue, qSetLowPointerBits(currentWordValue, isQueueLockedBit))) {
             Thread::yield();
             continue;
         }
@@ -109,7 +109,7 @@ NEVER_INLINE void WordLock::lockSlow()
 
         // We own the queue. Nobody can enqueue or dequeue until we're done. Also, it's not possible
         // to release the WordLock while we hold the queue lock.
-        ThreadData* queueHead = bitwise_cast<ThreadData*>(currentWordValue & ~queueHeadMask);
+        ThreadData* queueHead = bitwise_cast<ThreadData*>(qClearLowPointerBits<queueHeadMask>(currentWordValue));
         if (queueHead) {
             // Put this thread at the end of the queue.
             queueHead->queueTail->nextInQueue = &me;
@@ -120,7 +120,7 @@ NEVER_INLINE void WordLock::lockSlow()
             ASSERT(currentWordValue & ~queueHeadMask);
             ASSERT(currentWordValue & isQueueLockedBit);
             ASSERT(currentWordValue & isLockedBit);
-            m_word.store(currentWordValue & ~isQueueLockedBit);
+            m_word.store(qClearLowPointerBits<isQueueLockedBit>(currentWordValue));
         } else {
             // Make this thread be the queue-head.
             queueHead = &me;
@@ -134,7 +134,7 @@ NEVER_INLINE void WordLock::lockSlow()
             ASSERT(currentWordValue & isLockedBit);
             uintptr_t newWordValue = currentWordValue;
             newWordValue |= bitwise_cast<uintptr_t>(queueHead);
-            newWordValue &= ~isQueueLockedBit;
+            newWordValue = qClearLowPointerBits<isQueueLockedBit>(newWordValue);
             m_word.store(newWordValue);
         }
 
@@ -182,7 +182,7 @@ NEVER_INLINE void WordLock::unlockSlow()
             continue;
         }
         
-        if (currentWordValue & isQueueLockedBit) {
+        if (qGetLowPointerBits<isQueueLockedBit>(currentWordValue)) {
             Thread::yield();
             continue;
         }
@@ -202,7 +202,7 @@ NEVER_INLINE void WordLock::unlockSlow()
     // queue lock and if it did then it only releases it after putting something on the queue.
     ASSERT(currentWordValue & isLockedBit);
     ASSERT(currentWordValue & isQueueLockedBit);
-    ThreadData* queueHead = bitwise_cast<ThreadData*>(currentWordValue & ~queueHeadMask);
+    ThreadData* queueHead = bitwise_cast<ThreadData*>(qClearLowPointerBits<queueHeadMask>(currentWordValue));
     ASSERT(queueHead);
 
     ThreadData* newQueueHead = queueHead->nextInQueue;
@@ -219,9 +219,9 @@ NEVER_INLINE void WordLock::unlockSlow()
     ASSERT(currentWordValue & isQueueLockedBit);
     ASSERT((currentWordValue & ~queueHeadMask) == bitwise_cast<uintptr_t>(queueHead));
     uintptr_t newWordValue = currentWordValue;
-    newWordValue &= ~isLockedBit; // Release the WordLock.
-    newWordValue &= ~isQueueLockedBit; // Release the queue lock.
-    newWordValue &= queueHeadMask; // Clear out the old queue head.
+    newWordValue = qClearLowPointerBits<isLockedBit>(newWordValue); // Release the WordLock.
+    newWordValue = qClearLowPointerBits<isQueueLockedBit>(newWordValue); // Release the queue lock.
+    newWordValue = qGetLowPointerBits<queueHeadMask>(newWordValue); // Clear out the old queue head.
     newWordValue |= bitwise_cast<uintptr_t>(newQueueHead); // Install new queue head.
     m_word.store(newWordValue);
 

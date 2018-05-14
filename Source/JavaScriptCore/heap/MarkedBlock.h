@@ -440,7 +440,7 @@ inline MarkedBlock::Atom* MarkedBlock::atoms()
 
 inline bool MarkedBlock::isAtomAligned(const void* p)
 {
-    return !(reinterpret_cast<uintptr_t>(p) & atomAlignmentMask);
+    return !qGetLowPointerBits<atomAlignmentMask>(reinterpret_cast<uintptr_t>(p));
 }
 
 inline void* MarkedBlock::Handle::cellAlign(void* p)
@@ -455,7 +455,12 @@ inline void* MarkedBlock::Handle::cellAlign(void* p)
 
 inline MarkedBlock* MarkedBlock::blockFor(const void* p)
 {
+#if __has_builtin(__builtin_align_down)
+    return reinterpret_cast<MarkedBlock*>(__builtin_align_down(const_cast<void*>(p), blockSize));
+#else
     return reinterpret_cast<MarkedBlock*>(reinterpret_cast<uintptr_t>(p) & blockMask);
+#endif
+
 }
 
 inline BlockDirectory* MarkedBlock::Handle::directory() const

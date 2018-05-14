@@ -109,12 +109,12 @@ private:
         
         bool hasOneItem() const
         {
-            return m_word & 1;
+            return qGetLowPointerBits<1u>(m_word);
         }
         
         unsigned oneItem() const
         {
-            return m_word >> 1;
+            return qvaddr(m_word) >> 1;
         }
         
         void setOneItem(unsigned value)

@@ -974,12 +974,20 @@ uint64_t charactersToUInt64Strict(const UChar* data, size_t length, bool* ok, in
 
 intptr_t charactersToIntPtrStrict(const LChar* data, size_t length, bool* ok, int base)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return toIntegralType<long, LChar>(data, length, ok, base);
+#else
     return toIntegralType<intptr_t, LChar>(data, length, ok, base);
+#endif
 }
 
 intptr_t charactersToIntPtrStrict(const UChar* data, size_t length, bool* ok, int base)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return toIntegralType<long, UChar>(data, length, ok, base);
+#else
     return toIntegralType<intptr_t, UChar>(data, length, ok, base);
+#endif
 }
 
 long charactersToLongStrict(const LChar* data, size_t length, bool* ok, int base)
@@ -1034,12 +1042,20 @@ uint64_t charactersToUInt64(const UChar* data, size_t length, bool* ok)
 
 intptr_t charactersToIntPtr(const LChar* data, size_t length, bool* ok)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return toIntegralType<long, LChar>(data, lengthOfCharactersAsInteger<LChar>(data, length), ok, 10);
+#else
     return toIntegralType<intptr_t, LChar>(data, lengthOfCharactersAsInteger<LChar>(data, length), ok, 10);
+#endif
 }
 
 intptr_t charactersToIntPtr(const UChar* data, size_t length, bool* ok)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return toIntegralType<long, UChar>(data, lengthOfCharactersAsInteger<UChar>(data, length), ok, 10);
+#else
     return toIntegralType<intptr_t, UChar>(data, lengthOfCharactersAsInteger<UChar>(data, length), ok, 10);
+#endif
 }
 
 long charactersToLong(const LChar* data, size_t length, bool* ok)

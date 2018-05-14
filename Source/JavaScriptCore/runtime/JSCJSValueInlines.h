@@ -467,12 +467,12 @@ inline JSValue::JSValue(JSFalseTag)
 inline bool JSValue::isUndefinedOrNull() const
 {
     // Undefined and null share the same value, bar the 'undefined' bit in the extended tag.
-    return (u.asInt64 & ~UndefinedTag) == ValueNull;
+    return qClearLowPointerBits<UndefinedTag>(u.asInt64) == ValueNull;
 }
 
 inline bool JSValue::isBoolean() const
 {
-    return (u.asInt64 & ~1) == ValueFalse;
+    return qClearLowPointerBits<1u>(u.asInt64) == ValueFalse;
 }
 
 inline bool JSValue::isCell() const

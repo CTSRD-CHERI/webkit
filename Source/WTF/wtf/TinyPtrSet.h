@@ -359,10 +359,10 @@ public:
 private:
     friend class JSC::DFG::StructureAbstractValue;
 
-    static constexpr uintptr_t fatFlag = 1;
-    static constexpr uintptr_t reservedFlag = 2;
-    static constexpr uintptr_t flags = fatFlag | reservedFlag;
-    static constexpr uintptr_t reservedValue = 4;
+    static constexpr unsigned fatFlag = 1;
+    static constexpr unsigned reservedFlag = 2;
+    static constexpr unsigned flags = fatFlag | reservedFlag;
+    static constexpr unsigned reservedValue = 4;
 
     static constexpr unsigned defaultStartingSize = 4;
     

@@ -221,7 +221,11 @@ public:
             filterSlow(other);
             return;
         }
+#ifdef __CHERI_PURE_CAPABILITY__
+        abort();
+#else
         m_bitsOrPointer &= other.m_bitsOrPointer;
+#endif
         ASSERT(isInline());
     }
     
@@ -231,7 +235,11 @@ public:
             excludeSlow(other);
             return;
         }
+#ifdef __CHERI_PURE_CAPABILITY__
+        abort();
+#else
         m_bitsOrPointer &= ~other.m_bitsOrPointer;
+#endif
         m_bitsOrPointer |= (static_cast<inline_storage_type>(1) << maxInlineBits());
         ASSERT(isInline());
     }
@@ -455,10 +463,30 @@ private:
         size_t m_numBits;
     };
     
-    bool isInline() const { return m_bitsOrPointer >> maxInlineBits(); }
+    bool isInline() const {
+#ifdef __CHERI_PURE_CAPABILITY__
+      abort();
+#else
+      return m_bitsOrPointer >> maxInlineBits();
+#endif
+    }
     
-    const OutOfLineBits* outOfLineBits() const { return bitwise_cast<const OutOfLineBits*>(m_bitsOrPointer << 1); }
-    OutOfLineBits* outOfLineBits() { return bitwise_cast<OutOfLineBits*>(m_bitsOrPointer << 1); }
+    //XXXKG: Not sure about these two functions
+    const OutOfLineBits* outOfLineBits() const {
+#ifdef __CHERI_PURE_CAPABILITY__
+      abort();
+#else
+      return bitwise_cast<const OutOfLineBits*>(m_bitsOrPointer << 1);
+#endif
+    }
+
+    OutOfLineBits* outOfLineBits() {
+#ifdef __CHERI_PURE_CAPABILITY__
+      abort();
+#else
+      return bitwise_cast<OutOfLineBits*>(m_bitsOrPointer << 1);
+#endif
+    }
     
     WTF_EXPORT_PRIVATE void resizeOutOfLine(size_t numBits);
     WTF_EXPORT_PRIVATE void setSlow(const BitVector& other);

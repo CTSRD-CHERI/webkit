@@ -69,7 +69,7 @@ public:
 
     size_t sizeInBytes() const
     {
-        return m_end.untaggedPtr<size_t>() - m_start.untaggedPtr<size_t>();
+        return (size_t)m_end.untaggedPtr<uintptr_t>() - (size_t)m_start.untaggedPtr<uintptr_t>();
     }
     
     bool containsIntegerAddress(uintptr_t address) const

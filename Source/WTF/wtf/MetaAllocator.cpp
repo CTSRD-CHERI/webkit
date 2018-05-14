@@ -237,11 +237,11 @@ MetaAllocator::FreeSpacePtr MetaAllocator::findAndRemoveFreeSpace(size_t sizeInB
         // fewer committed pages and fewer failures in general.
         
         uintptr_t nodeStartAsInt = node->m_start.untaggedPtr<uintptr_t>();
-        uintptr_t firstPage = nodeStartAsInt >> m_logPageSize;
-        uintptr_t lastPage = (nodeStartAsInt + nodeSizeInBytes - 1) >> m_logPageSize;
+        uintptr_t firstPage = qvaddr(nodeStartAsInt) >> m_logPageSize;
+        uintptr_t lastPage = (qvaddr(nodeStartAsInt) + nodeSizeInBytes - 1) >> m_logPageSize;
 
-        uintptr_t lastPageForLeftAllocation = (nodeStartAsInt + sizeInBytes - 1) >> m_logPageSize;
-        uintptr_t firstPageForRightAllocation = (nodeStartAsInt + nodeSizeInBytes - sizeInBytes) >> m_logPageSize;
+        uintptr_t lastPageForLeftAllocation = (qvaddr(nodeStartAsInt) + sizeInBytes - 1) >> m_logPageSize;
+        uintptr_t firstPageForRightAllocation = (qvaddr(nodeStartAsInt) + nodeSizeInBytes - sizeInBytes) >> m_logPageSize;
         
         if (lastPageForLeftAllocation - firstPage + 1 <= lastPage - firstPageForRightAllocation + 1) {
             // Allocate in the left side of the returned chunk, and slide the node to the right.
@@ -395,8 +395,8 @@ void MetaAllocator::addFreeSpace(FreeSpacePtr start, size_t sizeInBytes)
 
 void MetaAllocator::incrementPageOccupancy(void* address, size_t sizeInBytes)
 {
-    uintptr_t firstPage = reinterpret_cast<uintptr_t>(address) >> m_logPageSize;
-    uintptr_t lastPage = (reinterpret_cast<uintptr_t>(address) + sizeInBytes - 1) >> m_logPageSize;
+    uintptr_t firstPage = qvaddr(address) >> m_logPageSize;
+    uintptr_t lastPage = (qvaddr(address) + sizeInBytes - 1) >> m_logPageSize;
 
     uintptr_t currentPageStart = 0;
     size_t count = 0;

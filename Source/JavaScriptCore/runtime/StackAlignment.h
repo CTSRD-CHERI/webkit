@@ -32,7 +32,13 @@
 namespace JSC {
 
 // NB. Different platforms may have different requirements here. But 16 bytes is very common.
-constexpr unsigned stackAlignmentBytes() { return 16; }
+constexpr unsigned stackAlignmentBytes() {
+#ifdef __CHERI_PURE_CAPABILITY__
+  return (_MIPS_SZCAP/8);
+#else
+  return 16;
+#endif
+}
 
 constexpr unsigned stackAlignmentRegisters()
 {
