@@ -331,10 +331,11 @@ IncludeFile.processIncludeOptions()
 asmFile = ARGV.shift
 offsetsFile = ARGV.shift
 outputFlnm = ARGV.shift
+$cheriCapSize = ARGV.shift.to_i
 
 $options = {}
 OptionParser.new do |opts|
-    opts.banner = "Usage: asm.rb asmFile offsetsFile outputFileName [--assembler=<ASM>]"
+    opts.banner = "Usage: asm.rb asmFile offsetsFile outputFileName cheriCapSize [--assembler=<ASM>]"
     # This option is currently only used to specify the masm assembler
     opts.on("--assembler=[ASM]", "Specify an assembler to use.") do |assembler|
         $options[:assembler] = assembler
