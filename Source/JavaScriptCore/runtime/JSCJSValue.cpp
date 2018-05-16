@@ -133,6 +133,7 @@ JSObject* JSValue::synthesizePrototype(JSGlobalObject* globalObject) const
         if (isBigInt())
             return globalObject->bigIntPrototype();
         ASSERT(isSymbol());
+        LOG_CHERI("isSymbol(): %d\n", isSymbol());
         return globalObject->symbolPrototype();
     }
 

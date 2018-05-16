@@ -360,7 +360,7 @@ macro metadata(size, opcode, dst, scratch)
     getu(size, opcode, m_metadataID, scratch) # scratch = bytecode.m_metadataID
     muli sizeof %opcode%::Metadata, scratch # scratch *= sizeof(Op::Metadata)
     addi scratch, dst # offset += scratch
-    addp metadataTable, dst # return &metadataTable[offset]
+    addp metadataTable, dst, dst # return &metadataTable[offset]
 end
 
 macro jumpImpl(targetOffsetReg)
@@ -1272,22 +1272,33 @@ macro functionInitialization(profileArgSkip)
     btpz t0, .argumentProfileDone
     loadp CodeBlock::m_argumentValueProfiles + RefCountedArray::m_data[t1], t3
     btpz t3, .argumentProfileDone # When we can't JIT, we don't allocate any argument value profiles.
+    printp t0, "before mulp"
+    printp t2, "before mulp"
     mulp sizeof ValueProfile, t0, t2 # Aaaaahhhh! Need strength reduction!
+    printp t2, "after mulp"
     lshiftp 3, t0 # offset of last JSValue arguments on the stack.
     addp t2, t3 # pointer to end of ValueProfile array in CodeBlock::m_argumentValueProfiles.
 .argumentProfileLoop:
     if JSVALUE64
-        loadq ThisArgumentOffset - 8 + profileArgSkip * 8[cfr, t0], t2
+        printp cfr
+        printp t0
+        printi profileArgSkip, "profileArgSkip"
+        printi ThisArgumentOffset, "ThisArgumentOffset"
+        loadp ThisArgumentOffset - PtrSize + profileArgSkip * PtrSize[cfr, t0], t2
+        printp t2, "arg profile loop"
+        printp t3, "before subp"
+        printi sizeof ValueProfile, "sizeof ValueProfile"
         subp sizeof ValueProfile, t3
-        storeq t2, profileArgSkip * sizeof ValueProfile + ValueProfile::m_buckets[t3]
+        printp t3, "after subp"
+        storep t2, profileArgSkip * sizeof ValueProfile + ValueProfile::m_buckets[t3]
     else
-        loadi ThisArgumentOffset + TagOffset - 8 + profileArgSkip * 8[cfr, t0], t2
+        loadi ThisArgumentOffset + TagOffset - PtrSize + profileArgSkip * PtrSize[cfr, t0], t2
         subp sizeof ValueProfile, t3
         storei t2, profileArgSkip * sizeof ValueProfile + ValueProfile::m_buckets + TagOffset[t3]
-        loadi ThisArgumentOffset + PayloadOffset - 8 + profileArgSkip * 8[cfr, t0], t2
+        loadi ThisArgumentOffset + PayloadOffset - PtrSize + profileArgSkip * PtrSize[cfr, t0], t2
         storei t2, profileArgSkip * sizeof ValueProfile + ValueProfile::m_buckets + PayloadOffset[t3]
     end
-    baddpnz -8, t0, .argumentProfileLoop
+    baddpnz -PtrSize, t0, .argumentProfileLoop
 .argumentProfileDone:
 end
 

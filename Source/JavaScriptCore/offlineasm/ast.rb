@@ -828,7 +828,14 @@ class BaseIndex < Node
         when 4
             2
         when 8
-            3
+            # Assume here that 8-bytes means pointer
+            if $cheriCapSize == 128
+                4
+            elsif $cheriCapSize == 256
+                5
+            else
+                3
+            end
         else
             raise "Bad scale: #{scale.value} at #{codeOriginString}"
         end

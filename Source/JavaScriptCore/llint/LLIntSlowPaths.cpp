@@ -764,9 +764,16 @@ LLINT_SLOW_PATH_DECL(slow_path_get_by_id)
     auto& metadata = bytecode.metadata(codeBlock);
     const Identifier& ident = codeBlock->identifier(bytecode.m_property);
     JSValue baseValue = getOperand(callFrame, bytecode.m_base);
+    LOG_CHERI("[slow_path_get_by_id]: %s\n", ident.utf8().data());
+    LOG_CHERI("   baseValue: %p\n", (void*)baseValue.asInt64());
+    LOG_CHERI("   baseValue.isCell(): %d\n", baseValue.isCell());
+    LOG_CHERI("   baseValue.isObject(): %d\n", baseValue.isObject());
+    LOG_CHERI("   codeBlock: %p\n", codeBlock);
+
     PropertySlot slot(baseValue, PropertySlot::PropertySlot::InternalMethodType::Get);
 
     JSValue result = baseValue.get(globalObject, ident, slot);
+    LOG_CHERI("   result: %p\n", (void*)result.asInt64());
     LLINT_CHECK_EXCEPTION();
     callFrame->uncheckedR(bytecode.m_dst) = result;
     

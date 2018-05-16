@@ -1032,8 +1032,11 @@ inline bool JSValue::toBoolean(JSGlobalObject* globalObject) const
 
 inline JSString* JSValue::toString(JSGlobalObject* globalObject) const
 {
-    if (isString())
+    if (isString()) {
+        LOG_CHERI("IS STRING\n");
         return asString(asCell());
+    }
+    LOG_CHERI("NOT STRING\n");
     bool returnEmptyStringOnError = true;
     return toStringSlowCase(globalObject, returnEmptyStringOnError);
 }

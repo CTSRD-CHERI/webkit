@@ -225,19 +225,31 @@ inline JSValue::JSValue(HashTableDeletedValueTag)
 
 inline JSValue::JSValue(JSCell* ptr)
 {
-    if (ptr)
+    LOG_CHERI("Creating a new JSValue(JSCell) for %p\n", ptr);
+    if (ptr) {
+        LOG_CHERI("Setting tag to CellTag: %d\n", CellTag);
         u.asBits.tag = CellTag;
-    else
+    }
+    else {
+        LOG_CHERI("Setting tag to EmptyValueTag: %d\n", EmptyValueTag);
         u.asBits.tag = EmptyValueTag;
+    }
+    LOG_CHERI("Setting payload to %d\n", reinterpret_cast<int32_t>(ptr));
     u.asBits.payload = reinterpret_cast<int32_t>(ptr);
 }
 
 inline JSValue::JSValue(const JSCell* ptr)
 {
-    if (ptr)
+    LOG_CHERI("Creating a new JSValue(JSCell) for const %p\n", ptr);
+    if (ptr) {
+        LOG_CHERI("Setting tag to CellTag: %d\n", CellTag);
         u.asBits.tag = CellTag;
-    else
+    }
+    else {
+        LOG_CHERI("Setting tag to EmptyValueTag: %d\n", EmptyValueTag);
         u.asBits.tag = EmptyValueTag;
+    }
+    LOG_CHERI("Setting payload to %d\n", reinterpret_cast<int32_t>(ptr));
     u.asBits.payload = reinterpret_cast<int32_t>(const_cast<JSCell*>(ptr));
 }
 
@@ -380,11 +392,13 @@ inline JSValue::JSValue(HashTableDeletedValueTag)
 
 inline JSValue::JSValue(JSCell* ptr)
 {
+    //LOG_CHERI("Creating JSValue from ptr: %p\n", ptr);
     u.asInt64 = reinterpret_cast<uintptr_t>(ptr);
 }
 
 inline JSValue::JSValue(const JSCell* ptr)
 {
+    //LOG_CHERI("Creating JSValue from const ptr: %p\n", ptr);
     u.asInt64 = reinterpret_cast<uintptr_t>(const_cast<JSCell*>(ptr));
 }
 
@@ -440,6 +454,18 @@ inline int32_t JSValue::asInt32() const
     return static_cast<int32_t>(u.asInt64);
 }
 
+#ifdef __CHERI_PURE_CAPABILITY__
+inline __intcap_t JSValue::asInt64() const
+{
+    return u.asInt64;
+}
+#else
+inline int64_t JSValue::asInt64() const
+{
+    return u.asInt64;
+}
+#endif
+
 inline bool JSValue::isDouble() const
 {
     return isNumber() && !isInt32();
@@ -478,7 +504,12 @@ inline bool JSValue::isBoolean() const
 
 inline bool JSValue::isCell() const
 {
+#ifdef __CHERI_PURE_CAPABILITY__ //XXXKG: need to do bitwise-and with the virtual address
+    //LOG_CHERI("JSValue::isCell(), u.asInt64: %p, cheri_addr_get: %ld, TagMask: %lx\n, bitwise-and (direct): %p, bitwise-and (w/ addr): %ld\n", u.asInt64, __builtin_cheri_address_get(u.ptr), TagMask, u.asInt64 & TagMask, __builtin_cheri_address_get(u.ptr) & TagMask);
+    return !(__builtin_cheri_address_get(u.ptr) & NotCellMask);
+#else
     return !(u.asInt64 & NotCellMask);
+#endif
 }
 
 inline bool JSValue::isInt32() const

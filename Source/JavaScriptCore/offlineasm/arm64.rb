@@ -1,5 +1,6 @@
 # Copyright (C) 2011-2019 Apple Inc. All rights reserved.
 # Copyright (C) 2014 University of Szeged. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -382,12 +383,12 @@ class Sequence
                 size = 2
             when "loadi", "loadis", "storei", "addi", "andi", "lshifti", "muli", "negi",
                 "noti", "ori", "rshifti", "urshifti", "subi", "xori", /^bi/, /^bti/,
-                /^ci/, /^ti/, "addis", "subis", "mulis", "smulli", "leai"
+                /^ci/, /^ti/, "addis", "subis", "mulis", "smulli", "leai", "printi"
                 size = 4
             when "loadp", "storep", "loadq", "storeq", "loadd", "stored", "lshiftp", "lshiftq", "negp", "negq", "rshiftp", "rshiftq",
                 "urshiftp", "urshiftq", "addp", "addq", "mulp", "mulq", "andp", "andq", "orp", "orq", "subp", "subq", "xorp", "xorq", "addd",
                 "divd", "subd", "muld", "sqrtd", /^bp/, /^bq/, /^btp/, /^btq/, /^cp/, /^cq/, /^tp/, /^tq/, /^bd/,
-                "jmp", "call", "leap", "leaq"
+                "jmp", "call", "leap", "leaq", "printp"
                 size = $currentSettings["ADDRESS64"] ? 8 : 4
             else
                 raise "Bad instruction #{node.opcode} for heap access at #{node.codeOriginString}: #{node.dump}"
@@ -413,6 +414,8 @@ class Sequence
             when /^store/
                 not (address.is_a? Address and address.offset.value < 0)
             when /^lea/
+                true
+            when /^print/
                 true
             else
                 raise "Bad instruction #{node.opcode} for heap access at #{node.codeOriginString}"
@@ -1056,6 +1059,8 @@ class Instruction
                 $asm.puts ".loh AdrpLdrGot L_offlineasm_loh_adrp_#{uid}, L_offlineasm_loh_ldr_#{uid}"
                 $asm.putStr("#endif")
             }
+	when "print", "printi", "printb", "printq", "printp", "printc"
+            $asm.putStr("/* print instructions not supported in arm64 llint */")
         else
             lowerDefault
         end

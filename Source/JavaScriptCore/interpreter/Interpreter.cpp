@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2008 Cameron Zwarich <cwzwarich@uwaterloo.ca>
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -357,15 +358,22 @@ Interpreter::~Interpreter()
 
 #if ENABLE(COMPUTED_GOTO_OPCODES)
 #if !USE(LLINT_EMBEDDED_OPCODE_ID) || !ASSERT_DISABLED
+static void populateOpcodeIDTable(HashMap<Opcode, OpcodeID> &opcodeIDTable,
+                                  const Opcode *opcodeTable,
+                                  unsigned length) {
+    for (unsigned i = 0; i < length; ++i)
+        opcodeIDTable.add(opcodeTable[i], static_cast<OpcodeID>(i));
+}
+
 HashMap<Opcode, OpcodeID>& Interpreter::opcodeIDTable()
 {
     static NeverDestroyed<HashMap<Opcode, OpcodeID>> opcodeIDTable;
 
     static std::once_flag initializeKey;
     std::call_once(initializeKey, [&] {
-        const Opcode* opcodeTable = LLInt::opcodeMap();
-        for (unsigned i = 0; i < NUMBER_OF_BYTECODE_IDS; ++i)
-            opcodeIDTable.get().add(opcodeTable[i], static_cast<OpcodeID>(i));
+        populateOpcodeIDTable(opcodeIDTable.get(), LLInt::opcodeMap(), numOpcodeIDs);
+        populateOpcodeIDTable(opcodeIDTable.get(), LLInt::opcodeMapWide16(), NUMBER_OF_BYTECODE_IDS);
+        populateOpcodeIDTable(opcodeIDTable.get(), LLInt::opcodeMapWide32(), NUMBER_OF_BYTECODE_IDS);
     });
 
     return opcodeIDTable;

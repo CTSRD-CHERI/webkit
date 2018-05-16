@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +35,7 @@
 #include "CLoopStackInlines.h"
 #include "CodeBlock.h"
 #include "CommonSlowPaths.h"
-#include "Interpreter.h"
+#include "InterpreterInlines.h"
 #include "LLIntCLoop.h"
 #include "LLIntData.h"
 #include "LLIntSlowPaths.h"
@@ -109,7 +110,11 @@ using namespace JSC::LLInt;
 #define OFFLINE_ASM_GLOBAL_LABEL(label)  label: USE_LABEL(label);
 
 #if ENABLE(LABEL_TRACING)
+#ifdef LOG_CHERI
+#define TRACE_LABEL(prefix, label) LOG_CHERI("\e[30;43m|-> Reached %s\e[0m", #label)
+#else
 #define TRACE_LABEL(prefix, label) dataLog(#prefix, ": ", #label, "\n")
+#endif
 #else
 #define TRACE_LABEL(prefix, label) do { } while (false);
 #endif
@@ -166,6 +171,8 @@ public:
     template<typename T, typename = std::enable_if_t<sizeof(T) == sizeof(uintptr_t)>>
     ALWAYS_INLINE void operator=(T value) { m_value = bitwise_cast<uintptr_t>(value); }
 #if USE(JSVALUE64)
+    ALWAYS_INLINE void operator=(int64_t value) { m_value = static_cast<intptr_t>(value); }
+    ALWAYS_INLINE void operator=(uint64_t value) { m_value = static_cast<uintptr_t>(value); }
     ALWAYS_INLINE void operator=(int32_t value) { m_value = static_cast<intptr_t>(value); }
     ALWAYS_INLINE void operator=(uint32_t value) { m_value = static_cast<uintptr_t>(value); }
 #endif
@@ -176,8 +183,28 @@ public:
     ALWAYS_INLINE void operator=(bool value) { m_value = static_cast<uintptr_t>(value); }
 
 #if USE(JSVALUE64)
-    ALWAYS_INLINE double bitsAsDouble() const { return bitwise_cast<double>(m_value); }
-    ALWAYS_INLINE int64_t bitsAsInt64() const { return bitwise_cast<int64_t>(m_value); }
+    ALWAYS_INLINE double bitsAsDouble() const {
+        uint64_t value;
+
+#ifdef __CHERI_PURE_CAPABILITY__
+        value = __builtin_cheri_address_get(i8p());
+#else
+        value = m_value;
+#endif
+
+        return bitwise_cast<double>(value);
+    }
+    ALWAYS_INLINE int64_t bitsAsInt64() const {
+        uint64_t value;
+
+#ifdef __CHERI_PURE_CAPABILITY__
+        value = __builtin_cheri_address_get(i8p());
+#else
+        value = m_value;
+#endif
+
+        return bitwise_cast<int64_t>(value);
+    }
 #endif
 
 private:
@@ -344,13 +371,21 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
     cfr = vm->topCallFrame;
 #ifndef NDEBUG
     void* startSP = sp.vp();
-    CallFrame* startCFR = cfr.callFrame();
 #endif
+    CallFrame* startCFR = cfr.callFrame();
 
     // Initialize the incoming args for doVMEntryToJavaScript:
     t0 = executableAddress;
     t1 = vm;
     t2 = protoCallFrame;
+
+    LOG_CHERI("LowLevelInterpreter: protoCallFrame: %p\n", protoCallFrame);
+    LOG_CHERI("LowLevelInterpreter: t2.i: %p\n", (void *) t2.i());
+    LOG_CHERI("LowLevelInterpreter: addr(protoCallFrame->paddedArgCount): %p\n", &protoCallFrame->paddedArgCount);
+    LOG_CHERI("LowLevelInterpreter: addr(protoCallFrame->codeBlockValue): %p\n", &protoCallFrame->codeBlockValue);
+    LOG_CHERI("LowLevelInterpreter: protoCallFrame->codeBlockValue.codeBlock(): %p\n", protoCallFrame->codeBlockValue.codeBlock());
+    LOG_CHERI("arg count: %d\n", protoCallFrame->paddedArgCount);
+    LOG_CHERI("start CFR: %p\n", cfr.callFrame());
 
 #if USE(JSVALUE64)
     // For the ASM llint, JITStubs takes care of this initialization. We do
@@ -399,7 +434,7 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
     //========================================================================
     // Loop dispatch mechanism using computed goto statements:
 
-    #define DISPATCH_OPCODE() goto *opcode
+    #define DISPATCH_OPCODE() { LOG_CHERI("\e[30;46m------> Dispatching to %s\e[0m", opcodeNames[vm->interpreter->getOpcodeID(opcode)]); goto *opcode; }
 
     #define DEFINE_OPCODE(__opcode) \
         __opcode: \
@@ -443,7 +478,10 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
 #if USE(JSVALUE32_64)
             return JSValue(t1.i(), t0.i()); // returning JSValue(tag, payload);
 #else
-            return JSValue::decode(t0.encodedJSValue());
+            JSValue ret = JSValue::decode(t0.encodedJSValue());
+            LOG_CHERI("ret: %p\n", (void*)ret.u.asInt64);
+            LOG_CHERI("startCFR: %p, cfr.callFrame: %p\n", startCFR, cfr.callFrame());
+            return ret;
 #endif
         }
 
@@ -459,6 +497,8 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
             t0 = result.payload();
 #else
             t0 = JSValue::encode(result);
+            LOG_CHERI("t0.encodedJSValue: %p\n", (void*)t0.encodedJSValue());
+            LOG_CHERI("cfr.i: %p\n", (void*)cfr.i());
 #endif
             opcode = lr.opcode();
             DISPATCH_OPCODE();

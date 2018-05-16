@@ -1,4 +1,5 @@
 # Copyright (C) 2012-2019 Apple Inc. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -48,6 +49,7 @@ def cloopMapType(type)
     when :bitsAsDouble;   ".bitsAsDouble()"
     when :bitsAsInt64;    ".bitsAsInt64()"
     when :opcode;         ".opcode()"
+    when :cap;            ".i()"
     else;
         raise "Unsupported type"
     end
@@ -186,6 +188,7 @@ class Address
         when :int32;        int32MemRef
         when :int64;        int64MemRef
         when :intptr;       intptrMemRef
+        when :int8Ptr;      intptrMemRef
         when :uint8;        uint8MemRef
         when :uint32;       uint32MemRef
         when :uint64;       uint64MemRef
@@ -387,6 +390,10 @@ end
 def cloopEmitOperation(operands, type, operator)
     raise unless type == :intptr || type == :uintptr || type == :int32 || type == :uint32 || \
         type == :int64 || type == :uint64 || type == :double
+
+    type1 = type
+    type2 = type
+
     if operands.size == 3
         op1 = operands[0]
         op2 = operands[1]
@@ -398,6 +405,21 @@ def cloopEmitOperation(operands, type, operator)
         dst = operands[1]
     end
     raise unless not dst.is_a? Immediate
+    if (type == :intptr or type == :uintptr)
+        if type == :intptr
+            type64 = :int64
+        else
+            type64 = :uint64
+        end
+
+        if op1.is_a? Immediate
+            type1 = type64
+        end
+
+        if op2.is_a? Immediate
+            type2 = type64
+        end
+    end
     if dst.is_a? RegisterID and (type == :int32 or type == :uint32)
         truncationHeader = "(uint32_t)("
         truncationFooter = ")"
@@ -405,7 +427,7 @@ def cloopEmitOperation(operands, type, operator)
         truncationHeader = ""
         truncationFooter = ""
     end
-    $asm.putc "#{dst.clLValue(type)} = #{truncationHeader}#{op1.clValue(type)} #{operator} #{op2.clValue(type)}#{truncationFooter};"
+    $asm.putc "#{dst.clLValue(type)} = #{truncationHeader}#{op1.clValue(type1)} #{operator} #{op2.clValue(type2)}#{truncationFooter};"
 end
 
 def cloopEmitShiftOperation(operands, type, operator)
@@ -426,10 +448,16 @@ def cloopEmitShiftOperation(operands, type, operator)
         truncationHeader = ""
         truncationFooter = ""
     end
-    shiftMask = "((sizeof(uintptr_t) == 8) ? 0x3f : 0x1f)" if type == :intptr || type == :uintptr
+    if (type == :intptr or type == :uintptr)
+        if ($cheriCapSize == 128 or $cheriCapSize == 256)
+	    shiftMask = "0x3f"
+	else
+	    shiftMask = "((sizeof(uintptr_t) == 8) ? 0x3f : 0x1f)" if type == :intptr || type == :uintptr
+	end
+    end
     shiftMask = "0x3f" if type == :int64 || type == :uint64
     shiftMask = "0x1f" if type == :int32 || type == :uint32
-    $asm.putc "#{dst.clLValue(type)} = #{truncationHeader}#{operands[1].clValue(type)} #{operator} (#{operands[0].clValue(:intptr)} & #{shiftMask})#{truncationFooter};"
+    $asm.putc "#{dst.clLValue(type)} = #{truncationHeader}#{operands[1].clValue(type)} #{operator} (#{operands[0].clValue(:int64)} & #{shiftMask})#{truncationFooter};"
 end
 
 def cloopEmitUnaryOperation(operands, type, operator)
@@ -448,6 +476,43 @@ def cloopEmitUnaryOperation(operands, type, operator)
     $asm.putc "#{dst.clLValue(type)} = #{truncationHeader}#{operator}#{op.clValue(type)}#{truncationFooter};"
 end
 
+def cloopEmitPrint(operands, type)
+    if type == :str
+        # Just printing a string
+        if operands.size > 1
+            raise "Wrong number of operands"
+        end
+        $asm.putc "LOG_CHERI(\"#{operands[0].value}\");"
+        return
+    end
+
+    formatSpecifier = case type
+    when :int8Ptr;  "%p"
+    when :int8;  "%c"
+    when :int32; "%d"
+    when :int64; "%ld"
+    when :cap; "%#p"
+    else
+        raise "Unexpected Address type: #{type}"
+    end
+    if operands.size == 2
+        contextString = " (#{operands[1].value})"
+    else
+        contextString = ""
+    end
+
+    if type == :cap
+        type = :int8Ptr
+    end
+
+    cast = ""
+    if type == :int8Ptr
+        cast = "(void*)"
+    end
+
+    $asm.putc "LOG_CHERI(\"#{operands[0].clValue(type)}#{contextString}: #{formatSpecifier}\", #{cast}#{operands[0].clValue(type)});"
+end
+
 def cloopEmitCompareDoubleWithNaNCheckAndBranch(operands, condition)
     $asm.putc "if (std::isnan(#{operands[0].clValue(:double)}) || std::isnan(#{operands[1].clValue(:double)})"
     $asm.putc "    || (#{operands[0].clValue(:double)} #{condition} #{operands[1].clValue(:double)}))"
@@ -463,7 +528,22 @@ end
 
 
 def cloopEmitCompareAndBranch(operands, type, comparator)
-    $asm.putc "if (#{operands[0].clValue(type)} #{comparator} #{operands[1].clValue(type)})"
+    if (type == :intptr or type == :uintptr) and ($cheriCapSize == 128 or $cheriCapSize == 256)
+        if operands[0].is_a? RegisterID or operands[0].is_a? Address
+            op0 = "__builtin_cheri_address_get(CAST<const void *>(#{operands[0].clValue(:int8Ptr)}))"
+        else
+            op0 = "#{operands[0].clValue(type)}"
+        end
+        if operands[1].is_a? RegisterID or operands[1].is_a? Address
+            op1 = "__builtin_cheri_address_get(CAST<const void *>(#{operands[1].clValue(:int8Ptr)}))"
+        else
+            op1 = "#{operands[1].clValue(type)}"
+        end
+    else
+        op0 = "#{operands[0].clValue(type)}"
+        op1 = "#{operands[1].clValue(type)}"
+    end
+    $asm.putc "if (#{op0} #{comparator} #{op1})"
     $asm.putc "    goto #{operands[2].cLabel};"
 end
 
@@ -471,14 +551,21 @@ end
 # conditionTest should contain a string that provides a comparator and a RHS
 # value e.g. "< 0".
 def cloopGenerateConditionExpression(operands, type, conditionTest)
-    op1 = operands[0].clValue(type)
+    if type == :intptr and ($cheriCapSize == 128 or $cheriCapSize == 256)
+        op1 = "__builtin_cheri_address_get((void*)#{operands[0].clValue(:int8Ptr)})"
+        op2type = :int64
+    else
+        op1 = operands[0].clValue(type)
+        op2type = type
+    end
 
     # The operands must consist of 2 or 3 values.
     case operands.size
     when 2 # Just test op1 against the conditionTest.
         lhs = op1
     when 3 # Mask op1 with op2 before testing against the conditionTest.
-        lhs = "(#{op1} & #{operands[1].clValue(type)})"
+        op2 = operands[1].clValue(op2type)
+        lhs = "(#{op1} & #{op2})"
     else
         raise "Expected 2 or 3 operands but got #{operands.size} at #{codeOriginString}"
     end
@@ -638,29 +725,58 @@ class Instruction
         when "noti"
             cloopEmitUnaryOperation(operands, :int32, "~")
 
+        when "print"
+            cloopEmitPrint(operands, :str)
+
+        when "printb"
+            cloopEmitPrint(operands, :int8)
+
+        when "printc"
+            if $cheriCapSize == 128 or $cheriCapSize == 256
+                cloopEmitPrint(operands, :cap)
+            else
+                cloopEmitPrint(operands, :int8Ptr) # treat as printp in non-CHERI case
+            end
+
+        when "printi"
+            cloopEmitPrint(operands, :int32)
+
+        when "printp"
+            cloopEmitPrint(operands, :int8Ptr)
+
+        when "printq"
+            cloopEmitPrint(operands, :int64)
+
         when "loadi"
             $asm.putc "#{operands[1].clLValue(:uint32)} = #{operands[0].uint32MemRef};"
             # There's no need to call clearHighWord() here because the above will
             # automatically take care of 0 extension.
+            # XXXKG: Shouldn't this be uint32 instead of uint?
         when "loadis"
+            $asm.putc "LOG_CHERI(\"32-bit load\");"
             $asm.putc "#{operands[1].clLValue(:int32)} = #{operands[0].int32MemRef};"
         when "loadq"
+            $asm.putc "LOG_CHERI(\"64-bit load\");"
             $asm.putc "#{operands[1].clLValue(:int64)} = #{operands[0].int64MemRef};"
         when "loadp"
             $asm.putc "#{operands[1].clLValue} = #{operands[0].intptrMemRef};"
         when "storei"
+            $asm.putc "LOG_CHERI(\"32-bit store\");"
             $asm.putc "#{operands[1].int32MemRef} = #{operands[0].clValue(:int32)};"
         when "storeq"
+            $asm.putc "LOG_CHERI(\"64-bit store\");"
             $asm.putc "#{operands[1].int64MemRef} = #{operands[0].clValue(:int64)};"
         when "storep"
             $asm.putc "#{operands[1].intptrMemRef} = #{operands[0].clValue(:intptr)};"
         when "loadb"
+            $asm.putc "LOG_CHERI(\"8-bit load\");"
             $asm.putc "#{operands[1].clLValue(:intptr)} = #{operands[0].uint8MemRef};"
         when "loadbsi"
             $asm.putc "#{operands[1].clLValue(:uint32)} = (uint32_t)((int32_t)#{operands[0].int8MemRef});"
         when "loadbsq"
             $asm.putc "#{operands[1].clLValue(:uint64)} = (int64_t)#{operands[0].int8MemRef};"
         when "storeb"
+            $asm.putc "LOG_CHERI(\"8-bit store\");"
             $asm.putc "#{operands[1].uint8MemRef} = #{operands[0].clValue(:int8)};"
         when "loadh"
             $asm.putc "#{operands[1].clLValue(:intptr)} = #{operands[0].uint16MemRef};"

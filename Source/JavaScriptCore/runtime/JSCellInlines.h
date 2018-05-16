@@ -210,6 +210,7 @@ inline bool JSCell::isObject() const
 
 inline bool JSCell::isString() const
 {
+    LOG_CHERI("JSCell::isString(), m_type: %d, StringType: %d\n", m_type, StringType);
     return m_type == StringType;
 }
 

@@ -107,6 +107,9 @@ union EncodedValueDescriptor {
 #if CPU(BIG_ENDIAN)
     struct {
         int32_t tag;
+#ifdef __CHERI_PURE_CAPABILITY__
+        int32_t i32padding[(_MIPS_SZCAP/32)-2];
+#endif
         int32_t payload;
     } asBits;
 #else
@@ -217,6 +220,11 @@ public:
     bool isFalse() const;
 
     int32_t asInt32() const;
+#ifdef __CHERI_PURE_CAPABILITY__
+    __intcap_t asInt64() const;
+#else
+    int64_t asInt64() const;
+#endif
     uint32_t asUInt32() const;
     int64_t asAnyInt() const;
     uint32_t asUInt32AsAnyInt() const;

@@ -1142,13 +1142,21 @@ public:
     static inline const TypeInfo typeInfo() { return TypeInfo(FinalObjectType, StructureFlags); }
     static constexpr IndexingType defaultIndexingType = NonArray;
         
-    static constexpr unsigned defaultSize = 64;
+#ifdef __CHERI_PURE_CAPABILITY__
+    static const unsigned defaultSize = 6 * (_MIPS_SZCAP/8); //XXXKG: 6 pointers
+#else
+    static const unsigned defaultSize = 64; //XXXKG: 6 pointers/elements
+#endif
     static inline unsigned defaultInlineCapacity()
     {
         return (defaultSize - allocationSize(0)) / sizeof(WriteBarrier<Unknown>);
     }
 
-    static constexpr unsigned maxSize = 512;
+#ifdef __CHERI_PURE_CAPABILITY__
+    static const unsigned maxSize = 64 * (_MIPS_SZCAP/8); ///XXXKG: 64 pointers/elements
+#else
+    static const unsigned maxSize = 512; ///XXXKG: 64 pointers/elements
+#endif
     static inline unsigned maxInlineCapacity()
     {
         return (maxSize - allocationSize(0)) / sizeof(WriteBarrier<Unknown>);
@@ -1437,6 +1445,8 @@ ALWAYS_INLINE bool JSObject::getPropertySlot(JSGlobalObject* globalObject, Prope
         }
         ASSERT(object->type() != ProxyObjectType);
         Structure* structure = structureIDTable.get(object->structureID());
+        LOG_CHERI("object: %p\n", object);
+        LOG_CHERI("object->structureID(): %d\n", object->structureID());
 #if USE(JSVALUE64)
         if (checkNullStructure && UNLIKELY(!structure))
             CRASH_WITH_INFO(object->type(), object->structureID(), structureIDTable.size());
