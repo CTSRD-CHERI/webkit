@@ -167,6 +167,8 @@ typedef struct {
 #endif
 } WTFLogChannel;
 
+extern WTFLogChannel CheriDebugLog;
+
 #define LOG_CHANNEL(name) JOIN_LOG_CHANNEL_WITH_PREFIX(LOG_CHANNEL_PREFIX, name)
 #define LOG_CHANNEL_ADDRESS(name) &LOG_CHANNEL(name),
 #define JOIN_LOG_CHANNEL_WITH_PREFIX(prefix, channel) JOIN_LOG_CHANNEL_WITH_PREFIX_LEVEL_2(prefix, channel)
@@ -531,6 +533,7 @@ template<int s, int t> struct check_size {
 #define RELEASE_LOG_STACKTRACE(channel) WTFReleaseLogStackTrace(&LOG_CHANNEL(channel))
 #endif
 
+#define LOG_CHERI(...) WTFLogVerbose(__FILE__, __LINE__, NULL, &CheriDebugLog, __VA_ARGS__)
 
 /* RELEASE_ASSERT */
 

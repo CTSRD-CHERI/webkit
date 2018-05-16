@@ -2758,6 +2758,7 @@ static NO_RETURN void printUsageStatement(bool help = false)
     fprintf(stderr, "  -d         Dumps bytecode (debug builds only)\n");
     fprintf(stderr, "  -e         Evaluate argument as script code\n");
     fprintf(stderr, "  -f         Specifies a source file (deprecated)\n");
+    fprintf(stderr, "  -g         Enable CHERI debug output\n");
     fprintf(stderr, "  -h|--help  Prints this help message\n");
     fprintf(stderr, "  -i         Enables interactive mode (default if no files are specified)\n");
     fprintf(stderr, "  -m         Execute as a module\n");
@@ -2831,6 +2832,10 @@ void CommandLine::parseArguments(int argc, char** argv)
             if (++i == argc)
                 printUsageStatement();
             m_scripts.append(Script(Script::StrictMode::Sloppy, Script::CodeSource::CommandLine, Script::ScriptType::Script, argv[i]));
+            continue;
+        }
+        if (!strcmp(arg, "-g")) {
+            CheriDebugLog.state = WTFLogChannelState::On;
             continue;
         }
         if (!strcmp(arg, "-i")) {
