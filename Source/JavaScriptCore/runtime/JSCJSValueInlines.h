@@ -528,12 +528,17 @@ inline double reinterpretInt64ToDouble(int64_t value)
 
 ALWAYS_INLINE JSValue::JSValue(EncodeAsDoubleTag, double d)
 {
+    // XXXKG: for some reason this conversion doesn't happen earlier
+    if (isImpureNaN(d))
+        d = purifyNaN(d);
     ASSERT(!isImpureNaN(d));
     u.asInt64 = reinterpretDoubleToInt64(d) + JSValue::DoubleEncodeOffset;
+    //LOG_CHERI("storing %f as %p, isImpureNaN? %d", d, u.asInt64, isImpureNaN(d));
 }
 
 inline JSValue::JSValue(int i)
 {
+    //LOG_CHERI("Setting u.asInt64 to %d (%p)\n", TagTypeNumber | static_cast<uint32_t>(i), intptr_t(TagTypeNumber | static_cast<uint32_t>(i)));
     u.asInt64 = JSValue::NumberTag | static_cast<uint32_t>(i);
 }
 
