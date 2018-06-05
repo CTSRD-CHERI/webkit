@@ -91,6 +91,9 @@ public:
     DisjunctionContext* allocDisjunctionContext(ByteDisjunction* disjunction)
     {
         size_t size = DisjunctionContext::allocationSize(disjunction->m_frameSize);
+#ifdef __CHERI_PURE_CAPABILITY__
+        size = WTF::roundUpToMultipleOf<_MIPS_SZCAP/8>(size);
+#endif
         allocatorPool = allocatorPool->ensureCapacity(size);
         RELEASE_ASSERT(allocatorPool);
         return new (allocatorPool->alloc(size)) DisjunctionContext();
@@ -129,7 +132,12 @@ public:
 
         DisjunctionContext* getDisjunctionContext(ByteTerm& term)
         {
-            return bitwise_cast<DisjunctionContext*>(bitwise_cast<uintptr_t>(this) + allocationSize(term.atom.parenthesesDisjunction->m_numSubpatterns));
+            DisjunctionContext* context = bitwise_cast<DisjunctionContext*>(bitwise_cast<uintptr_t>(this) + allocationSize(term.atom.parenthesesDisjunction->m_numSubpatterns));
+#ifdef __CHERI_PURE_CAPABILITY__
+            return __builtin_align_up(context, _MIPS_SZCAP/8);
+#else
+            return context;
+#endif
         }
 
         static size_t allocationSize(unsigned numberOfSubpatterns)
@@ -148,6 +156,9 @@ public:
     ParenthesesDisjunctionContext* allocParenthesesDisjunctionContext(ByteDisjunction* disjunction, unsigned* output, ByteTerm& term)
     {
         size_t size = (Checked<size_t>(ParenthesesDisjunctionContext::allocationSize(term.atom.parenthesesDisjunction->m_numSubpatterns)) + DisjunctionContext::allocationSize(disjunction->m_frameSize)).unsafeGet();
+#ifdef __CHERI_PURE_CAPABILITY__
+        size = WTF::roundUpToMultipleOf<_MIPS_SZCAP/8>(size);
+#endif
         allocatorPool = allocatorPool->ensureCapacity(size);
         RELEASE_ASSERT(allocatorPool);
         return new (allocatorPool->alloc(size)) ParenthesesDisjunctionContext(output, term);
