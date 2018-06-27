@@ -31,9 +31,9 @@ class TinyBloomFilter {
 public:
     TinyBloomFilter();
 
-    void add(size_t);
+    void add(uintptr_t);
     void add(TinyBloomFilter&);
-    bool ruleOut(size_t) const; // True for 0.
+    bool ruleOut(uintptr_t) const; // True for 0.
     void reset();
 
 private:
@@ -45,9 +45,13 @@ inline TinyBloomFilter::TinyBloomFilter()
 {
 }
 
-inline void TinyBloomFilter::add(size_t bits)
+inline void TinyBloomFilter::add(uintptr_t bits)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    m_bits |= (vaddr_t)(void*)bits;
+#else
     m_bits |= bits;
+#endif
 }
 
 inline void TinyBloomFilter::add(TinyBloomFilter& other)
@@ -55,12 +59,20 @@ inline void TinyBloomFilter::add(TinyBloomFilter& other)
     m_bits |= other.m_bits;
 }
 
-inline bool TinyBloomFilter::ruleOut(size_t bits) const
+inline bool TinyBloomFilter::ruleOut(uintptr_t bits) const
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    if (!((vaddr_t)(void*)bits))
+#else
     if (!bits)
+#endif
         return true;
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    if (((vaddr_t)(void*)bits & m_bits) != (vaddr_t)(void*)bits)
+#else
     if ((bits & m_bits) != bits)
+#endif
         return true;
 
     return false;
