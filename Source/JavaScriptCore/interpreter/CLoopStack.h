@@ -53,7 +53,13 @@ namespace JSC {
         
         bool ensureCapacityFor(Register* newTopOfStack);
 
-        bool containsAddress(Register* address) { return (lowAddress() <= address && address < highAddress()); }
+        bool containsAddress(Register* address) {
+#ifdef __CHERI_PURE_CAPABILITY__
+            return ((vaddr_t)lowAddress() <= (vaddr_t)address && (vaddr_t)address < (vaddr_t)highAddress());
+#else
+            return (lowAddress() <= address && address < highAddress());
+#endif
+        }
         static size_t committedByteCount();
 
         void gatherConservativeRoots(ConservativeRoots&, JITStubRoutineSet&, CodeBlockSet&);
