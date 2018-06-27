@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -86,7 +87,15 @@ public:
             // We may be interested in the last cell of the previous MarkedBlock.
             char* previousPointer = bitwise_cast<char*>(bitwise_cast<uintptr_t>(pointer) - sizeof(IndexingHeader) - 1);
             MarkedBlock* previousCandidate = MarkedBlock::blockFor(previousPointer);
-            if (!filter.ruleOut(bitwise_cast<Bits>(previousCandidate))
+
+            bool isRuleOut = filter.ruleOut(bitwise_cast<Bits>(previousCandidate));
+
+            if (__builtin_cheri_tag_get(previousCandidate) == 0
+                || __builtin_cheri_base_get(previousCandidate) > __builtin_cheri_address_get(previousCandidate)) {
+                isRuleOut = true;
+            }
+
+            if (!isRuleOut
                 && set.contains(previousCandidate)
                 && hasInteriorPointers(previousCandidate->handle().cellKind())) {
                 previousPointer = static_cast<char*>(previousCandidate->handle().cellAlign(previousPointer));

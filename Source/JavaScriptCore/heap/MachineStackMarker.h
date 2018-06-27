@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2017 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -62,9 +63,19 @@ private:
     std::shared_ptr<ThreadGroup> m_threadGroup;
 };
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define GET_STACK_BOUNDED_POINTER_TO_VARIABLE(var) \
+    __builtin_cheri_offset_increment( \
+        currentStackPointer(), \
+        (vaddr_t) &(var) - __builtin_cheri_address_get(currentStackPointer()))
+#else
+#define GET_STACK_BOUNDED_POINTER_TO_VARIABLE(var) \
+    &(var)
+#endif
+
 #define DECLARE_AND_COMPUTE_CURRENT_THREAD_STATE(stateName) \
     CurrentThreadState stateName; \
-    stateName.stackTop = &stateName; \
+    stateName.stackTop = GET_STACK_BOUNDED_POINTER_TO_VARIABLE(stateName); \
     stateName.stackOrigin = Thread::current().stack().origin(); \
     ALLOCATE_AND_GET_REGISTER_STATE(stateName ## _registerState); \
     stateName.registerState = &stateName ## _registerState

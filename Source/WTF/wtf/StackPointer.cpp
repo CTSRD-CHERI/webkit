@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +35,9 @@ constexpr size_t sizeOfFrameHeader = 2 * sizeof(void*);
 SUPPRESS_ASAN NEVER_INLINE
 void* currentStackPointer()
 {
-#if COMPILER(GCC_COMPATIBLE)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return __builtin_cheri_stack_get();
+#elif COMPILER(GCC_COMPATIBLE)
     return reinterpret_cast<uint8_t*>(__builtin_frame_address(0)) + sizeOfFrameHeader;
 #else
     // Make sure that sp is the only local variable declared in this function.

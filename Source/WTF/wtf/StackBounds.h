@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010-2017 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,9 +84,18 @@ public:
     {
         if (isEmpty())
             return false;
+#ifdef __CHERI_PURE_CAPABILITY__
+	size_t origin = (__cheri_addr size_t) m_origin;
+	size_t bound = (__cheri_addr size_t) m_bound;
+	size_t pointer = (__cheri_addr size_t) p;
+#else
+	size_t origin = (size_t) m_origin;
+	size_t bound = (size_t) m_bound;
+	size_t pointer = (size_t) p;
+#endif
         if (isGrowingDownward())
-            return (m_origin >= p) && (p > m_bound);
-        return (m_bound > p) && (p >= m_origin);
+            return (origin >= pointer) && (pointer > bound);
+        return (bound > pointer) && (pointer >= origin);
     }
 
     void* recursionLimit(size_t minAvailableDelta = s_defaultAvailabilityDelta) const
@@ -151,8 +161,13 @@ private:
         void* currentPosition = currentStackPointer();
         ASSERT(m_origin != m_bound);
         ASSERT(isGrowingDownward()
+#ifdef __CHERI_PURE_CAPABILITY__ // XXXKG: use vaddr_t because m_bound may not have tag set (if obtained from pthreads)
+            ? ((vaddr_t)currentPosition < (vaddr_t)m_origin && (vaddr_t)currentPosition > (vaddr_t)m_bound)
+            : ((vaddr_t)currentPosition > (vaddr_t)m_origin && (vaddr_t)currentPosition < (vaddr_t)m_bound));
+#else
             ? (currentPosition < m_origin && currentPosition > m_bound)
             : (currentPosition > m_origin && currentPosition < m_bound));
+#endif
 #endif
     }
 

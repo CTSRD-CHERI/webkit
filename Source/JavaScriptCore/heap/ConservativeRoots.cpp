@@ -88,7 +88,11 @@ template<typename MarkHook>
 SUPPRESS_ASAN
 void ConservativeRoots::genericAddSpan(void* begin, void* end, MarkHook& markHook)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    if ((vaddr_t)begin > (vaddr_t)end) { //XXXKG: end may not be a capability hence use address_get, otherwise we will get a tag violation
+#else
     if (begin > end) {
+#endif
         void* swapTemp = begin;
         begin = end;
         end = swapTemp;
@@ -100,8 +104,15 @@ void ConservativeRoots::genericAddSpan(void* begin, void* end, MarkHook& markHoo
     TinyBloomFilter filter = m_heap.objectSpace().blocks().filter(); // Make a local copy of filter to show the compiler it won't alias, and can be register-allocated.
     HeapVersion markingVersion = m_heap.objectSpace().markingVersion();
     HeapVersion newlyAllocatedVersion = m_heap.objectSpace().newlyAllocatedVersion();
-    for (char** it = static_cast<char**>(begin); it != static_cast<char**>(end); ++it)
+    for (char** it = static_cast<char**>(begin);
+#ifdef __CHERI_PURE_CAPABILITY__
+        (vaddr_t)it != (vaddr_t)static_cast<char**>(end);
+#else
+        it != static_cast<char**>(end);
+#endif
+        ++it) {
         genericAddPointer(*it, markingVersion, newlyAllocatedVersion, filter, markHook);
+    }
 }
 
 class DummyMarkHook {
