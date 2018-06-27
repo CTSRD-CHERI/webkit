@@ -110,7 +110,11 @@ void Data::performAssertions(VM& vm)
 
 #if CPU(BIG_ENDIAN)
     STATIC_ASSERT(TagOffset == 0);
-    STATIC_ASSERT(PayloadOffset == 4);
+#ifdef __CHERI_PURE_CAPABILITY__
+    ASSERT(PayloadOffset == ((_MIPS_SZCAP/8)-4));
+#else
+    ASSERT(PayloadOffset == 4);
+#endif
 #else
     STATIC_ASSERT(TagOffset == 4);
     STATIC_ASSERT(PayloadOffset == 0);
