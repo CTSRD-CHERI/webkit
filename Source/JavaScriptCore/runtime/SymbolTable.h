@@ -428,7 +428,7 @@ private:
     
     static bool isValidVarOffset(VarOffset offset)
     {
-        return (uintptr_t(static_cast<uintptr_t>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<intptr_t>(offset.rawOffset());
+        return (uintptr_t(static_cast<uintptr_t>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<uintptr_t>(offset.rawOffset());
     }
 
     intptr_t m_bits;
