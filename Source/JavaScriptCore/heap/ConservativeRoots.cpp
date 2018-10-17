@@ -68,6 +68,11 @@ void ConservativeRoots::grow()
 template<typename MarkHook>
 inline void ConservativeRoots::genericAddPointer(void* p, HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, TinyBloomFilter filter, MarkHook& markHook)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    // Check if this is a valid capability
+    if (!__builtin_cheri_tag_get(p))
+        return;
+#endif
     p = removeArrayPtrTag(p);
     markHook.mark(p);
 
