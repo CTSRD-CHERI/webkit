@@ -975,7 +975,12 @@ private:
     {
         ASSERT(Thread::current().stack().isGrowingDownward());
         void* curr = currentStackPointer();
+#ifdef __CHERI_PURE_CAPABILITY__
+        // XXXKG: limit may or may not be a capability
+        return (vaddr_t)curr >= (vaddr_t)stackLimit;
+#else
         return curr >= stackLimit;
+#endif
     }
 
     void setException(Exception* exception)
