@@ -127,7 +127,13 @@ namespace WTF {
     struct PtrHashBase<T, false /* isSmartPtr */> {
         typedef T PtrType; 
 
-        static unsigned hash(PtrType key) { return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key)); }
+        static unsigned hash(PtrType key) {
+#ifdef __CHERI_PURE_CAPABILITY__
+            return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key));
+#else
+            return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key));
+#endif
+        }
         static bool equal(PtrType a, PtrType b) {
 #ifdef __CHERI_PURE_CAPABILITY__
             return (vaddr_t)a == (vaddr_t)b;
@@ -142,7 +148,13 @@ namespace WTF {
     struct PtrHashBase<T, true /* isSmartPtr */> {
         typedef typename GetPtrHelper<T>::PtrType PtrType; 
 
-        static unsigned hash(PtrType key) { return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key)); }
+        static unsigned hash(PtrType key) {
+#ifdef __CHERI_PURE_CAPABILITY__
+            return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key));
+#else
+            return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key));
+#endif
+        }
         static bool equal(PtrType a, PtrType b) {
 #ifdef __CHERI_PURE_CAPABILITY__
             return (vaddr_t)a == (vaddr_t)b;

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All Rights Reserved.
  * Copyright (C) 2013 Patrick Gansterer <paroga@paroga.com>
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,7 +81,7 @@
  * - https://bugs.webkit.org/show_bug.cgi?id=38045
  * - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43976
  */
-#if (CPU(ARM) || CPU(MIPS)) && COMPILER(GCC_COMPATIBLE)
+#if (CPU(ARM) || CPU(MIPS)) && COMPILER(GCC_OR_CLANG)
 template<typename Type>
 inline bool isPointerTypeAlignmentOkay(Type* ptr)
 {
@@ -122,14 +123,18 @@ inline bool isPointerAligned(void* p)
 #ifdef __CHERI_PURE_CAPABILITY__
     return __builtin_is_aligned(p, _MIPS_SZCAP/8);
 #else
-    return !((vaddr_t)(p) & (sizeof(char*) - 1));
+    return !((intptr_t)(p) & (sizeof(char*) - 1));
 #endif
 }
 
 inline bool is8ByteAligned(void* p)
 {
     static_assert(sizeof(double) == 8, "");
+#ifdef __CHERI_PURE_CAPABILITY__
     return !((vaddr_t)(p) & (sizeof(double) - 1));
+#else
+    return !((uintptr_t)(p) & (sizeof(double) - 1));
+#endif
 }
 
 /*
@@ -176,24 +181,35 @@ inline size_t bitCount(uint64_t bits)
 // Macro that returns a compile time constant with the length of an array, but gives an error if passed a non-array.
 template<typename T, size_t Size> char (&ArrayLengthHelperFunction(T (&)[Size]))[Size];
 // GCC needs some help to deduce a 0 length array.
-#if COMPILER(GCC_COMPATIBLE)
+#if COMPILER(GCC_OR_CLANG)
 template<typename T> char (&ArrayLengthHelperFunction(T (&)[0]))[0];
 #endif
 #define WTF_ARRAY_LENGTH(array) sizeof(::WTF::ArrayLengthHelperFunction(array))
 
-ALWAYS_INLINE constexpr intptr_t roundUpToMultipleOfImpl(size_t divisor, intptr_t x)
+template<typename T>
+ALWAYS_INLINE constexpr T roundUpToMultipleOfImpl(size_t divisor, T x)
 {
-    return __builtin_align_up(x, divisor);
+    if (__builtin_is_constant_evaluated()) {
+        size_t remainderMask = divisor - 1;
+        return (x + remainderMask) & ~remainderMask;
+    }
+    else {
+        return __builtin_align_up(x, divisor);
+    }
 }
 
 // Efficient implementation that takes advantage of powers of two.
-inline intptr_t roundUpToMultipleOf(size_t divisor, intptr_t x)
+template<typename T>
+inline T roundUpToMultipleOf(size_t divisor, T x)
 {
     ASSERT(divisor && !(divisor & (divisor - 1)));
     return roundUpToMultipleOfImpl(divisor, x);
 }
 
-template<size_t divisor> constexpr intptr_t roundUpToMultipleOf(intptr_t x)
+template<size_t divisor,
+       typename T,
+       std::enable_if_t<std::is_integral<T>::value, int> = 0
+> constexpr T roundUpToMultipleOf(T x)
 {
     static_assert(divisor && !(divisor & (divisor - 1)), "divisor must be a power of two!");
     return roundUpToMultipleOfImpl(divisor, x);
