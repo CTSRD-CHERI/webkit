@@ -27,6 +27,8 @@
 
 #include <wtf/Platform.h>
 
+#include <cstring> // for strrchr()
+
 /*
    no namespaces because this file has to be includable from C and Objective-C
 
@@ -533,7 +535,7 @@ template<int s, int t> struct check_size {
 #define RELEASE_LOG_STACKTRACE(channel) WTFReleaseLogStackTrace(&LOG_CHANNEL(channel))
 #endif
 
-#define LOG_CHERI(...) WTFLogVerbose(__FILE__, __LINE__, NULL, &CheriDebugLog, __VA_ARGS__)
+#define LOG_CHERI(...) WTFLogVerbose(strrchr("/" __FILE__, '/')+1, __LINE__, NULL, &CheriDebugLog, __VA_ARGS__)
 
 /* RELEASE_ASSERT */
 
