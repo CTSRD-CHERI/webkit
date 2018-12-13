@@ -514,7 +514,11 @@ inline bool JSValue::isCell() const
 
 inline bool JSValue::isInt32() const
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    return (__builtin_cheri_address_get(u.ptr) & NumberTag) == NumberTag;
+#else
     return (u.asInt64 & NumberTag) == NumberTag;
+#endif
 }
 
 inline int64_t reinterpretDoubleToInt64(double value)
