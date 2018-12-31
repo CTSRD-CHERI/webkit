@@ -34,7 +34,8 @@ cmdName=`basename $0`
 usage()
 {
     echo "usage: $cmdName [[--jsc | -j] <path-to-jsc>] [[--results-dir | -r] <results-path>]"
-    echo "                    [[--test-root | -t] <test-root-path>]"
+    echo "                    [[--test-root | -t] <test-root-path>] [[--filter-list | -f] <filter-list>]"
+    echo "                    [[--timeout | -l] <timeout>]"
     exit 1
 }
 
@@ -42,13 +43,22 @@ while [ $# -gt 1 ]
 do
     case $1 in
     --jsc|-j)
-        jscCmd=$2
+        jscCmd="$2"
         ;;
     --results-dir|-r)
         resultsRoot=$2
         ;;
     --test-root|-t)
         testRoot=$2
+        ;;
+    --filter-list|-f)
+        filterList=$2
+        ;;
+    --skip-first|-s)
+        skipFirst=$2
+        ;;
+    --timeout|-l)
+        timeout=$2
         ;;
     *)
         echo "Unrecognized option \"$1\""
@@ -70,11 +80,14 @@ postScript=$testRoot/resources/standalone-post.js
 passList=$resultsRoot/passed
 failList=$resultsRoot/failed
 crashList=$resultsRoot/crashed
+timeoutList=$resultsRoot/timedout
 
 numTestsRun=0
 numPassed=0
 numFailed=0
 numCrashed=0
+numTimedout=0
+numSkipped=0
 
 rm -rf $resultsRoot
 rm -f jsc-tests-passed jsc-tests-failed
@@ -83,10 +96,22 @@ for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
 do
     testPassed=0
     testCrashed=0
+    testTimeout=0
     testName=`basename $testHTMLFile .html`
     dirName=`dirname $testHTMLFile`
     test=$dirName/$testName
      
+    if [ ! -z "$filterList" ]
+    then
+        grep -x $test $filterList
+        if [ $? -eq 1 ]
+        then
+            numSkipped=$(($numSkipped+1))
+            echo "Skipping $testName"
+            continue
+        fi
+    fi
+
     expectedOut="$testRoot/$dirName/${testName}-expected.txt"
     actualOut="$resultsRoot/$dirName/${testName}-out.txt"
     actualErr="$resultsRoot/$dirName/${testName}-err.txt"
@@ -100,14 +125,39 @@ do
 
     if [ -f $jsTest ]
     then
-        if [ `uname` = 'Darwin' ]; then
-            echo "Testing $test ... \c"
-        else
-            echo -n "Testing $test ..."
-        fi
         numTestsRun=$(($numTestsRun+1))
-        $jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut
+        
+        if [ ! -z $skipFirst ]
+        then
+            if [ $numTestsRun -le $skipFirst ]
+            then
+                numSkipped=$(($numSkipped+1))
+                echo "Skipping $testName"
+                continue
+            fi
+        fi
+
+        if [ `uname` = 'Darwin' ]; then
+            echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
+        else
+            echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
+        fi
+        if [ -z "$timeout" ]
+        then
+            echo "$jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut"
+        else
+            echo "timeout $timeout $jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut"
+        fi
+        START=$(date +%s)
+        if [ -z "$timeout" ]
+        then
+            $jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut
+        else
+            timeout $timeout $jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut
+        fi
         JSC_RES=$?
+        END=$(date +%s)
+        DIFF=$(echo "$END - $START" | bc)
         
         if [ $JSC_RES -eq 0 ]
         then
@@ -115,19 +165,23 @@ do
             if [ $? -eq 0 ]
             then
                 testPassed=1
-                echo "PASSED"
+                echo -e "\e[1;32mPASSED\e[0;37m"
             else
                 testPassed=0
-                echo "FAILED"
+                echo -e "\e[1;31mFAILED\e[0;37m"
             fi
         else
             testPassed=0
             if [ $JSC_RES -gt 128 ]
             then
                 testCrashed=1
-                echo "CRASHED"
+                echo -e "\e[1;31mCRASHED\e[0;37m"
+            elif [ $JSC_RES -eq 124 ]
+            then
+                testTimeout=1
+                echo -e "\e[1;31mTIMEOUT\e[0;37m"
             else
-                echo "ERROR: $JSC_RES"
+                echo -e "\e[1;31mERROR: $JSC_RES\e[0;37m"
             fi
         fi
 
@@ -143,15 +197,26 @@ do
                 echo "$test" >> $crashList
                 numCrashed=$(($numCrashed+1))
             fi
+            if [ $testTimeout -eq 1 ]
+            then
+                echo "$test" >> $timeoutList
+                numTimedout=$(($numTimedout+1))
+            fi
         fi
+        echo -e "\e[1;33m >> Took: $DIFF seconds, Status: $numPassed passed, $numFailed failed, $numCrashed crashed, $numTimedout timed out, $numSkipped skipped.\e[0;37m"
     fi
 done
+
+if [ $numSkipped -gt 0 ]
+then
+    numTestsRun=$(($numTestsRun-$numSkipped))
+fi
 
 if [ $numPassed -eq $numTestsRun ]
 then
     echo "All $numTestsRun tests passed!" | tee $resultsRoot/summary
 else
-    echo "$numPassed tests passed, $numFailed tests failed, $numCrashed tests crashed." | tee $resultsRoot/summary
+    echo "$numPassed tests passed, $numFailed tests failed, $numCrashed tests crashed, $numTimedout tests timed out, $numSkipped skipped." | tee $resultsRoot/summary
 fi
 
 echo "Test results in $resultsRoot"
