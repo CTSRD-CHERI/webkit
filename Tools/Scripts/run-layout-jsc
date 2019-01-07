@@ -36,6 +36,7 @@ usage()
     echo "usage: $cmdName [[--jsc | -j] <path-to-jsc>] [[--results-dir | -r] <results-path>]"
     echo "                    [[--test-root | -t] <test-root-path>] [[--filter-list | -f] <filter-list>]"
     echo "                    [[--timeout | -l] <timeout>] [[--junit-xml | -x] <xml-file-path>]"
+    echo "                    [--num-shards <N> --run-shard <N>]"
     exit 1
 }
 
@@ -63,6 +64,12 @@ do
     --junit-xml|-x)
         junitXML=$2
         ;;
+    --num-shards)
+        numShards=$2
+        ;;
+    --run-shard)
+        runShard=$2
+        ;;
     *)
         echo "Unrecognized option \"$1\""
         usage
@@ -76,6 +83,23 @@ if [ $# -gt 0 ]
 then
     echo "Extra argument \"$1\""
     usage
+fi
+
+# Sanity check on shard arguments
+if [ -z "$numShards" -o -z "$runShard" ]
+then
+    if [ "$numShards" != "$runShard" ]
+    then
+        echo "Must specify --num-shards and --run-shard together"
+        usage
+    fi
+fi
+
+# Update junit XML filename if using sharding. Add shard number after filename
+# in the format filename.$runShard
+if [ -n $junitXML -a -n $numShards ]
+then
+    junitXML="$junitXML.$runShard"
 fi
 
 preScript=$testRoot/resources/standalone-pre.js
@@ -144,6 +168,18 @@ do
             then
                 numSkipped=$(($numSkipped+1))
                 echo "Skipping $testName"
+                continue
+            fi
+        fi
+
+        if [ -n $numShards ]
+        then
+            # Check if we should be running this test in this shard
+            # i.e. if: ($numTestsRun % $numShards) == ($runShard % $numShards)
+            # Assumes that test and shard numbering starts from 1
+            if [ "`expr $numTestsRun % $numShards`" != "`expr $runShard % $numShards`" ]
+            then
+                echo "Skipping $testName (run in a different shard)"
                 continue
             fi
         fi
