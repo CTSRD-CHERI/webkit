@@ -35,7 +35,7 @@ usage()
 {
     echo "usage: $cmdName [[--jsc | -j] <path-to-jsc>] [[--results-dir | -r] <results-path>]"
     echo "                    [[--test-root | -t] <test-root-path>] [[--filter-list | -f] <filter-list>]"
-    echo "                    [[--timeout | -l] <timeout>]"
+    echo "                    [[--timeout | -l] <timeout>] [[--junit-xml | -x] <xml-file-path>]"
     exit 1
 }
 
@@ -59,6 +59,9 @@ do
         ;;
     --timeout|-l)
         timeout=$2
+        ;;
+    --junit-xml|-x)
+        junitXML=$2
         ;;
     *)
         echo "Unrecognized option \"$1\""
@@ -92,7 +95,15 @@ numSkipped=0
 rm -rf $resultsRoot
 rm -f jsc-tests-passed jsc-tests-failed
 
-for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
+if [ ! -z $junitXML ]
+then
+  echo "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" > $junitXML
+  echo "<testsuites>" >> $junitXML
+  echo "<testsuite>" >> $junitXML
+fi
+
+#for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
+for testHTMLFile in `(cd $testRoot && ls -1 fast/regex/*.html)`
 do
     testPassed=0
     testCrashed=0
@@ -137,9 +148,7 @@ do
             fi
         fi
 
-        if [ `uname` = 'Darwin' ]; then
-            echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
-        else
+        if [ -z $junitXML ]; then
             echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
         fi
         if [ -z "$timeout" ]
@@ -157,8 +166,11 @@ do
         fi
         JSC_RES=$?
         END=$(date +%s)
-        DIFF=$(echo "$END - $START" | bc)
+        DIFF=$(expr $END - $START)
         
+        if [ ! -z $junitXML ]; then
+            echo "<testcase classname=\"$test\" name=\"$test\" time=\"$DIFF\">" >> $junitXML
+        fi
         if [ $JSC_RES -eq 0 ]
         then
             diff $actualOut $expectedOut > $diffOut
@@ -168,20 +180,36 @@ do
                 echo -e "\e[1;32mPASSED\e[0;37m"
             else
                 testPassed=0
-                echo -e "\e[1;31mFAILED\e[0;37m"
+                if [ ! -z $junitXML ]; then
+                    echo "<failure>FAILED</failure>" >> $junitXML
+                else
+                    echo -e "\e[1;31mFAILED\e[0;37m"
+                fi
             fi
         else
             testPassed=0
             if [ $JSC_RES -gt 128 ]
             then
                 testCrashed=1
-                echo -e "\e[1;31mCRASHED\e[0;37m"
+                if [ ! -z $junitXML ]; then
+                    echo "<failure>CRASHED</failure>" >> $junitXML
+                else
+                    echo -e "\e[1;31mCRASHED\e[0;37m"
+                fi
             elif [ $JSC_RES -eq 124 ]
             then
                 testTimeout=1
-                echo -e "\e[1;31mTIMEOUT\e[0;37m"
+                if [ ! -z $junitXML ]; then
+                    echo "<failure>TIMEOUT</failure>" >> $junitXML
+                else
+                    echo -e "\e[1;31mTIMEOUT\e[0;37m"
+                fi
             else
-                echo -e "\e[1;31mERROR: $JSC_RES\e[0;37m"
+                if [ ! -z $junitXML ]; then
+                    echo "<failure>ERROR: $JSC_RES</failure>" >> $junitXML
+                else
+                    echo -e "\e[1;31mERROR: $JSC_RES\e[0;37m"
+                fi
             fi
         fi
 
@@ -204,8 +232,17 @@ do
             fi
         fi
         echo -e "\e[1;33m >> Took: $DIFF seconds, Status: $numPassed passed, $numFailed failed, $numCrashed crashed, $numTimedout timed out, $numSkipped skipped.\e[0;37m"
+        if [ ! -z $junitXML ]; then
+            echo "</testcase>" >> $junitXML
+        fi
     fi
 done
+
+if [ ! -z $junitXML ]
+then
+  echo "</testsuite>" >> $junitXML
+  echo "</testsuites>" >> $junitXML
+fi
 
 if [ $numSkipped -gt 0 ]
 then
