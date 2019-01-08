@@ -97,7 +97,7 @@ fi
 
 # Update junit XML filename if using sharding. Add shard number after filename
 # in the format filename.$runShard
-if [ -n $junitXML -a -n $numShards ]
+if [ -n "$junitXML" -a -n "$numShards" ]
 then
     junitXML="$junitXML.$runShard"
 fi
@@ -124,6 +124,11 @@ then
   echo "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" > $junitXML
   echo "<testsuites>" >> $junitXML
   echo "<testsuite>" >> $junitXML
+fi
+
+if [ -n "$numShards" ]
+then
+    runShardModulo="`expr $runShard % $numShards`"
 fi
 
 for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
@@ -171,12 +176,12 @@ do
             fi
         fi
 
-        if [ -n $numShards ]
+        if [ -n "$numShards" ]
         then
             # Check if we should be running this test in this shard
             # i.e. if: ($numTestsRun % $numShards) == ($runShard % $numShards)
             # Assumes that test and shard numbering starts from 1
-            if [ "`expr $numTestsRun % $numShards`" != "`expr $runShard % $numShards`" ]
+            if [ "`expr $numTestsRun % $numShards`" != "$runShardModulo" ]
             then
                 echo "Skipping $testName (run in a different shard)"
                 continue
