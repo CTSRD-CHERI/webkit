@@ -126,8 +126,7 @@ then
   echo "<testsuite>" >> $junitXML
 fi
 
-#for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
-for testHTMLFile in `(cd $testRoot && ls -1 fast/regex/*.html)`
+for testHTMLFile in `(cd $testRoot && ls -1 js/*.html fast/regex/*.html)`
 do
     testPassed=0
     testCrashed=0
