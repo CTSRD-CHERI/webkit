@@ -188,9 +188,7 @@ do
             fi
         fi
 
-        if [ -z $junitXML ]; then
-            echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
-        fi
+        echo -e "\e[1;36m${numTestsRun} Testing $test ... \e[0;37m\c"
         if [ -z "$timeout" ]
         then
             echo "$jscCmd $preScript $jsTest $postScript 2>$actualErr > $actualOut"
