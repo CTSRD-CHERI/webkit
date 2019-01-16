@@ -1,0 +1,14 @@
+#!/bin/csh
+
+set jscCmd = "/mnt/jsc"
+set testRoot = "/mnt/qt5/qtwebkit/LayoutTests"
+
+set DEBUG = ""
+if ("$1" == "-g") then
+  set TEST = "$2"
+  set DEBUG = "-g"
+else
+  set TEST = "$1"
+endif
+
+$jscCmd $DEBUG $testRoot/resources/standalone-pre.js $TEST $testRoot/resources/standalone-post.js
