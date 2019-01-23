@@ -1975,6 +1975,18 @@ extern "C" void llint_write_barrier_slow(CallFrame* callFrame, JSCell* cell)
     vm.heap.writeBarrier(cell);
 }
 
+extern "C" uint64_t numSlowPathCalls = 0;
+
+extern "C" void llint_log_slow_path_call(CallFrame* exec, const Instruction* pc)
+{
+    numSlowPathCalls++;
+}
+
+extern "C" uint64_t llint_get_num_slow_path_calls()
+{
+    return numSlowPathCalls;
+}
+
 extern "C" NO_RETURN_DUE_TO_CRASH void llint_crash()
 {
     CRASH();

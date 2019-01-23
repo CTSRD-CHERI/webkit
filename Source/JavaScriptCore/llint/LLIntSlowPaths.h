@@ -39,6 +39,8 @@ namespace LLInt {
 extern "C" SlowPathReturnType llint_trace_operand(CallFrame*, const Instruction*, int fromWhere, int operand);
 extern "C" SlowPathReturnType llint_trace_value(CallFrame*, const Instruction*, int fromWhere, VirtualRegister operand);
 extern "C" void llint_write_barrier_slow(CallFrame*, JSCell*) WTF_INTERNAL;
+extern "C" void llint_log_slow_path_call(CallFrame* exec, const Instruction* pc) WTF_INTERNAL;
+extern "C" uint64_t llint_get_num_slow_path_calls();
 
 #define LLINT_SLOW_PATH_DECL(name) \
     extern "C" SlowPathReturnType llint_##name(CallFrame* callFrame, const Instruction* pc)
@@ -58,6 +60,7 @@ LLINT_SLOW_PATH_HIDDEN_DECL(entry_osr_function_for_construct);
 LLINT_SLOW_PATH_HIDDEN_DECL(entry_osr_function_for_call_arityCheck);
 LLINT_SLOW_PATH_HIDDEN_DECL(entry_osr_function_for_construct_arityCheck);
 LLINT_SLOW_PATH_HIDDEN_DECL(loop_osr);
+LLINT_SLOW_PATH_HIDDEN_DECL(log_slow_path);
 LLINT_SLOW_PATH_HIDDEN_DECL(replace);
 LLINT_SLOW_PATH_HIDDEN_DECL(stack_check);
 LLINT_SLOW_PATH_HIDDEN_DECL(slow_path_new_object);
