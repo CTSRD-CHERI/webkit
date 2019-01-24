@@ -30,6 +30,7 @@
 #include <sys/mman.h>
 #include <wtf/Assertions.h>
 #include <wtf/PageAllocation.h>
+#include <wtf/MemoryProfiler.h>
 
 namespace WTF {
 
@@ -52,6 +53,8 @@ void* OSAllocator::reserveUncommitted(size_t bytes, Usage usage, bool writable, 
 #endif
     UNUSED_PARAM(includesGuardPages);
 
+    //fprintf(stderr, "[%s] mmap(%zu)\n", __FUNCTION__, bytes);
+    MemoryProfiler::recordMmap(bytes);
     void* result = mmap(0, bytes, PROT_NONE, MAP_NORESERVE | MAP_PRIVATE | MAP_ANON, -1, 0);
     if (result == MAP_FAILED)
         CRASH();
@@ -62,17 +65,25 @@ void* OSAllocator::reserveUncommitted(size_t bytes, Usage usage, bool writable, 
     // we reallocate a double-size region, choose a valid region, and unmap the remainder.
     if (executable && UNLIKELY(!isWithin256MB(result, bytes))) {
         // Not in 256MB region, try to map double size.
+        //fprintf(stderr, "[%s] munmap(%zu)\n", __FUNCTION__, bytes);
+        MemoryProfiler::recordMunmap(bytes);
         if (munmap(result, bytes))
             CRASH();
+        //fprintf(stderr, "[%s] MIPS: mmap(%zu)\n", __FUNCTION__, 2*bytes);
+        MemoryProfiler::recordMmap(2*bytes);
         result = mmap(0, 2 * bytes, PROT_NONE, MAP_NORESERVE | MAP_PRIVATE | MAP_ANON, -1, 0);
         if (result == MAP_FAILED)
             CRASH();
         if (isWithin256MB(result, bytes)) {
             // 1st half is good, release 2nd half.
+            //fprintf(stderr, "[%s] munmap(%zu)\n", __FUNCTION__, bytes);
+            MemoryProfiler::recordMunmap(bytes);
             if (munmap(reinterpret_cast<int8_t*>(result) + bytes, bytes))
                 CRASH();
         } else if (isWithin256MB(reinterpret_cast<int8_t*>(result) + bytes, bytes)) {
             // 2nd half is good, release 1st half.
+            //fprintf(stderr, "[%s] munmap(%zu)\n", __FUNCTION__, bytes);
+            MemoryProfiler::recordMunmap(bytes);
             if (munmap(result, bytes))
                 CRASH();
         } else
@@ -138,6 +149,8 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
     }
 #endif
 
+    //fprintf(stderr, "[%s] mmap(%zu)\n", __FUNCTION__, bytes);
+    MemoryProfiler::recordMmap(bytes);
     result = mmap(result, bytes, protection, flags, fd, 0);
     if (result == MAP_FAILED) {
         if (executable)
@@ -150,6 +163,8 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
         // mprotect results in multiple references to the code region. This
         // breaks the madvise based mechanism we use to return physical memory
         // to the OS.
+        //fprintf(stderr, "[%s] guard pages: mmap(%zu)\n", __FUNCTION__, 2*pageSize());
+        MemoryProfiler::recordMmap(2*pageSize());
         mmap(result, pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
         mmap(static_cast<char*>(result) + bytes - pageSize(), pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
     }
@@ -210,6 +225,8 @@ void OSAllocator::hintMemoryNotNeededSoon(void* address, size_t bytes)
 
 void OSAllocator::releaseDecommitted(void* address, size_t bytes)
 {
+    //fprintf(stderr, "[%s] munmap(%zu)\n", __FUNCTION__, bytes);
+    MemoryProfiler::recordMunmap(bytes);
     int result = munmap(address, bytes);
     if (result == -1)
         CRASH();

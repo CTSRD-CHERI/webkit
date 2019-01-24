@@ -1,3 +1,5 @@
+include(CheckIncludeFiles)
+
 set(WTF_PUBLIC_HEADERS
     ASCIICType.h
     AggregateLogger.h
@@ -131,6 +133,7 @@ set(WTF_PUBLIC_HEADERS
     MemoryFootprint.h
     MemoryPressureHandler.h
     MessageQueue.h
+    MemoryProfiler.h
     MetaAllocator.h
     MetaAllocatorHandle.h
     MetaAllocatorPtr.h
@@ -379,6 +382,7 @@ set(WTF_SOURCES
     MainThread.cpp
     MediaTime.cpp
     MemoryPressureHandler.cpp
+    MemoryProfiler.cpp
     MetaAllocator.cpp
     MonotonicTime.cpp
     NumberOfCores.cpp
@@ -488,6 +492,17 @@ set(WTF_PRIVATE_INCLUDE_DIRECTORIES
 set(WTF_LIBRARIES
     ${CMAKE_DL_LIBS}
 )
+
+check_include_files("libmw.h" LIBMEMWALK_FOUND)
+message(STATUS "LIBMEMWALK_FOUND=${LIBMEMWALK_FOUND}")
+if (LIBMEMWALK_FOUND)
+    list(APPEND WTF_LIBRARIES
+        procstat
+        kvm
+        util
+        mw
+    )
+endif()
 
 if (NOT USE_SYSTEM_MALLOC)
     list(APPEND WTF_LIBRARIES WebKit::bmalloc)

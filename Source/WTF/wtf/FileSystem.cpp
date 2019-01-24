@@ -29,6 +29,7 @@
 
 #include <wtf/FileMetadata.h>
 #include <wtf/HexNumber.h>
+#include <wtf/MemoryProfiler.h>
 #include <wtf/Scope.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/StringBuilder.h>
@@ -284,6 +285,8 @@ MappedFileData::~MappedFileData()
 {
     if (!m_fileData)
         return;
+    //fprintf(stderr, "[%s] munmap(%zu)\n", __FUNCTION__, m_fileSize);
+    MemoryProfiler::recordMunmap(m_fileSize);
     unmapViewOfFile(m_fileData, m_fileSize);
 }
 
@@ -324,6 +327,8 @@ bool MappedFileData::mapFileHandle(PlatformFileHandle handle, MappedFileMode mod
         return true;
     }
 
+    //fprintf(stderr, "[%s] mmap(%zu)\n", __FUNCTION__, size);
+    MemoryProfiler::recordMmap(size);
     void* data = mmap(0, size, PROT_READ, MAP_FILE | (mode == MappedFileMode::Shared ? MAP_SHARED : MAP_PRIVATE), fd, 0);
 
     if (data == MAP_FAILED) {

@@ -37,6 +37,7 @@
 #include "JSCInlines.h"
 #include "Options.h"
 #include <wtf/Lock.h>
+#include <wtf/MemoryProfiler.h>
 
 namespace JSC {
 
@@ -142,6 +143,10 @@ void CLoopStack::addToCommittedByteCount(long byteCount)
     LockHolder locker(stackStatisticsMutex);
     ASSERT(static_cast<long>(committedBytesCount) + byteCount > -1);
     committedBytesCount += byteCount;
+    if (byteCount >= 0)
+        MemoryProfiler::recordJsStackGrow(byteCount);
+    else
+        MemoryProfiler::recordJsStackShrink(-byteCount);
 }
 
 void CLoopStack::setSoftReservedZoneSize(size_t reservedZoneSize)
