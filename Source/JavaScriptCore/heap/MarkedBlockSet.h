@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,7 +51,7 @@ private:
 
 inline void MarkedBlockSet::add(MarkedBlock* block)
 {
-    m_filter.add(reinterpret_cast<Bits>(block));
+    m_filter.add(reinterpret_cast<size_t>(block));
     m_set.add(block);
 }
 
@@ -66,7 +67,7 @@ inline void MarkedBlockSet::recomputeFilter()
 {
     TinyBloomFilter filter;
     for (HashSet<MarkedBlock*>::iterator it = m_set.begin(); it != m_set.end(); ++it)
-        filter.add(reinterpret_cast<Bits>(*it));
+        filter.add(reinterpret_cast<size_t>(*it));
     m_filter = filter;
 }
 

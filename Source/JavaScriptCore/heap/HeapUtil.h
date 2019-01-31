@@ -104,7 +104,7 @@ public:
             }
         }
     
-        if (filter.ruleOut(bitwise_cast<Bits>(candidate))) {
+        if (filter.ruleOut(bitwise_cast<size_t>(candidate))) {
             ASSERT(!candidate || !set.contains(candidate));
             return;
         }
@@ -168,7 +168,7 @@ public:
         const HashSet<MarkedBlock*>& set = heap.objectSpace().blocks().set();
         
         MarkedBlock* candidate = MarkedBlock::blockFor(pointer);
-        if (filter.ruleOut(bitwise_cast<Bits>(candidate))) {
+        if (filter.ruleOut(bitwise_cast<size_t>(candidate))) {
             ASSERT(!candidate || !set.contains(candidate));
             return false;
         }
