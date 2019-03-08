@@ -310,6 +310,9 @@ void WTFPrintBacktrace(void** stack, int size)
 void WTFCrash()
 {
     WTFReportBacktrace();
+#ifdef __CHERI_PURE_CAPABILITY__
+    abort(); // gives a sensible core dump with a backtrace
+#endif
 #if ASAN_ENABLED
     __builtin_trap();
 #else
