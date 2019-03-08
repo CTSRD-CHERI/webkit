@@ -357,6 +357,9 @@ inline std::pair<PropertyTable::find_iterator, bool> PropertyTable::add(const Va
     // Look for a value with a matching key already in the array.
     find_iterator iter = find(entry.key);
     if (iter.first) {
+#ifdef __CHERI_PURE_CAPABILITY__
+        ASSERT(__builtin_cheri_tag_get(iter.first->key));
+#endif
         RELEASE_ASSERT(iter.first->offset <= offset);
         return std::make_pair(iter, false);
     }
@@ -381,6 +384,9 @@ inline std::pair<PropertyTable::find_iterator, bool> PropertyTable::add(const Va
     iter.first = &table()[entryIndex - 1];
     *iter.first = entry;
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    ASSERT(__builtin_cheri_tag_get(iter.first->key));
+#endif
     ++m_keyCount;
     
     if (offsetEffect == PropertyOffsetMayChange)
