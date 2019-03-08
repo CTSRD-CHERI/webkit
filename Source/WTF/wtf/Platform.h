@@ -713,18 +713,22 @@
 #define HAVE_MACHINE_CONTEXT 1
 #endif
 
-#if OS(DARWIN) || (OS(LINUX) && defined(__GLIBC__) && !defined(__UCLIBC__) && !CPU(MIPS))
+#if OS(DARWIN) || (OS(LINUX) && defined(__GLIBC__) && !defined(__UCLIBC__) && !CPU(MIPS)) || OS(FREEBSD)
 #define HAVE_BACKTRACE 1
 #endif
 
-#if OS(DARWIN) || OS(LINUX)
+#if OS(DARWIN) || OS(LINUX) || OS(FREEBSD)
 #if PLATFORM(GTK)
 #if defined(__GLIBC__) && !defined(__UCLIBC__) && !CPU(MIPS)
 #define HAVE_BACKTRACE_SYMBOLS 1
 #endif
-#endif /* PLATFORM(GTK) */
+#elif OS(FREEBSD)
+#define HAVE_BACKTRACE_SYMBOLS 1
+#endif /* OS(FREEBSD) && !PLATFORM(GTK) */
+#if !OS(FREEBSD)
 #define HAVE_DLADDR 1
-#endif /* OS(DARWIN) || OS(LINUX) */
+#endif /* !OS(FREEBSD) */
+#endif /* OS(DARWIN) || OS(LINUX) || OS(FREEBSD) */
 
 
 /* ENABLE macro defaults */

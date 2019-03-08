@@ -74,6 +74,12 @@
 #include <unistd.h>
 #endif
 
+#if OS(DARWIN) || (OS(LINUX) && defined(__GLIBC__) && !defined(__UCLIBC__))
+#include <cxxabi.h>
+#include <dlfcn.h>
+#include <execinfo.h>
+#endif
+
 namespace WTF {
 
 WTF_ATTRIBUTE_PRINTF(1, 0) static String createWithFormatAndArguments(const char* format, va_list args)

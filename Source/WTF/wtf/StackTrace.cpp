@@ -121,6 +121,8 @@ void StackTrace::dump(PrintStream& out, const char* indentString) const
 
     symbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
     symbolInfo->MaxNameLen = MAX_SYM_NAME;
+#elif defined(__CHERI_PURE_CAPABILITY)
+#error should use BACKTRACE_SYMBOLS!
 #endif
 
     if (!indentString)
