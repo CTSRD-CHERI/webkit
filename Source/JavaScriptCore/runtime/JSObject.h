@@ -1144,7 +1144,7 @@ public:
     static constexpr IndexingType defaultIndexingType = NonArray;
         
 #ifdef __CHERI_PURE_CAPABILITY__
-    static const unsigned defaultSize = 6 * (_MIPS_SZCAP/8); //XXXKG: 6 pointers
+    static const unsigned defaultSize = 6 * sizeof(__uintcap_t); //XXXKG: 6 pointers
 #else
     static const unsigned defaultSize = 64; //XXXKG: 6 pointers/elements
 #endif
@@ -1154,7 +1154,7 @@ public:
     }
 
 #ifdef __CHERI_PURE_CAPABILITY__
-    static const unsigned maxSize = 64 * (_MIPS_SZCAP/8); ///XXXKG: 64 pointers/elements
+    static const unsigned maxSize = 64 * sizeof(__uintcap_t); ///XXXKG: 64 pointers/elements
 #else
     static const unsigned maxSize = 512; ///XXXKG: 64 pointers/elements
 #endif

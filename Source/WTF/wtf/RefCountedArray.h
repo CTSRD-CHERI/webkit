@@ -218,7 +218,7 @@ private:
             // By default the size is adjusted such that the payload
             // is 8-byte aligned. We adjust alignment for CHERI.
 #ifdef __CHERI_PURE_CAPABILITY__
-            return (sizeof(Header) + ((_MIPS_SZCAP/8)-1)) & ~((_MIPS_SZCAP/8)-1);
+            return (sizeof(Header) + (sizeof(__uintcap_t)-1)) & ~((sizeof(__uintcap_t))-1);
 #else
             return (sizeof(Header) + 7) & ~7;
 #endif
@@ -229,7 +229,7 @@ private:
             char* result = reinterpret_cast<char*>(this) + size();
             //XXXKG: check alignment
 #ifdef __CHERI_PURE_CAPABILITY__
-            ASSERT(!((vaddr_t)result & ((_MIPS_SZCAP/8)-1)));
+            ASSERT(!((vaddr_t)result & (sizeof(__uintcap_t)-1)));
 #else
             ASSERT(!(bitwise_cast<uintptr_t>(result) & 7));
 #endif

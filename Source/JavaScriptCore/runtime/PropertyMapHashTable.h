@@ -554,7 +554,7 @@ inline PropertyTable::ValueType* PropertyTable::table()
 {
     // The table of values lies after the hash index.
 #ifdef __CHERI_PURE_CAPABILITY__
-    return reinterpret_cast<ValueType*>(__builtin_align_up(m_index + m_indexSize, _MIPS_SZCAP/8));
+    return reinterpret_cast<ValueType*>(__builtin_align_up(m_index + m_indexSize, sizeof(__uintcap_t)));
 #else
     return reinterpret_cast<ValueType*>(m_index + m_indexSize);
 #endif
@@ -564,7 +564,7 @@ inline const PropertyTable::ValueType* PropertyTable::table() const
 {
     // The table of values lies after the hash index.
 #ifdef __CHERI_PURE_CAPABILITY__
-    return reinterpret_cast<const ValueType*>(__builtin_align_up(m_index + m_indexSize, _MIPS_SZCAP/8));
+    return reinterpret_cast<const ValueType*>(__builtin_align_up(m_index + m_indexSize, sizeof(__uintcap_t)));
 #else
     return reinterpret_cast<const ValueType*>(m_index + m_indexSize);
 #endif
@@ -581,7 +581,7 @@ inline size_t PropertyTable::dataSize()
     // The size in bytes of data needed for by the table.
 #ifdef __CHERI_PURE_CAPABILITY__
     //XXXKG: ensure table starts on a capability alignment boundary
-    return __builtin_align_up(m_indexSize * sizeof(unsigned), _MIPS_SZCAP/8) + ((tableCapacity()) + 1) * sizeof(ValueType);
+    return __builtin_align_up(m_indexSize * sizeof(unsigned), sizeof(__uintcap_t)) + ((tableCapacity()) + 1) * sizeof(ValueType);
 #else
     return m_indexSize * sizeof(unsigned) + ((tableCapacity()) + 1) * sizeof(ValueType);
 #endif
