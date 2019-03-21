@@ -116,7 +116,11 @@ void Data::performAssertions(VM& vm)
     ASSERT(PayloadOffset == 4);
 #endif
 #else
-    STATIC_ASSERT(TagOffset == 4);
+#ifdef __CHERI_PURE_CAPABILITY__
+    ASSERT(TagOffset == (sizeof(__uintcap_t)-4));
+#else
+    ASSERT(TagOffset == 4);
+#endif
     STATIC_ASSERT(PayloadOffset == 0);
 #endif
 
