@@ -37,8 +37,7 @@
 #define OFFLINE_ASM_CHERI_128_PURECAP 0
 #define OFFLINE_ASM_CHERI_256_PURECAP 1
 #else
-#define OFFLINE_ASM_CHERI_128_PURECAP 0
-#define OFFLINE_ASM_CHERI_256_PURECAP 0
+#error __UINTCAP_WIDTH__ is undefined or an unsupported value
 #endif
 #else
 #define OFFLINE_ASM_CHERI_128_PURECAP 0
