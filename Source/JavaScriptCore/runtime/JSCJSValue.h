@@ -115,6 +115,9 @@ union EncodedValueDescriptor {
 #else
     struct {
         int32_t payload;
+#ifdef __CHERI_PURE_CAPABILITY__
+        int32_t i32padding[(sizeof(__uintcap_t) / sizeof(int32_t))-2];
+#endif
         int32_t tag;
     } asBits;
 #endif
