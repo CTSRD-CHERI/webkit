@@ -169,7 +169,11 @@ inline void copyLCharsFromUCharSource(LChar* destination, const UChar* source, s
         do {
             asm("ld2   { v0.16B, v1.16B }, [%[SOURCE]], #32\n\t"
                 "st1   { v0.16B }, [%[DESTINATION]], #16\n\t"
+#ifdef __CHERI_PURE_CAPABILITY__
+                : [SOURCE]"+C" (source), [DESTINATION]"+C" (destination)
+#else
                 : [SOURCE]"+r" (source), [DESTINATION]"+r" (destination)
+#endif
                 :
                 : "memory", "v0", "v1");
         } while (destination != simdEnd);
