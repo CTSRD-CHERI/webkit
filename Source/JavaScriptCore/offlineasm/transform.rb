@@ -1,4 +1,5 @@
 # Copyright (C) 2011 Apple Inc. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -539,6 +540,16 @@ class SubImmediates
         return self unless @left.is_a? Immediate
         return self unless @right.is_a? Immediate
         Immediate.new(codeOrigin, @left.value - @right.value)
+    end
+end
+
+class LShiftImmediates
+    def fold
+        @left = @left.fold
+        @right = @right.fold
+        return self unless @left.is_a? Immediate
+        return self unless @right.is_a? Immediate
+        Immediate.new(codeOrigin, @left.value << @right.value)
     end
 end
 

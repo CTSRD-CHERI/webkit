@@ -1,4 +1,5 @@
 # Copyright (C) 2011, 2016 Apple Inc. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -195,6 +196,8 @@ def lex(str, file)
         when /\A([0-9]+)/
             result << Token.new(CodeOrigin.new(file, lineNumber), $&)
         when /\A::/
+            result << Token.new(CodeOrigin.new(file, lineNumber), $&)
+        when /\A<</
             result << Token.new(CodeOrigin.new(file, lineNumber), $&)
         when /\A[:,\(\)\[\]=\+\-~\|&^*]/
             result << Token.new(CodeOrigin.new(file, lineNumber), $&)
@@ -408,14 +411,7 @@ class Parser
             else
                 parseError unless @tokens[@idx] == ","
                 @idx += 1
-                if ["1", "2", "4", "8"].member? @tokens[@idx].string
-                    c = Immediate.new(codeOrigin, @tokens[@idx].string.to_i)
-                    @idx += 1
-                elsif @tokens[@idx] == "constexpr"
-                    c = parseConstExpr
-                else
-                    c = parseVariable
-                end
+                c = parseExpressionAtom
                 parseError unless @tokens[@idx] == "]"
                 result = BaseIndex.new(codeOrigin, a, b, c, offset)
             end
@@ -514,13 +510,27 @@ class Parser
         end
     end
     
-    def parseExpressionMul
+    def parseExpressionLShift
         skipNewLine
         result = parseExpressionAtom
+        while @tokens[@idx] == "<<"
+            if @tokens[@idx] == "<<"
+                @idx += 1
+                result = LShiftImmediates.new(@tokens[@idx - 1].codeOrigin, result, parseExpressionAtom)
+            else
+                raise
+            end
+        end
+        result
+    end
+
+    def parseExpressionMul
+        skipNewLine
+        result = parseExpressionLShift
         while @tokens[@idx] == "*"
             if @tokens[@idx] == "*"
                 @idx += 1
-                result = MulImmediates.new(@tokens[@idx - 1].codeOrigin, result, parseExpressionAtom)
+                result = MulImmediates.new(@tokens[@idx - 1].codeOrigin, result, parseExpressionLShift)
             else
                 raise
             end

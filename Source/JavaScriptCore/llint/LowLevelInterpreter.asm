@@ -1,4 +1,5 @@
 # Copyrsght (C) 2011-2019 Apple Inc. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -152,9 +153,13 @@ end
 
 # These declarations must match interpreter/JSStack.h.
 
-const PtrSize = constexpr (sizeof(void*))
-const MachineRegisterSize = constexpr (sizeof(CPURegister))
-const SlotSize = constexpr (sizeof(Register))
+const PtrSizeLog = constexpr (WTF::fastLog2(sizeof(void*)))
+const MachineRegisterSizeLog = constexpr (WTF::fastLog2(sizeof(CPURegister)))
+const SlotSizeLog = constexpr (WTF::fastLog2(sizeof(Register)))
+
+const PtrSize = (1 << PtrSizeLog)
+const MachineRegisterSize = (1 << MachineRegisterSizeLog)
+const SlotSize = (1 << SlotSizeLog)
 
 if JSVALUE64
     const CallFrameHeaderSlots = 5
@@ -910,7 +915,7 @@ end
 
 macro getFrameRegisterSizeForCodeBlock(codeBlock, size)
     loadi CodeBlock::m_numCalleeLocals[codeBlock], size
-    lshiftp 3, size
+    lshiftp SlotSizeLog, size
     addp maxFrameExtentForSlowPathCall, size
 end
 
@@ -1276,7 +1281,7 @@ macro functionInitialization(profileArgSkip)
     printp t2, "before mulp"
     mulp sizeof ValueProfile, t0, t2 # Aaaaahhhh! Need strength reduction!
     printp t2, "after mulp"
-    lshiftp 3, t0 # offset of last JSValue arguments on the stack.
+    lshiftp SlotSizeLog, t0 # offset of last JSValue arguments on the stack.
     addp t2, t3 # pointer to end of ValueProfile array in CodeBlock::m_argumentValueProfiles.
 .argumentProfileLoop:
     if JSVALUE64
@@ -1284,7 +1289,7 @@ macro functionInitialization(profileArgSkip)
         printp t0
         printi profileArgSkip, "profileArgSkip"
         printi ThisArgumentOffset, "ThisArgumentOffset"
-        loadp ThisArgumentOffset - PtrSize + profileArgSkip * PtrSize[cfr, t0], t2
+        loadp ThisArgumentOffset - SlotSize + profileArgSkip * SlotSize[cfr, t0], t2
         printp t2, "arg profile loop"
         printp t3, "before subp"
         printi sizeof ValueProfile, "sizeof ValueProfile"
@@ -1298,7 +1303,7 @@ macro functionInitialization(profileArgSkip)
         loadi ThisArgumentOffset + PayloadOffset - PtrSize + profileArgSkip * PtrSize[cfr, t0], t2
         storei t2, profileArgSkip * sizeof ValueProfile + ValueProfile::m_buckets + PayloadOffset[t3]
     end
-    baddpnz -PtrSize, t0, .argumentProfileLoop
+    baddpnz -SlotSize, t0, .argumentProfileLoop
 .argumentProfileDone:
 end
 

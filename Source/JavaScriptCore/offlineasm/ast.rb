@@ -1,4 +1,5 @@
 # Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+# Copyright (C) 2019 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -325,6 +326,52 @@ class SubImmediates < Node
         true
     end
     
+    def register?
+        false
+    end
+end
+
+class LShiftImmediates < Node
+    attr_reader :left, :right
+
+    def initialize(codeOrigin, left, right)
+        super(codeOrigin)
+        @left = left
+        @right = right
+    end
+
+    def children
+        [@left, @right]
+    end
+
+    def mapChildren
+        LShiftImmediates.new(codeOrigin, (yield @left), (yield @right))
+    end
+
+    def dump
+        "(#{left.dump} << #{right.dump})"
+    end
+
+    def value
+        "#{left.value} << #{right.value}"
+    end
+
+    def address?
+        false
+    end
+
+    def label?
+        false
+    end
+
+    def immediate?
+        true
+    end
+
+    def immediateOperand?
+        true
+    end
+
     def register?
         false
     end
@@ -815,7 +862,7 @@ class BaseIndex < Node
     end
 
     def scaleValue
-        raise unless [1, 2, 4, 8].member? scale.value
+        raise unless [1, 2, 4, 8, 16, 32].member? scale.value
         scale.value
     end
 
@@ -828,14 +875,11 @@ class BaseIndex < Node
         when 4
             2
         when 8
-            # Assume here that 8-bytes means pointer
-            if $cheriCapSize == 128
-                4
-            elsif $cheriCapSize == 256
-                5
-            else
-                3
-            end
+            3
+        when 16
+            4
+        when 32
+            5
         else
             raise "Bad scale: #{scale.value} at #{codeOriginString}"
         end
@@ -846,7 +890,7 @@ class BaseIndex < Node
     end
     
     def children
-        [@base, @index, @offset]
+        [@base, @index, @scale, @offset]
     end
     
     def mapChildren

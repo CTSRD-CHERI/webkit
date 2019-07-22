@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -449,7 +450,7 @@ constexpr unsigned maskForSize(unsigned size)
     return roundUpToPowerOfTwo(size) - 1;
 }
 
-inline unsigned fastLog2(unsigned i)
+constexpr inline unsigned fastLog2(unsigned i)
 {
     unsigned log2 = 0;
     if (i & (i - 1))
@@ -475,7 +476,7 @@ inline unsigned fastLog2(unsigned i)
     return log2;
 }
 
-inline unsigned fastLog2(uint64_t value)
+constexpr inline unsigned fastLog2(uint64_t value)
 {
     unsigned high = static_cast<unsigned>(value >> 32);
     if (high)
