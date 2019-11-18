@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 Apple Inc.  All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +34,8 @@
 #endif
 #include <stddef.h> /* for size_t */
 
+#include <unicode/utypes.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,7 +49,7 @@ extern "C" {
  character. As with all scalar types, endianness depends on the underlying
  architecture.
 */
-    typedef unsigned short JSChar;
+    typedef UChar JSChar;
 #else
     typedef wchar_t JSChar;
 #endif
