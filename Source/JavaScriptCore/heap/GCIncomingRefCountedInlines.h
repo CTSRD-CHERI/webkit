@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include "GCIncomingRefCounted.h"
 #include "Heap.h"
+#include <wtf/PointerMacro.h>
 
 namespace JSC {
 
@@ -34,7 +36,7 @@ template<typename T>
 bool GCIncomingRefCounted<T>::addIncomingReference(JSCell* cell)
 {
     if (!hasAnyIncoming()) {
-        m_encodedPointer = qSetLowPointerBits(quintptr(cell), singletonFlag);
+        m_encodedPointer = WTF::Pointer::setLowBits((uintptr_t) cell, singletonFlag);
         this->setIsDeferred(true);
         ASSERT(hasSingleton());
         return true;
@@ -118,7 +120,7 @@ bool GCIncomingRefCounted<T>::filterIncomingReferences(FilterFunctionType&& filt
         dataLog("   Shrinking to singleton.\n");
     JSCell* singleton = vectorOfCells()->at(0);
     delete vectorOfCells();
-    m_encodedPointer = qSetLowPointerBits(quintptr(singleton), singletonFlag);
+    m_encodedPointer = WTF::Pointer::setLowBits((uintptr_t) singleton, singletonFlag);
     ASSERT(hasSingleton());
     return false;
 }

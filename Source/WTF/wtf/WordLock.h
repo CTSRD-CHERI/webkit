@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include <wtf/Compiler.h>
 #include <wtf/Locker.h>
 #include <wtf/Noncopyable.h>
+#include <wtf/PointerMacro.h>
 
 namespace TestWebKitAPI {
 struct LockInspector;
@@ -73,7 +75,7 @@ public:
 
     bool isHeld() const
     {
-        return qGetLowPointerBits<isLockedBit>(m_word.load(std::memory_order_acquire));
+        return Pointer::getLowBits<isLockedBit>(m_word.load(std::memory_order_acquire));
     }
 
     bool isLocked() const

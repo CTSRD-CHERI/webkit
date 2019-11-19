@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include <wtf/Assertions.h>
 #include <wtf/FastMalloc.h>
+#include <wtf/PointerMacro.h>
 
 namespace JSC { namespace DFG {
 class StructureAbstractValue;
@@ -476,11 +478,11 @@ private:
         }
     }
     
-    bool isThin() const { return !(m_pointer & fatFlag); }
+    bool isThin() const { return !Pointer::getLowBits<fatFlag>(m_pointer); }
     
     void* pointer() const
     {
-        return bitwise_cast<void*>(m_pointer & ~flags);
+        return bitwise_cast<void*>(Pointer::clearLowBits<flags>(m_pointer));
     }
     
     T singleEntry() const
@@ -509,15 +511,15 @@ private:
     }
     void set(uintptr_t pointer, bool singleEntry)
     {
-        m_pointer = pointer | (singleEntry ? 0 : fatFlag) | (m_pointer & reservedFlag);
+        m_pointer = Pointer::setLowBits(pointer, (singleEntry ? 0 : fatFlag) | Pointer::getLowBits<reservedFlag>(m_pointer));
     }
-    bool getReservedFlag() const { return m_pointer & reservedFlag; }
+    bool getReservedFlag() const { return Pointer::getLowBits<reservedFlag>(m_pointer); }
     void setReservedFlag(bool value)
     {
         if (value)
-            m_pointer |= reservedFlag;
+            m_pointer = Pointer::setLowBits(m_pointer, reservedFlag);
         else
-            m_pointer &= ~reservedFlag;
+            m_pointer = Pointer::clearLowBits<reservedFlag>(m_pointer);;
     }
     
     uintptr_t m_pointer;

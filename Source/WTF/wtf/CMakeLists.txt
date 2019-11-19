@@ -167,6 +167,7 @@ set(WTF_PUBLIC_HEADERS
     Platform.h
     PlatformRegisters.h
     PointerComparison.h
+    PointerMacro.h
     PointerPreparations.h
     PrintStream.h
     PriorityQueue.h

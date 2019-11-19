@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 #include "IndexingType.h"
 #include "WeakGCMap.h"
 #include <wtf/HashFunctions.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/text/UniquedStringImpl.h>
 
 namespace JSC {
@@ -189,7 +191,7 @@ private:
 
     bool isUsingSingleSlot() const
     {
-        return m_data & UsingSingleSlotFlag;
+        return WTF::Pointer::getLowBits<UsingSingleSlotFlag>(m_data);
     }
 
     TransitionMap* map() const
@@ -201,7 +203,7 @@ private:
     WeakImpl* weakImpl() const
     {
         ASSERT(isUsingSingleSlot());
-        return bitwise_cast<WeakImpl*>(qClearLowPointerBits<UsingSingleSlotFlag>(m_data));
+        return bitwise_cast<WeakImpl*>(WTF::Pointer::clearLowBits<UsingSingleSlotFlag>(m_data));
     }
 
     void setMap(TransitionMap* map)

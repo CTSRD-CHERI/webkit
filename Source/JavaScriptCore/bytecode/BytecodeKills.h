@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include "CodeBlock.h"
 #include <wtf/UniqueArray.h>
+#include <wtf/PointerMacro.h>
 
 namespace JSC {
 
@@ -109,12 +111,12 @@ private:
         
         bool hasOneItem() const
         {
-            return qGetLowPointerBits<1u>(m_word);
+            return WTF::Pointer::getLowBits<1u>(m_word);
         }
         
         unsigned oneItem() const
         {
-            return qvaddr(m_word) >> 1;
+            return uintptr_t(m_word) >> 1;
         }
         
         void setOneItem(unsigned value)

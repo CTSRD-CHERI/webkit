@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010, 2011 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 
 #include <wtf/Assertions.h>
 #include <wtf/Noncopyable.h>
+#include <wtf/PointerMacro.h>
 
 namespace WTF {
 
@@ -103,12 +105,12 @@ public:
         // word. But doing so appears to reveal a bug in the compiler.
         NodeType* parent() const
         {
-            return reinterpret_cast<NodeType*>(qClearLowPointerBits<1u>(m_parentAndRed));
+            return reinterpret_cast<NodeType*>(Pointer::clearLowBits<1u>(m_parentAndRed));
         }
         
         void setParent(NodeType* newParent)
         {
-            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | qGetLowPointerBits<1u>(m_parentAndRed);
+            m_parentAndRed = reinterpret_cast<uintptr_t>(newParent) | Pointer::getLowBits<1u>(m_parentAndRed);
         }
         
         NodeType* left() const
@@ -133,7 +135,7 @@ public:
         
         Color color() const
         {
-            if (qGetLowPointerBits<1u>(m_parentAndRed))
+            if (Pointer::getLowBits<1u>(m_parentAndRed))
                 return Red;
             return Black;
         }
@@ -141,9 +143,9 @@ public:
         void setColor(Color value)
         {
             if (value == Red)
-                m_parentAndRed = qSetLowPointerBits(m_parentAndRed, 1u);
+                m_parentAndRed = Pointer::setLowBits(m_parentAndRed, 1u);
             else
-                m_parentAndRed = qClearLowPointerBits<1u>(m_parentAndRed);
+                m_parentAndRed = Pointer::clearLowBits<1u>(m_parentAndRed);
         }
         
         NodeType* m_left;

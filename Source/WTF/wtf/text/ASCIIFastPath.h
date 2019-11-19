@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2011, 2012 Apple Inc. All rights reserved.
  * Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -23,6 +24,7 @@
 
 #include <stdint.h>
 #include <unicode/utypes.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/text/LChar.h>
 
@@ -155,14 +157,15 @@ inline void copyLCharsFromUCharSource(LChar* destination, const UChar* source, s
     }
 #elif COMPILER(GCC_COMPATIBLE) && CPU(ARM64) && !defined(__ILP32__) && defined(NDEBUG)
     const LChar* const end = destination + length;
-    const uintptr_t memoryAccessSize = 16;
+    const unsigned memoryAccessSize = 16;
 
     if (length >= memoryAccessSize) {
-        const uintptr_t memoryAccessMask = memoryAccessSize - 1;
+        const unsigned memoryAccessMask = memoryAccessSize - 1;
 
         // Vector interleaved unpack, we only store the lower 8 bits.
         const uintptr_t lengthLeft = end - destination;
-        const LChar* const simdEnd = destination + (lengthLeft & ~memoryAccessMask);
+        const LChar* const simdEnd = destination +
+               WTF::Pointer::clearLowBits<memoryAccessMask>(lengthLeft);
         do {
             asm("ld2   { v0.16B, v1.16B }, [%[SOURCE]], #32\n\t"
                 "st1   { v0.16B }, [%[DESTINATION]], #16\n\t"

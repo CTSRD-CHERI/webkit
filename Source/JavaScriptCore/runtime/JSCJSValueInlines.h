@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -467,12 +468,12 @@ inline JSValue::JSValue(JSFalseTag)
 inline bool JSValue::isUndefinedOrNull() const
 {
     // Undefined and null share the same value, bar the 'undefined' bit in the extended tag.
-    return qClearLowPointerBits<UndefinedTag>(u.asInt64) == ValueNull;
+    return (u.asInt64 & ~UndefinedTag) == ValueNull;
 }
 
 inline bool JSValue::isBoolean() const
 {
-    return qClearLowPointerBits<1u>(u.asInt64) == ValueFalse;
+    return (u.asInt64 & ~1) == ValueFalse;
 }
 
 inline bool JSValue::isCell() const

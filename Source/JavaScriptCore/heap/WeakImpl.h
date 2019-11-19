@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #pragma once
 
 #include "JSCJSValue.h"
+#include <wtf/PointerMacro.h>
 
 namespace JSC {
 
@@ -82,13 +84,13 @@ inline WeakImpl::WeakImpl(JSValue jsValue, WeakHandleOwner* weakHandleOwner, voi
 
 inline WeakImpl::State WeakImpl::state()
 {
-    return static_cast<State>(qGetLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)));
+    return static_cast<State>(WTF::Pointer::getLowBits<StateMask>((uintptr_t) m_weakHandleOwner));
 }
 
 inline void WeakImpl::setState(WeakImpl::State state)
 {
     ASSERT(state >= this->state());
-    m_weakHandleOwner = reinterpret_cast<WeakHandleOwner*>(qSetLowPointerBits(qClearLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)), state));
+    m_weakHandleOwner = reinterpret_cast<WeakHandleOwner*>(WTF::Pointer::setLowBits(WTF::Pointer::clearLowBits<StateMask>(m_weakHandleOwner), state));
 }
 
 inline const JSValue& WeakImpl::jsValue()
@@ -98,7 +100,7 @@ inline const JSValue& WeakImpl::jsValue()
 
 inline WeakHandleOwner* WeakImpl::weakHandleOwner()
 {
-    return reinterpret_cast<WeakHandleOwner*>(qClearLowPointerBits<StateMask>(quintptr(m_weakHandleOwner)));
+    return reinterpret_cast<WeakHandleOwner*>(WTF::Pointer::clearLowBits<StateMask>(m_weakHandleOwner));
 }
 
 inline void* WeakImpl::context()

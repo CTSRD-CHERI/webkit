@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include <wtf/DeferrableRefCounted.h>
 #include <wtf/Forward.h>
+#include <wtf/PointerMacro.h>
 
 namespace JSC {
 
@@ -87,14 +89,14 @@ public:
 private:
     static const unsigned singletonFlag = 1;
     
-    bool hasVectorOfCells() const { return !qGetLowPointerBits<singletonFlag>(m_encodedPointer); }
+    bool hasVectorOfCells() const { return !WTF::Pointer::getLowBits<singletonFlag>(m_encodedPointer); }
     bool hasAnyIncoming() const { return !!m_encodedPointer; }
     bool hasSingleton() const { return hasAnyIncoming() && !hasVectorOfCells(); }
     
     JSCell* singleton() const
     {
         ASSERT(hasSingleton());
-        return bitwise_cast<JSCell*>(qClearLowPointerBits<singletonFlag>(m_encodedPointer));
+        return bitwise_cast<JSCell*>(WTF::Pointer::clearLowBits<singletonFlag>(m_encodedPointer));
     }
     
     Vector<JSCell*>* vectorOfCells() const

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include <wtf/FastMalloc.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/Nonmovable.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/PrintStream.h>
 #include <wtf/ScopedLambda.h>
 #include <wtf/SentinelLinkedList.h>
@@ -479,18 +481,18 @@ private:
     static constexpr unsigned StateMask         = 6;
     static constexpr unsigned StateShift        = 1;
     
-    static bool isThin(uintptr_t data) { return qGetLowPointerBits<IsThinFlag>(data); }
+    static bool isThin(uintptr_t data) { return WTF::Pointer::getLowBits<IsThinFlag>(data); }
     static bool isFat(uintptr_t data) { return !isThin(data); }
     
     static WatchpointState decodeState(uintptr_t data)
     {
         ASSERT(isThin(data));
-        return static_cast<WatchpointState>(qGetLowPointerBits<StateMask>(data) >> StateShift);
+        return static_cast<WatchpointState>(WTF::Pointer::getLowBits<StateMask>(data) >> StateShift);
     }
     
     static uintptr_t encodeState(WatchpointState state)
     {
-        return qSetLowPointerBits(qvaddr(state) << StateShift, IsThinFlag);
+        return WTF::Pointer::setLowBits(uintptr_t(state) << StateShift, IsThinFlag);
     }
     
     bool isThin() const { return isThin(m_data); }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,6 +39,7 @@
 #include "Watchpoint.h"
 #include <memory>
 #include <wtf/HashTraits.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/text/UniquedStringImpl.h>
 
 namespace JSC {
@@ -79,20 +81,20 @@ private:
     static VarOffset varOffsetFromBits(intptr_t bits)
     {
         VarKind kind;
-        intptr_t kindBits = qvaddr(bits) & KindBitsMask;
+        intptr_t kindBits = uintptr_t(bits) & KindBitsMask;
         if (kindBits <= UnwatchableScopeKindBits)
             kind = VarKind::Scope;
         else if (kindBits == StackKindBits)
             kind = VarKind::Stack;
         else
             kind = VarKind::DirectArgument;
-        return VarOffset::assemble(kind, static_cast<int>(qvaddr(bits) >> FlagBits));
+        return VarOffset::assemble(kind, static_cast<int>(uintptr_t(bits) >> FlagBits));
     }
     
     static ScopeOffset scopeOffsetFromBits(intptr_t bits)
     {
         ASSERT((bits & KindBitsMask) <= UnwatchableScopeKindBits);
-        return ScopeOffset(static_cast<int>(qvaddr(bits) >> FlagBits));
+        return ScopeOffset(static_cast<int>(uintptr_t(bits) >> FlagBits));
     }
 
 public:
@@ -115,7 +117,7 @@ public:
     
         bool isNull() const
         {
-            return !qClearLowPointerBits<SlimFlag>(m_bits);
+            return !WTF::Pointer::clearLowBits<SlimFlag>(m_bits);
         }
 
         VarOffset varOffset() const
@@ -133,12 +135,12 @@ public:
         
         bool isReadOnly() const
         {
-            return qGetLowPointerBits<ReadOnlyFlag>(m_bits);
+            return WTF::Pointer::getLowBits<ReadOnlyFlag>(m_bits);
         }
         
         bool isDontEnum() const
         {
-            return qGetLowPointerBits<DontEnumFlag>(m_bits);
+            return WTF::Pointer::getLowBits<DontEnumFlag>(m_bits);
         }
         
         unsigned getAttributes() const
@@ -153,7 +155,7 @@ public:
 
         bool isFat() const
         {
-            return !qGetLowPointerBits<SlimFlag>(m_bits);
+            return !WTF::Pointer::getLowBits<SlimFlag>(m_bits);
         }
         
     private:
@@ -219,7 +221,7 @@ public:
 
     bool isNull() const
     {
-        return !qClearLowPointerBits<SlimFlag>(bits());
+        return !WTF::Pointer::clearLowBits<SlimFlag>(bits());
     }
 
     VarOffset varOffset() const
@@ -229,7 +231,7 @@ public:
     
     bool isWatchable() const
     {
-        return (qvaddr(m_bits) & KindBitsMask) == ScopeKindBits && VM::canUseJIT();
+        return (uintptr_t(m_bits) & KindBitsMask) == ScopeKindBits && VM::canUseJIT();
     }
     
     // Asserts if the offset is anything but a scope offset. This structures the assertions
@@ -268,7 +270,7 @@ public:
 
     bool isReadOnly() const
     {
-        return qGetLowPointerBits<ReadOnlyFlag>(bits());
+        return WTF::Pointer::getLowBits<ReadOnlyFlag>(bits());
     }
     
     ConstantMode constantMode() const
@@ -278,7 +280,7 @@ public:
     
     bool isDontEnum() const
     {
-        return qGetLowPointerBits<DontEnumFlag>(bits());
+        return WTF::Pointer::getLowBits<DontEnumFlag>(bits());
     }
     
     void disableWatching(VM& vm)
@@ -335,7 +337,7 @@ private:
         WTF_MAKE_FAST_ALLOCATED;
     public:
         FatEntry(intptr_t bits)
-            : m_bits(qClearLowPointerBits<SlimFlag>(bits))
+            : m_bits(WTF::Pointer::clearLowBits<SlimFlag>(bits))
         {
         }
         
@@ -348,7 +350,7 @@ private:
     
     bool isFat() const
     {
-        return !qGetLowPointerBits<SlimFlag>(m_bits);
+        return !WTF::Pointer::getLowBits<SlimFlag>(m_bits);
     }
     
     const FatEntry* fatEntry() const
@@ -400,7 +402,7 @@ private:
         ASSERT(!isFat());
         intptr_t& bitsRef = bits();
         bitsRef =
-            qSetLowPointerBits(qvaddr(offset.rawOffset()) << FlagBits, NotNullFlag | SlimFlag);
+            WTF::Pointer::setLowBits(uintptr_t(offset.rawOffset()) << FlagBits, NotNullFlag | SlimFlag);
         if (readOnly)
             bitsRef |= ReadOnlyFlag;
         if (dontEnum)
@@ -426,7 +428,7 @@ private:
     
     static bool isValidVarOffset(VarOffset offset)
     {
-        return (qvaddr(static_cast<qvaddr>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<intptr_t>(offset.rawOffset());
+        return (uintptr_t(static_cast<uintptr_t>(offset.rawOffset()) << FlagBits) >> FlagBits) == static_cast<intptr_t>(offset.rawOffset());
     }
 
     intptr_t m_bits;

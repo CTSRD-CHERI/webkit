@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,7 +46,7 @@ void BitVector::setSlow(const BitVector& other)
         OutOfLineBits* newOutOfLineBits = OutOfLineBits::create(other.size());
         memcpy(newOutOfLineBits->bits(), other.bits(), byteCount(other.size()));
         // XXXAR: this will probably not work...
-        newBitsOrPointer = qvaddr(newOutOfLineBits) >> 1;
+        newBitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
     }
     if (!isInline() && !isEmptyOrDeletedValue())
         OutOfLineBits::destroy(outOfLineBits());
@@ -106,7 +107,7 @@ void BitVector::resizeOutOfLine(size_t numBits)
             memcpy(newOutOfLineBits->bits(), outOfLineBits()->bits(), newOutOfLineBits->numWords() * sizeof(void*));
         OutOfLineBits::destroy(outOfLineBits());
     }
-    m_bitsOrPointer = qvaddr(newOutOfLineBits) >> 1;
+    m_bitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
 }
 
 void BitVector::mergeSlow(const BitVector& other)
@@ -138,7 +139,7 @@ void BitVector::filterSlow(const BitVector& other)
     if (isInline()) {
         ASSERT(!other.isInline());
         m_bitsOrPointer &= *other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (qvaddr(1) << maxInlineBits());
+        m_bitsOrPointer |= (uintptr_t(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }
@@ -163,7 +164,7 @@ void BitVector::excludeSlow(const BitVector& other)
     if (isInline()) {
         ASSERT(!other.isInline());
         m_bitsOrPointer &= ~*other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (qvaddr(1) << maxInlineBits());
+        m_bitsOrPointer |= (uintptr_t(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }
