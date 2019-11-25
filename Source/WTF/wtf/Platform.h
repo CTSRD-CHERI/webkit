@@ -329,12 +329,16 @@
 
 #if COMPILER(GCC_COMPATIBLE)
 /* __LP64__ is not defined on 64bit Windows since it uses LLP64. Using __SIZEOF_POINTER__ is simpler. */
+#ifdef __CHERI_PURE_CAPABILITY__
+#define WTF_CPU_ADDRESS64 1
+#else
 #if __SIZEOF_POINTER__ == 8
 #define WTF_CPU_ADDRESS64 1
 #elif __SIZEOF_POINTER__ == 4
 #define WTF_CPU_ADDRESS32 1
 #else
 #error "Unsupported pointer width"
+#endif
 #endif
 #elif COMPILER(MSVC)
 #if defined(_WIN64)
