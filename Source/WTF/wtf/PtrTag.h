@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,7 +45,7 @@ namespace WTF {
     FOR_EACH_BASE_WTF_PTRTAG(v) \
     FOR_EACH_ADDITIONAL_WTF_PTRTAG(v) \
 
-enum PtrTag : uintptr_t {
+enum PtrTag : size_t {
     NoPtrTag,
     CFunctionPtrTag,
 };
@@ -55,9 +56,9 @@ enum PtrTag : uintptr_t {
 #else // not CPU(ARM64E)
 
 template<size_t N>
-constexpr uintptr_t makePtrTagHash(const char (&str)[N])
+constexpr size_t makePtrTagHash(const char (&str)[N])
 {
-    uintptr_t result = 134775813;
+    size_t result = 134775813;
     for (size_t i = 0; i < N; ++i)
         result += ((result * str[i]) ^ (result >> 16));
     return result & 0xffff;
@@ -70,8 +71,8 @@ constexpr uintptr_t makePtrTagHash(const char (&str)[N])
     constexpr PtrTag tag = static_cast<PtrTag>(WTF_PTRTAG_HASH(#tag)); \
     static_assert(tag != NoPtrTag && tag != CFunctionPtrTag, "");
 
-static_assert(static_cast<uintptr_t>(NoPtrTag) == static_cast<uintptr_t>(0), "");
-static_assert(static_cast<uintptr_t>(CFunctionPtrTag) == static_cast<uintptr_t>(1), "");
+static_assert(static_cast<size_t>(NoPtrTag) == static_cast<size_t>(0), "");
+static_assert(static_cast<size_t>(CFunctionPtrTag) == static_cast<size_t>(1), "");
 
 #if COMPILER(MSVC)
 #pragma warning(push)
