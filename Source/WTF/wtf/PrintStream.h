@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -122,6 +123,10 @@ WTF_EXPORT_PRIVATE void printInternal(PrintStream&, unsigned long long);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, float);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, double);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, RawPointer);
+#ifdef __CHERI_PURE_CAPABILITY__
+WTF_EXPORT_PRIVATE void printInternal(PrintStream&, __uintcap_t);
+WTF_EXPORT_PRIVATE void printInternal(PrintStream&, __intcap_t);
+#endif
 
 template<typename T>
 void printInternal(PrintStream& out, const T& value)

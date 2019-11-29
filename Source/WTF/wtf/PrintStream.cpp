@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -174,6 +175,35 @@ void printInternal(PrintStream& out, double value)
 {
     out.printf("%lf", value);
 }
+
+#ifdef __CHERI_PURE_CAPABILITY__
+void printInternal(PrintStream& out, __uintcap_t value)
+{
+    int tag = __builtin_cheri_tag_get((const void *) value);
+
+    uint64_t* value_u64_p = reinterpret_cast<uint64_t *>(&value);
+
+#if CPU(LITTLE_ENDIAN)
+    uint64_t high64 = value_u64_p[1];
+    uint64_t low64 = value_u64_p[0];
+#else
+    uint64_t high64 = value_u64_p[0];
+    uint64_t low64 = value_u64_p[1];
+#endif
+
+    ASSERT(low64 == __builtin_cheri_address_get((const void *) value));
+
+    out.printf("0x%c:%016lx:%016lx",
+               tag ? '1' : '0',
+               high64,
+               low64);
+}
+
+void printInternal(PrintStream& out, __intcap_t value)
+{
+    printInternal(out, (__uintcap_t) value);
+}
+#endif
 
 void printInternal(PrintStream& out, RawPointer value)
 {
