@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2002 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2004-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -75,8 +76,8 @@ void JSString::dumpToStream(const JSCell* cell, PrintStream& out)
     const JSString* thisObject = jsCast<const JSString*>(cell);
     out.printf("<%p, %s, [%u], ", thisObject, thisObject->className(vm), thisObject->length());
     uintptr_t pointer = thisObject->m_fiber;
-    if (pointer & isRopeInPointer) {
-        if (pointer & JSRopeString::isSubstringInPointer)
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer)) {
+        if (WTF::Pointer::getLowBits<JSRopeString::isSubstringInPointer>(pointer))
             out.printf("[substring]");
         else
             out.printf("[rope]");
@@ -106,7 +107,7 @@ size_t JSString::estimatedSize(JSCell* cell, VM& vm)
 {
     JSString* thisObject = asString(cell);
     uintptr_t pointer = thisObject->m_fiber;
-    if (pointer & isRopeInPointer)
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer))
         return Base::estimatedSize(cell, vm);
     return Base::estimatedSize(cell, vm) + bitwise_cast<StringImpl*>(pointer)->costDuringGC();
 }
@@ -118,8 +119,8 @@ void JSString::visitChildren(JSCell* cell, SlotVisitor& visitor)
     Base::visitChildren(thisObject, visitor);
     
     uintptr_t pointer = thisObject->m_fiber;
-    if (pointer & isRopeInPointer) {
-        if (pointer & JSRopeString::isSubstringInPointer) {
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer)) {
+        if (WTF::Pointer::getLowBits<JSRopeString::isSubstringInPointer>(pointer)) {
             visitor.appendUnbarriered(static_cast<JSRopeString*>(thisObject)->fiber1());
             return;
         }
@@ -127,7 +128,7 @@ void JSString::visitChildren(JSCell* cell, SlotVisitor& visitor)
             JSString* fiber = nullptr;
             switch (index) {
             case 0:
-                fiber = bitwise_cast<JSString*>(pointer & JSRopeString::stringMask);
+                fiber = bitwise_cast<JSString*>(WTF::Pointer::clearLowBits<JSRopeString::invStringMask>(pointer));
                 break;
             case 1:
                 fiber = static_cast<JSRopeString*>(thisObject)->fiber1();

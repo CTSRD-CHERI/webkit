@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -7127,6 +7128,22 @@ private:
             flagsAndLength = mergeFlagsAndLength(edges[i], kids[i], flagsAndLength);
         }
 
+#if NON_COMPACT_FIBERS
+       m_out.store32(flagsAndLength.length, result, m_heaps.JSRopeString_length);
+
+        m_out.storePtr(
+            m_out.bitOr(
+                m_out.bitOr(kids[0], m_out.constIntPtr(JSString::isRopeInPointer)),
+                m_out.bitAnd(m_out.constIntPtr(JSRopeString::is8BitInPointer), m_out.zeroExtPtr(flagsAndLength.flags))),
+            result, m_heaps.JSRopeString_fiber0);
+
+        m_out.storePtr(kids[1], result, m_heaps.JSRopeString_fiber1);
+
+        if (numKids == 2)
+            m_out.storePtr(m_out.constInt64(0), result, m_heaps.JSRopeString_fiber2);
+        else
+            m_out.storePtr(kids[2], result, m_heaps.JSRopeString_fiber2);
+#else
         m_out.storePtr(
             m_out.bitOr(
                 m_out.bitOr(kids[0], m_out.constIntPtr(JSString::isRopeInPointer)),
@@ -7139,7 +7156,8 @@ private:
             m_out.storePtr(m_out.lShr(kids[1], m_out.constInt32(32)), result, m_heaps.JSRopeString_fiber2);
         else
             m_out.storePtr(m_out.bitOr(m_out.lShr(kids[1], m_out.constInt32(32)), m_out.shl(kids[2], m_out.constInt32(16))), result, m_heaps.JSRopeString_fiber2);
-        
+#endif
+
         mutatorFence();
         ValueFromBlock fastResult = m_out.anchor(result);
         m_out.branch(m_out.isZero32(flagsAndLength.length), rarely(emptyCase), usually(continuation));

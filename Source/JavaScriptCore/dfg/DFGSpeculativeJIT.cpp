@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13941,6 +13942,25 @@ void SpeculativeJIT::compileMakeRope(Node* node)
     }
 
     static_assert(StringImpl::flagIs8Bit() == JSRopeString::is8BitInPointer, "");
+
+#if NON_COMPACT_FIBERS
+    m_jit.store32(allocatorGPR, CCallHelpers::Address(resultGPR, JSRopeString::offsetOfLength()));
+
+    m_jit.and32(TrustedImm32(StringImpl::flagIs8Bit()), scratchGPR);
+    m_jit.orPtr(opGPRs[0], scratchGPR);
+    m_jit.orPtr(TrustedImmPtr(JSString::isRopeInPointer), scratchGPR);
+    m_jit.storePtr(scratchGPR, CCallHelpers::Address(resultGPR, JSRopeString::offsetOfFiber0()));
+
+    m_jit.move(opGPRs[1], scratchGPR);
+    m_jit.storePtr(scratchGPR, CCallHelpers::Address(resultGPR, JSRopeString::offsetOfFiber1()));
+
+    if (numOpGPRs == 3) {
+        m_jit.move(opGPRs[2], scratchGPR);
+        m_jit.storePtr(scratchGPR, CCallHelpers::Address(resultGPR, JSRopeString::offsetOfFiber2()));
+    } else {
+        m_jit.storeZero64(CCallHelpers::Address(resultGPR, JSRopeString::offsetOfFiber2()));
+    }
+#else
     m_jit.and32(TrustedImm32(StringImpl::flagIs8Bit()), scratchGPR);
     m_jit.orPtr(opGPRs[0], scratchGPR);
     m_jit.orPtr(TrustedImmPtr(JSString::isRopeInPointer), scratchGPR);
@@ -13963,6 +13983,7 @@ void SpeculativeJIT::compileMakeRope(Node* node)
         m_jit.orPtr(scratch2GPR, scratchGPR);
         m_jit.storePtr(scratchGPR, CCallHelpers::Address(resultGPR, JSRopeString::offsetOfFiber2()));
     }
+#endif
 
     auto isNonEmptyString = m_jit.branchTest32(CCallHelpers::NonZero, allocatorGPR);
 

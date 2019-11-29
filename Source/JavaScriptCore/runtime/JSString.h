@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -62,22 +63,37 @@ bool isJSString(JSCell*);
 bool isJSString(JSValue);
 JSString* asString(JSValue);
 
-// In 64bit architecture, JSString and JSRopeString have the following memory layout to make sizeof(JSString) == 16 and sizeof(JSRopeString) == 32.
-// JSString has only one pointer. We use it for String. length() and is8Bit() queries go to StringImpl. In JSRopeString, we reuse the above pointer
-// place for the 1st fiber. JSRopeString has three fibers so its size is 48. To keep length and is8Bit flag information in JSRopeString, JSRopeString
-// encodes these information into the fiber pointers. is8Bit flag is encoded in the 1st fiber pointer. length is embedded directly, and two fibers
-// are compressed into 12bytes. isRope information is encoded in the first fiber's LSB.
+#ifdef __CHERI_PURE_CAPABILITY__
+/*
+ * Compact fibers aren't supported.
+ */
+#define NON_COMPACT_FIBERS 1
+#else
+#define NON_COMPACT_FIBERS 0
+#endif
+
+// !NON_COMPACT_FIBERS:
+//    In 64bit architecture, JSString and JSRopeString have the following memory layout to make sizeof(JSString) == 16 and sizeof(JSRopeString) == 32.
+//    JSString has only one pointer. We use it for String. length() and is8Bit() queries go to StringImpl. In JSRopeString, we reuse the above pointer
+//    place for the 1st fiber. JSRopeString has three fibers so its size is 48. To keep length and is8Bit flag information in JSRopeString, JSRopeString
+//    encodes these information into the fiber pointers. is8Bit flag is encoded in the 1st fiber pointer. length is embedded directly, and two fibers
+//    are compressed into 12bytes. isRope information is encoded in the first fiber's LSB.
 //
-// Since length of JSRopeString should be frequently accessed compared to each fiber, we put length in contiguous 32byte field, and compress 2nd
-// and 3rd fibers into the following 80byte fields. One problem is that now 2nd and 3rd fibers are split. Storing and loading 2nd and 3rd fibers
-// are not one pointer load operation. To make concurrent collector work correctly, we must initialize 2nd and 3rd fibers at JSRopeString creation
-// and we must not modify these part later.
+//    Since length of JSRopeString should be frequently accessed compared to each fiber, we put length in contiguous 32byte field, and compress 2nd
+//    and 3rd fibers into the following 80byte fields. One problem is that now 2nd and 3rd fibers are split. Storing and loading 2nd and 3rd fibers
+//    are not one pointer load operation. To make concurrent collector work correctly, we must initialize 2nd and 3rd fibers at JSRopeString creation
+//    and we must not modify these part later.
 //
-//              0                        8        10               16                       32                                     48
-// JSString     [   ID      ][  header  ][   String pointer      0]
-// JSRopeString [   ID      ][  header  ][   1st fiber         xyz][  length  ][2nd lower32][2nd upper16][3rd lower16][3rd upper32]
-//                                                               ^
-//                                            x:(is8Bit),y:(isSubstring),z:(isRope) bit flags
+//                 0                        8        10               16                       32                                     48
+//    JSString     [   ID      ][  header  ][   String pointer      0]
+//    JSRopeString [   ID      ][  header  ][   1st fiber         xyz][  length  ][2nd lower32][2nd upper16][3rd lower16][3rd upper32]
+//                                                                  ^
+//                                               x:(is8Bit),y:(isSubstring),z:(isRope) bit flags
+//
+// NON_COMPACT_FIBERS:
+//   The fiber pointers are stored as uintptr_t, so being able to hold capabilities.
+//   With __CHERI_PURE_CAPABILITY and the mode, size of JSString is 32, and size of JSRopeString is 80.
+//
 class JSString : public JSCell {
 public:
     friend class JIT;
@@ -108,7 +124,7 @@ public:
     static constexpr unsigned MaxLength = std::numeric_limits<int32_t>::max();
     static_assert(MaxLength == String::MaxLength, "");
 
-    static constexpr uintptr_t isRopeInPointer = 0x1;
+    static constexpr unsigned isRopeInPointer = 0x1;
 
 private:
     String& uninitializedValueInternal() const
@@ -256,35 +272,51 @@ class JSRopeString final : public JSString {
     friend class JSString;
 public:
     // We use lower 3bits of fiber0 for flags. These bits are usable due to alignment, and it is OK even in 32bit architecture.
-    static constexpr uintptr_t is8BitInPointer = static_cast<uintptr_t>(StringImpl::flagIs8Bit());
-    static constexpr uintptr_t isSubstringInPointer = 0x2;
+    static constexpr unsigned is8BitInPointer = static_cast<unsigned>(StringImpl::flagIs8Bit());
+    static constexpr unsigned isSubstringInPointer = 0x2;
     static_assert(is8BitInPointer == 0b100, "");
     static_assert(isSubstringInPointer == 0b010, "");
     static_assert(isRopeInPointer == 0b001, "");
-    static constexpr uintptr_t stringMask = ~(isRopeInPointer | is8BitInPointer | isSubstringInPointer);
+    static constexpr unsigned invStringMask = (isRopeInPointer | is8BitInPointer | isSubstringInPointer);
 #if CPU(ADDRESS64)
+#if !NON_COMPACT_FIBERS
     static_assert(sizeof(uintptr_t) == sizeof(uint64_t), "");
+#endif
     class CompactFibers {
     public:
+#if !NON_COMPACT_FIBERS
         static constexpr uintptr_t addressMask = (1ULL << WTF_CPU_EFFECTIVE_ADDRESS_WIDTH) - 1;
+#endif
         JSString* fiber1() const
         {
+#if NON_COMPACT_FIBERS
+            return bitwise_cast<JSString*>(m_fiber1);
+#else
 #if CPU(LITTLE_ENDIAN)
             return bitwise_cast<JSString*>(WTF::unalignedLoad<uintptr_t>(&m_fiber1Lower) & addressMask);
 #else
             return bitwise_cast<JSString*>(static_cast<uintptr_t>(m_fiber1Lower) | (static_cast<uintptr_t>(m_fiber1Upper) << 32));
+#endif
 #endif
         }
 
         void initializeFiber1(JSString* fiber)
         {
             uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
+
+#if NON_COMPACT_FIBERS
+           m_fiber1 = pointer;
+#else
             m_fiber1Lower = static_cast<uint32_t>(pointer);
             m_fiber1Upper = static_cast<uint16_t>(pointer >> 32);
+#endif
         }
 
         JSString* fiber2() const
         {
+#if NON_COMPACT_FIBERS
+            return bitwise_cast<JSString*>(m_fiber2);
+#else
 #if CPU(LITTLE_ENDIAN)
             // This access exceeds the sizeof(JSRopeString). But this is OK because JSRopeString is always allocated in MarkedBlock,
             // and the last JSRopeString cell in the block has some subsequent bytes which are used for MarkedBlock::Footer.
@@ -293,12 +325,18 @@ public:
 #else
             return bitwise_cast<JSString*>(static_cast<uintptr_t>(m_fiber2Lower) | (static_cast<uintptr_t>(m_fiber2Upper) << 16));
 #endif
+#endif
         }
         void initializeFiber2(JSString* fiber)
         {
             uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
+
+#if NON_COMPACT_FIBERS
+           m_fiber2 = pointer;
+#else
             m_fiber2Lower = static_cast<uint16_t>(pointer);
             m_fiber2Upper = static_cast<uint32_t>(pointer >> 16);
+#endif
         }
 
         unsigned length() const { return m_length; }
@@ -307,20 +345,35 @@ public:
             m_length = length;
         }
 
+#if NON_COMPACT_FIBERS
+        static ptrdiff_t offsetOfLength() { return OBJECT_OFFSETOF(CompactFibers, m_length); }
+        static ptrdiff_t offsetOfFiber1() { return OBJECT_OFFSETOF(CompactFibers, m_fiber1); }
+        static ptrdiff_t offsetOfFiber2() { return OBJECT_OFFSETOF(CompactFibers, m_fiber2); }
+#else
         static ptrdiff_t offsetOfLength() { return OBJECT_OFFSETOF(CompactFibers, m_length); }
         static ptrdiff_t offsetOfFiber1() { return OBJECT_OFFSETOF(CompactFibers, m_length); }
         static ptrdiff_t offsetOfFiber2() { return OBJECT_OFFSETOF(CompactFibers, m_fiber1Upper); }
+#endif
 
     private:
         friend class LLIntOffsetsExtractor;
 
-        uint32_t m_length { 0 };
+       uint32_t m_length { 0 };
+#if NON_COMPACT_FIBERS
+       uintptr_t m_fiber1 { 0 };
+       uintptr_t m_fiber2 { 0 };
+#else
         uint32_t m_fiber1Lower { 0 };
         uint16_t m_fiber1Upper { 0 };
         uint16_t m_fiber2Lower { 0 };
         uint32_t m_fiber2Upper { 0 };
+#endif
     };
+#if NON_COMPACT_FIBERS
+    static_assert(sizeof(CompactFibers) == sizeof(void*) * 3, "");
+#else
     static_assert(sizeof(CompactFibers) == sizeof(void*) * 2, "");
+#endif
 #else
     class CompactFibers {
     public:
@@ -450,17 +503,17 @@ private:
     void initializeIs8Bit(bool flag) const
     {
         if (flag)
-            m_fiber |= is8BitInPointer;
+            m_fiber = WTF::Pointer::setLowBits(m_fiber, is8BitInPointer);
         else
-            m_fiber &= ~is8BitInPointer;
+            m_fiber = WTF::Pointer::clearLowBits<is8BitInPointer>(m_fiber);
     }
 
     void initializeIsSubstring(bool flag) const
     {
         if (flag)
-            m_fiber |= isSubstringInPointer;
+            m_fiber = WTF::Pointer::setLowBits(m_fiber, isSubstringInPointer);
         else
-            m_fiber &= ~isSubstringInPointer;
+            m_fiber = WTF::Pointer::clearLowBits<isSubstringInPointer>(m_fiber);
     }
 
     ALWAYS_INLINE void initializeLength(unsigned length)
@@ -597,7 +650,7 @@ private:
 
     JSString* fiber0() const
     {
-        return bitwise_cast<JSString*>(m_fiber & stringMask);
+        return bitwise_cast<JSString*>(WTF::Pointer::clearLowBits<invStringMask>(m_fiber));
     }
 
     JSString* fiber1() const
@@ -629,8 +682,8 @@ private:
     void initializeFiber0(JSString* fiber)
     {
         uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
-        ASSERT(!(pointer & ~stringMask));
-        m_fiber = (pointer | (m_fiber & ~stringMask));
+        ASSERT(!(WTF::Pointer::clearLowBits<invStringMask>(pointer)));
+        m_fiber = (pointer | (WTF::Pointer::clearLowBits<invStringMask>(m_fiber)));
     }
 
     void initializeFiber1(JSString* fiber)
@@ -683,7 +736,7 @@ ALWAYS_INLINE bool JSString::is8Bit() const
     if (pointer & isRopeInPointer) {
         // Do not load m_fiber twice. We should use the information in pointer.
         // Otherwise, JSRopeString may be converted to JSString between the first and second accesses.
-        return pointer & JSRopeString::is8BitInPointer;
+        return WTF::Pointer::getLowBits<JSRopeString::is8BitInPointer>(pointer);
     }
     return bitwise_cast<StringImpl*>(pointer)->is8Bit();
 }
@@ -1014,7 +1067,7 @@ ALWAYS_INLINE StringViewWithUnderlyingString JSString::viewWithUnderlyingString(
 
 inline bool JSString::isSubstring() const
 {
-    return m_fiber & JSRopeString::isSubstringInPointer;
+    return WTF::Pointer::getLowBits<JSRopeString::isSubstringInPointer>(m_fiber);
 }
 
 // --- JSValue inlines ----------------------------
