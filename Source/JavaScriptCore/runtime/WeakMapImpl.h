@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
  * Copyright (C) 2017 Yusuke Suzuki <utatane.tea@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +39,6 @@ struct WeakMapBucketDataKey {
     static const HashTableType Type = HashTableType::Key;
     WriteBarrier<JSObject> key;
 };
-static_assert(sizeof(WeakMapBucketDataKey) == sizeof(void*), "");
 
 struct WeakMapBucketDataKeyValue {
     static const HashTableType Type = HashTableType::KeyValue;
@@ -48,7 +48,6 @@ struct WeakMapBucketDataKeyValue {
 #endif
     WriteBarrier<Unknown> value;
 };
-static_assert(sizeof(WeakMapBucketDataKeyValue) == 16, "");
 
 ALWAYS_INLINE uint32_t jsWeakMapHash(JSObject* key)
 {

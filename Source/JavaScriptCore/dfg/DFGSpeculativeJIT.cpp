@@ -13075,15 +13075,13 @@ void SpeculativeJIT::compileWeakMapGet(Node* node)
     MacroAssembler::Label loop = m_jit.label();
     m_jit.and32(maskGPR, indexGPR);
     if (node->child1().useKind() == WeakSetObjectUse) {
-        static_assert(sizeof(WeakMapBucket<WeakMapBucketDataKey>) == sizeof(void*), "");
         m_jit.zeroExtend32ToPtr(indexGPR, bucketGPR);
-        m_jit.lshiftPtr(MacroAssembler::Imm32(sizeof(void*) == 4 ? 2 : 3), bucketGPR);
+        m_jit.lshiftPtr(MacroAssembler::Imm32(WTF::fastLog2(sizeof(WeakMapBucket<WeakMapBucketDataKey>))), bucketGPR);
         m_jit.addPtr(bufferGPR, bucketGPR);
     } else {
         ASSERT(node->child1().useKind() == WeakMapObjectUse);
-        static_assert(sizeof(WeakMapBucket<WeakMapBucketDataKeyValue>) == 16, "");
         m_jit.zeroExtend32ToPtr(indexGPR, bucketGPR);
-        m_jit.lshiftPtr(MacroAssembler::Imm32(4), bucketGPR);
+        m_jit.lshiftPtr(MacroAssembler::Imm32(WTF::fastLog2(sizeof(WeakMapBucket<WeakMapBucketDataKeyValue>))), bucketGPR);
         m_jit.addPtr(bufferGPR, bucketGPR);
     }
 
