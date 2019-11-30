@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +39,11 @@ class UnlinkedMetadataTable : public RefCounted<UnlinkedMetadataTable> {
     friend class MetadataTable;
     friend class CachedMetadataTable;
 public:
+#ifdef __CHERI_PURE_CAPABILITY__
+    static constexpr unsigned s_maxMetadataAlignment = 16;
+#else
     static constexpr unsigned s_maxMetadataAlignment = 8;
+#endif
 
     struct LinkingData {
         Ref<UnlinkedMetadataTable> unlinkedMetadata;
