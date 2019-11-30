@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -98,6 +99,8 @@ struct RegisterState {
     SAVE_REG(r11, registers.r11)
 
 #elif CPU(ARM64)
+
+#ifndef __CHERI_PURE_CAPABILITY__
 struct RegisterState {
     uint64_t x19;
     uint64_t x20;
@@ -126,6 +129,7 @@ struct RegisterState {
     SAVE_REG(x26, registers.x26); \
     SAVE_REG(x27, registers.x27); \
     SAVE_REG(x28, registers.x28)
+#endif
 
 #elif CPU(MIPS)
 struct RegisterState {
