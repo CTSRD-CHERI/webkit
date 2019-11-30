@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,7 +36,7 @@ class ScriptExecutable;
 struct DebuggerLocation {
 
     DebuggerLocation() { }
-    DebuggerLocation(const String& url, intptr_t sourceID, unsigned line, unsigned column)
+    DebuggerLocation(const String& url, long sourceID, unsigned line, unsigned column)
         : url(url)
         , sourceID(sourceID)
         , line(line)
@@ -45,7 +46,7 @@ struct DebuggerLocation {
     DebuggerLocation(ScriptExecutable*);
 
     String url;
-    intptr_t sourceID { noSourceID };
+    long sourceID { noSourceID };
     unsigned line { 0 };
     unsigned column { 0 };
 };
