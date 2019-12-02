@@ -25,6 +25,10 @@ set(WebKitLegacy_PRIVATE_INCLUDE_DIRECTORIES
     "${WebKitLegacy_DERIVED_SOURCES_DIR}"
 )
 
+set(WebKitLegacy_SYSTEM_INCLUDE_DIRECTORIES
+    "${ICU_INCLUDE_DIRS}"
+)
+
 set(WebKitLegacy_LIBRARIES
     PRIVATE WebKit::JavaScriptCore
     PRIVATE WebCore${DEBUG_SUFFIX}

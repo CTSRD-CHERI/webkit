@@ -1,13 +1,16 @@
-2019-10-28  Kate Cheney  <katherine_cheney@apple.com>
+2019-05-17  Don Olmstead  <don.olmstead@sony.com>
 
-        Added myself as a committer.
+        [CMake] Use builtin FindICU
+        https://bugs.webkit.org/show_bug.cgi?id=197934
 
-        * Scripts/webkitpy/common/config/contributors.json:
+        Reviewed by Michael Catanzaro.
 
-2019-10-28  Alex Christensen  <achristensen@webkit.org>
+        Remove uses of ICU_INCLUDE_DIRS and ICU_LIBRARIES.
 
-        Remove unused _WKProcessPoolConfiguration SPI
-        https://bugs.webkit.org/show_bug.cgi?id=203066
+        * TestWebKitAPI/PlatformMac.cmake:
+        * TestWebKitAPI/PlatformPlayStation.cmake:
+        * TestWebKitAPI/PlatformWin.cmake:
+        * WebKitTestRunner/CMakeLists.txt:
 
         Reviewed by Youenn Fablet.
 

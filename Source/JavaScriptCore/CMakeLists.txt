@@ -53,6 +53,10 @@ if (USE_CAPSTONE)
     list(APPEND JavaScriptCore_PRIVATE_INCLUDE_DIRECTORIES "${THIRDPARTY_DIR}/capstone/Source/include")
 endif ()
 
+set(JavaScriptCore_SYSTEM_INCLUDE_DIRECTORIES
+    "${ICU_INCLUDE_DIRS}"
+)
+
 set(JavaScriptCore_OBJECT_LUT_SOURCES
     runtime/ArrayConstructor.cpp
     runtime/AsyncFromSyncIteratorPrototype.cpp

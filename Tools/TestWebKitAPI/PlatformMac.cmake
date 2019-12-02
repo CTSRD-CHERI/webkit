@@ -23,6 +23,7 @@ list(APPEND test_wtf_LIBRARIES
     ${CARBON_LIBRARY}
     ${COCOA_LIBRARY}
     ${COREFOUNDATION_LIBRARY}
+    ${ICU_LIBRARIES}
 )
 list(APPEND TestWTF_SOURCES
     cocoa/UtilitiesCocoa.mm
