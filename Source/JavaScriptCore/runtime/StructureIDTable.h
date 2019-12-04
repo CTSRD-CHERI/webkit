@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,12 @@
 #include <wtf/UniqueArray.h>
 #include <wtf/Vector.h>
 #include <wtf/WeakRandom.h>
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define ENCODE_STRUCTURE_BITS 0
+#else
+#define ENCODE_STRUCTURE_BITS 1
+#endif
 
 namespace JSC {
 
@@ -82,7 +89,9 @@ inline StructureID decontaminate(StructureID id)
 
 #if USE(JSVALUE64)
 
-using EncodedStructureBits = uintptr_t;
+#if ENCODE_STRUCTURE_BITS
+using EncodedStructureBits = size_t;
+#endif
 
 class StructureIDTable {
     friend class LLIntOffsetsExtractor;
@@ -107,13 +116,19 @@ private:
     union StructureOrOffset {
         WTF_MAKE_FAST_ALLOCATED;
     public:
+#if ENCODE_STRUCTURE_BITS
         EncodedStructureBits encodedStructureBits;
+#else
+        Structure* structure;
+#endif
         StructureID offset;
     };
 
     StructureOrOffset* table() const { return m_table.get(); }
+#if ENCODE_STRUCTURE_BITS
     static Structure* decode(EncodedStructureBits, StructureID);
     static EncodedStructureBits encode(Structure*, StructureID);
+#endif
 
     static constexpr size_t s_initialSize = 512;
 
@@ -152,20 +167,24 @@ public:
 
     static constexpr uint32_t s_numberOfNukeBits = 1;
     static constexpr uint32_t s_numberOfEntropyBits = 7;
-    static constexpr uint32_t s_entropyBitsShiftForStructurePointer = (sizeof(intptr_t) * 8) - s_numberOfEntropyBits;
+#if ENCODE_STRUCTURE_BITS
+    static constexpr uint32_t s_entropyBitsShiftForStructurePointer = (sizeof(EncodedStructureBits) * 8) - s_numberOfEntropyBits;
+#endif
 
     static constexpr uint32_t s_maximumNumberOfStructures = 1 << (32 - s_numberOfEntropyBits - s_numberOfNukeBits);
 };
 
+#if ENCODE_STRUCTURE_BITS
 ALWAYS_INLINE Structure* StructureIDTable::decode(EncodedStructureBits bits, StructureID structureID)
 {
-    return bitwise_cast<Structure*>(bits ^ (static_cast<uintptr_t>(structureID) << s_entropyBitsShiftForStructurePointer));
+    return bitwise_cast<Structure*>(bits ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer));
 }
 
 ALWAYS_INLINE EncodedStructureBits StructureIDTable::encode(Structure* structure, StructureID structureID)
 {
     return bitwise_cast<EncodedStructureBits>(structure) ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer);
 }
+#endif
 
 inline Structure* StructureIDTable::get(StructureID structureID)
 {
@@ -173,7 +192,12 @@ inline Structure* StructureIDTable::get(StructureID structureID)
     ASSERT_WITH_SECURITY_IMPLICATION(!isNuked(structureID));
     uint32_t structureIndex = structureID >> s_numberOfEntropyBits;
     RELEASE_ASSERT_WITH_SECURITY_IMPLICATION(structureIndex < m_capacity);
-    return decode(table()[structureIndex].encodedStructureBits, structureID);
+    const StructureOrOffset& structureOrOffset = table()[structureIndex];
+#if ENCODE_STRUCTURE_BITS
+    return decode(structureOrOffset.encodedStructureBits, structureID);
+#else
+    return structureOrOffset.structure;
+#endif
 }
 
 inline bool StructureIDTable::isValid(StructureID structureID)
@@ -183,9 +207,9 @@ inline bool StructureIDTable::isValid(StructureID structureID)
     uint32_t structureIndex = structureID >> s_numberOfEntropyBits;
     if (structureIndex >= m_capacity)
         return false;
-#if CPU(ADDRESS64)
-    Structure* structure = decode(table()[structureIndex].encodedStructureBits, structureID);
-    if (reinterpret_cast<uintptr_t>(structure) >> s_entropyBitsShiftForStructurePointer)
+#if CPU(ADDRESS64) && ENCODE_STRUCTURE_BITS
+    HeapPtr<Structure> structure = decode(table()[structureIndex].encodedStructureBits, structureID);
+    if (bitwise_cast<EncodedStructureBits>(structure) >> s_entropyBitsShiftForStructurePointer)
         return false;
 #endif
     return true;

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,13 @@
 #include "LLIntCommon.h"
 #include <wtf/Assertions.h>
 #include <wtf/Gigacage.h>
+#include <runtime/StructureIDTable.h>
+
+#if ENCODE_STRUCTURE_BITS
+#define OFFLINE_ASM_ENCODE_STRUCTURE_BITS 1
+#else
+#define OFFLINE_ASM_ENCODE_STRUCTURE_BITS 0
+#endif
 
 #ifdef __CHERI_PURE_CAPABILITY__
 #if __UINTCAP_WIDTH__ == 128

@@ -645,9 +645,13 @@ macro structureIDToStructureWithScratch(structureIDThenStructure, scratch, scrat
     loadp CodeBlock::m_vm[scratch], scratch
     rshifti NumberOfStructureIDEntropyBits, scratch2
     loadp VM::heap + Heap::m_structureIDTable + StructureIDTable::m_table[scratch], scratch
-    loadp [scratch, scratch2, PtrSize], scratch2
+if ENCODE_STRUCTURE_BITS
+    loadp [scratch, scratch2, sizeof StructureIDTable::StructureOrOffset], scratch2
     lshiftp StructureEntropyBitsShift, structureIDThenStructure
     xorp scratch2, structureIDThenStructure
+else
+    loadp [scratch, scratch2, sizeof StructureIDTable::StructureOrOffset], structureIDThenStructure
+end
     printp structureIDThenStructure, "structure from id"
 end
 

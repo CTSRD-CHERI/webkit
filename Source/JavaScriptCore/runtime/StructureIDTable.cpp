@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,7 +41,12 @@ StructureIDTable::StructureIDTable()
 {
     // We pre-allocate the first offset so that the null Structure
     // can still be represented as the StructureID '0'.
-    table()[0].encodedStructureBits = 0;
+    StructureOrOffset& structureOrOffset = table()[0];
+#if ENCODE_STRUCTURE_BITS
+    structureOrOffset.encodedStructureBits = 0;
+#else
+    structureOrOffset.structure = 0;
+#endif
 
     makeFreeListFromRange(1, m_capacity - 1);
 }
@@ -159,7 +165,12 @@ StructureID StructureIDTable::allocateID(Structure* structure)
         m_lastFreeOffset = 0;
 
     StructureID result = (structureIndex << s_numberOfEntropyBits) | entropyBits;
-    table()[structureIndex].encodedStructureBits = encode(structure, result);
+    StructureOrOffset& structureOrOffset = table()[structureIndex];
+#if ENCODE_STRUCTURE_BITS
+    structureOrOffset.encodedStructureBits = encode(structure, result);
+#else
+    structureOrOffset.structure = structure;
+#endif
     m_size++;
     ASSERT(!isNuked(result));
     return result;
@@ -170,7 +181,11 @@ void StructureIDTable::deallocateID(Structure* structure, StructureID structureI
     ASSERT(structureID != s_unusedID);
     uint32_t structureIndex = structureID >> s_numberOfEntropyBits;
     ASSERT(structureIndex && structureIndex < s_maximumNumberOfStructures);
+#if ENCODE_STRUCTURE_BITS
     RELEASE_ASSERT(table()[structureIndex].encodedStructureBits == encode(structure, structureID));
+#else
+    RELEASE_ASSERT(table()[structureIndex].structure == structure);
+#endif
     m_size--;
     if (!m_firstFreeOffset) {
         table()[structureIndex].offset = 0;

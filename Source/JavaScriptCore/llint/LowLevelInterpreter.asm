@@ -215,7 +215,9 @@ end
 
 if JSVALUE64
     const NumberOfStructureIDEntropyBits = constexpr StructureIDTable::s_numberOfEntropyBits
+if ENCODE_STRUCTURE_BITS
     const StructureEntropyBitsShift = constexpr StructureIDTable::s_entropyBitsShiftForStructurePointer
+end
 end
 
 const CallOpCodeSize = constexpr op_call_length

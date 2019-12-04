@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -382,8 +383,10 @@ void AssemblyHelpers::emitLoadStructure(VM& vm, RegisterID source, RegisterID de
     loadPtr(vm.heap.structureIDTable().base(), scratch);
     rshift32(scratch2, TrustedImm32(StructureIDTable::s_numberOfEntropyBits), dest);
     loadPtr(MacroAssembler::BaseIndex(scratch, dest, MacroAssembler::TimesEight), dest);
+#if ENCODE_STRUCTURE_BITS
     lshiftPtr(TrustedImm32(StructureIDTable::s_entropyBitsShiftForStructurePointer), scratch2);
     xorPtr(scratch2, dest);
+#endif
 #else // not USE(JSVALUE64)
     UNUSED_PARAM(scratch);
     UNUSED_PARAM(vm);

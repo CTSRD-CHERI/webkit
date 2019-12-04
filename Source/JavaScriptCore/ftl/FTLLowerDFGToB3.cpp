@@ -17772,10 +17772,16 @@ private:
         LValue structureID = m_out.load32(value, m_heaps.JSCell_structureID);
         LValue tableBase = m_out.loadPtr(m_out.absolute(vm().heap.structureIDTable().base()));
         LValue tableIndex = m_out.aShr(structureID, m_out.constInt32(StructureIDTable::s_numberOfEntropyBits));
+#if ENCODE_STRUCTURE_BITS
         LValue entropyBits = m_out.shl(m_out.zeroExtPtr(structureID), m_out.constInt32(StructureIDTable::s_entropyBitsShiftForStructurePointer));
+#endif
         TypedPointer address = m_out.baseIndex(m_heaps.structureTable, tableBase, m_out.zeroExtPtr(tableIndex));
         LValue encodedStructureBits = m_out.loadPtr(address);
+#if ENCODE_STRUCTURE_BITS
         return m_out.bitXor(encodedStructureBits, entropyBits);
+#else
+       return encodedStructureBits;
+#endif
     }
 
     LValue weakPointer(JSCell* pointer)
