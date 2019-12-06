@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,7 +61,7 @@ void LLIntPrototypeLoadAdaptiveStructureWatchpoint::fireInternal(VM& vm, const F
     }
 
     auto& instruction = m_owner->instructions().at(m_bytecodeOffset.get());
-    clearLLIntGetByIdCache(instruction->as<OpGetById>().metadata(m_owner.get()));
+    clearLLIntGetByIdCache(instruction->as<OpGetById>().metadata(&*m_owner));
 }
 
 void LLIntPrototypeLoadAdaptiveStructureWatchpoint::clearLLIntGetByIdCache(OpGetById::Metadata& metadata)

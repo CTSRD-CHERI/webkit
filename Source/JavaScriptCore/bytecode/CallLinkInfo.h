@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,7 +42,12 @@ class JSFunction;
 enum OpcodeID : unsigned;
 struct CallFrameShuffleData;
 
-class CallLinkInfo : public PackedRawSentinelNode<CallLinkInfo> {
+class CallLinkInfo
+#ifdef __CHERI_PURE_CAPABILITY__
+  : public BasicRawSentinelNode<CallLinkInfo> {
+#else
+  : public PackedRawSentinelNode<CallLinkInfo> {
+#endif
 public:
     enum CallType {
         None,

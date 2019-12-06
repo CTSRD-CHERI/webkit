@@ -138,7 +138,13 @@ class WatchpointSet;
     static_assert(std::is_trivially_destructible<type>::value, ""); \
 
 
-class Watchpoint : public PackedRawSentinelNode<Watchpoint> {
+class Watchpoint
+#ifdef __CHERI_PURE_CAPABILITY__
+  : public BasicRawSentinelNode<Watchpoint> {
+#else
+  : public PackedRawSentinelNode<Watchpoint> {
+#endif
+
     WTF_MAKE_NONCOPYABLE(Watchpoint);
     WTF_MAKE_NONMOVABLE(Watchpoint);
     WTF_MAKE_FAST_ALLOCATED;
@@ -296,7 +302,11 @@ private:
     int8_t m_state;
     int8_t m_setIsNotEmpty;
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    SentinelLinkedList<Watchpoint, BasicRawSentinelNode<Watchpoint>> m_set;
+#else
     SentinelLinkedList<Watchpoint, PackedRawSentinelNode<Watchpoint>> m_set;
+#endif
 };
 
 // InlineWatchpointSet is a low-overhead, non-copyable watchpoint set in which

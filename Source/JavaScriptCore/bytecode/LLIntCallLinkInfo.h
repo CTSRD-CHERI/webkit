@@ -36,7 +36,12 @@ namespace JSC {
 
 struct Instruction;
 
-class LLIntCallLinkInfo : public PackedRawSentinelNode<LLIntCallLinkInfo> {
+class LLIntCallLinkInfo
+#ifdef __CHERI_PURE_CAPABILITY__
+  : public BasicRawSentinelNode<LLIntCallLinkInfo> {
+#else
+  : public PackedRawSentinelNode<LLIntCallLinkInfo> {
+#endif
 public:
     friend class LLIntOffsetsExtractor;
 

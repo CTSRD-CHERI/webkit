@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +39,12 @@ namespace JSC {
 
 class CallLinkInfo;
 
-class PolymorphicCallNode : public PackedRawSentinelNode<PolymorphicCallNode> {
+class PolymorphicCallNode
+#ifdef __CHERI_PURE_CAPABILITY__
+    : public BasicRawSentinelNode<PolymorphicCallNode> {
+#else
+    : public PackedRawSentinelNode<PolymorphicCallNode> {
+#endif
     WTF_MAKE_NONCOPYABLE(PolymorphicCallNode);
 public:
     PolymorphicCallNode(CallLinkInfo* info)
