@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -125,9 +126,28 @@ private:
 #endif
 };
 
-using ContiguousDoubles = ContiguousData<double>;
+/*
+ * Double value with size of a JS value slot
+ */
+class DoubleSlot {
+public:
+  DoubleSlot() : m_value() { }
+  DoubleSlot(const DoubleSlot &other) : m_value(other.m_value) { }
+  DoubleSlot(DoubleSlot &&other) : m_value(other.m_value) { }
+  DoubleSlot(double value) : m_value(value) { }
+  operator double () const { return m_value; }
+  DoubleSlot& operator=(const DoubleSlot &other) { m_value = other.m_value; return *this; }
+
+private:
+  union {
+    double m_value;
+    WriteBarrier<Unknown> m_slot;
+  };
+};
+
+using ContiguousDoubles = ContiguousData<DoubleSlot>;
 using ContiguousJSValues = ContiguousData<WriteBarrier<Unknown>>;
-using ConstContiguousDoubles = ContiguousData<const double>;
+using ConstContiguousDoubles = ContiguousData<const DoubleSlot>;
 using ConstContiguousJSValues = ContiguousData<const WriteBarrier<Unknown>>;
 
 class Butterfly {
@@ -189,21 +209,21 @@ public:
     T* indexingPayload() { return reinterpret_cast_ptr<T*>(this); }
     ArrayStorage* arrayStorage() { return indexingPayload<ArrayStorage>(); }
     ContiguousJSValues contiguousInt32() { return ContiguousJSValues(indexingPayload<WriteBarrier<Unknown>>(), vectorLength()); }
-    ContiguousDoubles contiguousDouble() { return ContiguousDoubles(indexingPayload<double>(), vectorLength()); }
+    ContiguousDoubles contiguousDouble() { return ContiguousDoubles(indexingPayload<DoubleSlot>(), vectorLength()); }
     ContiguousJSValues contiguous() { return ContiguousJSValues(indexingPayload<WriteBarrier<Unknown>>(), vectorLength()); }
 
     template<typename T>
     const T* indexingPayload() const { return reinterpret_cast_ptr<const T*>(this); }
     const ArrayStorage* arrayStorage() const { return indexingPayload<ArrayStorage>(); }
     ConstContiguousJSValues contiguousInt32() const { return ConstContiguousJSValues(indexingPayload<WriteBarrier<Unknown>>(), vectorLength()); }
-    ConstContiguousDoubles contiguousDouble() const { return ConstContiguousDoubles(indexingPayload<double>(), vectorLength()); }
+    ConstContiguousDoubles contiguousDouble() const { return ConstContiguousDoubles(indexingPayload<DoubleSlot>(), vectorLength()); }
     ConstContiguousJSValues contiguous() const { return ConstContiguousJSValues(indexingPayload<WriteBarrier<Unknown>>(), vectorLength()); }
     
     static Butterfly* fromContiguous(WriteBarrier<Unknown>* contiguous)
     {
         return reinterpret_cast<Butterfly*>(contiguous);
     }
-    static Butterfly* fromContiguous(double* contiguous)
+    static Butterfly* fromContiguous(DoubleSlot* contiguous)
     {
         return reinterpret_cast<Butterfly*>(contiguous);
     }

@@ -3,6 +3,7 @@
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
  *  Copyright (C) 2007 Eric Seidel (eric@webkit.org)
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -631,7 +632,7 @@ bool JSObject::getOwnPropertySlotByIndex(JSObject* thisObject, JSGlobalObject* g
         if (i >= butterfly->vectorLength())
             return false;
         
-        double value = butterfly->contiguousDouble().at(thisObject, i);
+        double value = (DoubleSlot) butterfly->contiguousDouble().at(thisObject, i);
         if (value == value) {
             slot.setValue(thisObject, static_cast<unsigned>(PropertyAttribute::None), JSValue(JSValue::EncodeAsDouble, value));
             return true;
@@ -1315,7 +1316,7 @@ ContiguousJSValues JSObject::convertDoubleToContiguous(VM& vm)
 
     Butterfly* butterfly = m_butterfly.get();
     for (unsigned i = butterfly->vectorLength(); i--;) {
-        double* current = &butterfly->contiguousDouble().atUnsafe(i);
+        DoubleSlot* current = &butterfly->contiguousDouble().atUnsafe(i);
         WriteBarrier<Unknown>* currentAsValue = bitwise_cast<WriteBarrier<Unknown>*>(current);
         double value = *current;
         if (value != value) {
@@ -1340,7 +1341,7 @@ ArrayStorage* JSObject::convertDoubleToArrayStorage(VM& vm, NonPropertyTransitio
     ArrayStorage* newStorage = constructConvertedArrayStorageWithoutCopyingElements(vm, vectorLength);
     Butterfly* butterfly = m_butterfly.get();
     for (unsigned i = 0; i < vectorLength; i++) {
-        double value = butterfly->contiguousDouble().at(this, i);
+        double value = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
         if (value != value) {
             newStorage->m_vector[i].clear();
             continue;
@@ -2374,7 +2375,7 @@ void JSObject::getOwnPropertyNames(JSObject* object, JSGlobalObject* globalObjec
             Butterfly* butterfly = object->butterfly();
             unsigned usedLength = butterfly->publicLength();
             for (unsigned i = 0; i < usedLength; ++i) {
-                double value = butterfly->contiguousDouble().at(object, i);
+                double value = (DoubleSlot) butterfly->contiguousDouble().at(object, i);
                 if (value != value)
                     continue;
                 propertyNames.add(i);
@@ -3267,7 +3268,7 @@ unsigned JSObject::countElements(Butterfly* butterfly)
             break;
             
         case DoubleShape: {
-            double value = butterfly->contiguousDouble().at(this, i);
+            double value = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (value == value)
                 numValues++;
             break;
@@ -3405,8 +3406,9 @@ bool JSObject::ensureLengthSlow(VM& vm, unsigned length)
     }
 
     if (hasDouble(indexingType())) {
-        for (unsigned i = oldVectorLength; i < newVectorLength; ++i)
-            butterfly->indexingPayload<double>()[i] = PNaN;
+        for (unsigned i = oldVectorLength; i < newVectorLength; ++i) {
+            butterfly->indexingPayload<DoubleSlot>()[i] = PNaN;
+        }
     } else {
         for (unsigned i = oldVectorLength; i < newVectorLength; ++i)
             butterfly->indexingPayload<WriteBarrier<Unknown>>()[i].clear();
@@ -3813,7 +3815,7 @@ uint32_t JSObject::getEnumerableLength(JSGlobalObject* globalObject, JSObject* o
         Butterfly* butterfly = object->butterfly();
         unsigned usedLength = butterfly->publicLength();
         for (unsigned i = 0; i < usedLength; ++i) {
-            double value = butterfly->contiguousDouble().at(object, i);
+            double value = (DoubleSlot) butterfly->contiguousDouble().at(object, i);
             if (value != value)
                 return 0;
         }

@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -275,7 +276,7 @@ public:
         case ALL_DOUBLE_INDEXING_TYPES: {
             if (i >= butterfly->vectorLength())
                 return false;
-            double value = butterfly->contiguousDouble().at(this, i);
+            double value = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (value != value)
                 return false;
             return true;
@@ -297,7 +298,7 @@ public:
         case ALL_CONTIGUOUS_INDEXING_TYPES:
             return butterfly->contiguous().at(this, i).get();
         case ALL_DOUBLE_INDEXING_TYPES:
-            return JSValue(JSValue::EncodeAsDouble, butterfly->contiguousDouble().at(this, i));
+            return JSValue(JSValue::EncodeAsDouble, (DoubleSlot) butterfly->contiguousDouble().at(this, i));
         case ALL_ARRAY_STORAGE_INDEXING_TYPES:
             return butterfly->arrayStorage()->m_vector[i].get();
         case ALL_BLANK_INDEXING_TYPES:
@@ -332,7 +333,7 @@ public:
         case ALL_DOUBLE_INDEXING_TYPES: {
             if (i >= butterfly->publicLength())
                 break;
-            double result = butterfly->contiguousDouble().at(this, i);
+            double result = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (result != result)
                 break;
             return JSValue(JSValue::EncodeAsDouble, result);

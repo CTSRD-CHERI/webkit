@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -90,7 +91,7 @@ public:
 
         if (indexingType == DoubleShape) {
             for (unsigned i = 0; i < length; i++) {
-                double d = array->butterfly()->contiguousDouble().at(array, i);
+                double d = (DoubleSlot) array->butterfly()->contiguousDouble().at(array, i);
                 JSValue value = std::isnan(d) ? jsUndefined() : JSValue(JSValue::EncodeAsDouble, d);
                 result->buffer()[i].set(vm, result, value);
             }

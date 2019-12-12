@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1170,7 +1171,7 @@ private:
     IndexingType m_indexingType;
     unsigned m_length;
     union {
-        CachedArray<double> m_cachedDoubles;
+        CachedArray<DoubleSlot> m_cachedDoubles;
         CachedArray<CachedJSValue, WriteBarrier<Unknown>> m_cachedValues;
     };
 };

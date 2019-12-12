@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -46,7 +47,7 @@ void clearArrayMemset(WriteBarrier<Unknown>* base, unsigned count)
 #endif // generic CPU
 }
 
-void clearArrayMemset(double* base, unsigned count)
+void clearArrayMemset(DoubleSlot* base, unsigned count)
 {
 #if CPU(X86_64) && COMPILER(GCC_COMPATIBLE)
     uint64_t pnan = bitwise_cast<uint64_t>(PNaN);

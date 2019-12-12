@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
 
 #pragma once
 
+#include "Butterfly.h"
 #include "IndexingHeader.h"
 #include "PureNaN.h"
 #include "WriteBarrier.h"
@@ -118,7 +120,7 @@ inline IndexingHeader baseIndexingHeaderForArrayStorage(unsigned length)
 
 #if USE(JSVALUE64)
 JS_EXPORT_PRIVATE void clearArrayMemset(WriteBarrier<Unknown>* base, unsigned count);
-JS_EXPORT_PRIVATE void clearArrayMemset(double* base, unsigned count);
+JS_EXPORT_PRIVATE void clearArrayMemset(DoubleSlot* base, unsigned count);
 #endif // USE(JSVALUE64)
 
 ALWAYS_INLINE void clearArray(WriteBarrier<Unknown>* base, unsigned count)
@@ -135,7 +137,7 @@ ALWAYS_INLINE void clearArray(WriteBarrier<Unknown>* base, unsigned count)
         base[i].clear();
 }
 
-ALWAYS_INLINE void clearArray(double* base, unsigned count)
+ALWAYS_INLINE void clearArray(DoubleSlot* base, unsigned count)
 {
 #if USE(JSVALUE64)
     const unsigned minCountForMemset = 100;

@@ -3,6 +3,7 @@
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
  *  Copyright (C) 2003 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2006 Alexey Proskuryakov (ap@nypop.com)
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -697,7 +698,7 @@ JSValue JSArray::pop(JSGlobalObject* globalObject)
             return jsUndefined();
         
         RELEASE_ASSERT(length < butterfly->vectorLength());
-        double value = butterfly->contiguousDouble().at(this, length);
+        double value = (DoubleSlot) butterfly->contiguousDouble().at(this, length);
         if (value == value) {
             butterfly->contiguousDouble().at(this, length) = PNaN;
             butterfly->setPublicLength(length);
@@ -961,7 +962,7 @@ bool JSArray::shiftCountWithAnyIndexingType(JSGlobalObject* globalObject, unsign
         unsigned end = oldLength - count;
         if (this->structure(vm)->holesMustForwardToPrototype(vm, this)) {
             for (unsigned i = startIndex; i < end; ++i) {
-                double v = butterfly->contiguousDouble().at(this, i + count);
+                double v = (DoubleSlot) butterfly->contiguousDouble().at(this, i + count);
                 if (UNLIKELY(v != v)) {
                     startIndex = i;
                     return shiftCountWithArrayStorage(vm, startIndex, count, ensureArrayStorage(vm));
@@ -1135,13 +1136,13 @@ bool JSArray::unshiftCountWithAnyIndexingType(JSGlobalObject* globalObject, unsi
         // We have to check for holes before we start moving things around so that we don't get halfway 
         // through shifting and then realize we should have been in ArrayStorage mode.
         for (unsigned i = oldLength; i-- > startIndex;) {
-            double v = butterfly->contiguousDouble().at(this, i);
+            double v = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (UNLIKELY(v != v))
                 RELEASE_AND_RETURN(scope, unshiftCountWithArrayStorage(globalObject, startIndex, count, ensureArrayStorage(vm)));
         }
 
         for (unsigned i = oldLength; i-- > startIndex;) {
-            double v = butterfly->contiguousDouble().at(this, i);
+            double v = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             ASSERT(v == v);
             butterfly->contiguousDouble().at(this, i + count) = v;
         }
@@ -1193,7 +1194,7 @@ void JSArray::fillArgList(JSGlobalObject* globalObject, MarkedArgumentBuffer& ar
         vector = 0;
         vectorEnd = 0;
         for (; i < butterfly->publicLength(); ++i) {
-            double v = butterfly->contiguousDouble().at(this, i);
+            double v = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (v != v)
                 break;
             args.append(JSValue(JSValue::EncodeAsDouble, v));
@@ -1266,7 +1267,7 @@ void JSArray::copyToArguments(JSGlobalObject* globalObject, CallFrame* callFrame
         vectorEnd = 0;
         for (; i < butterfly->publicLength(); ++i) {
             ASSERT(i < butterfly->vectorLength());
-            double v = butterfly->contiguousDouble().at(this, i);
+            double v = (DoubleSlot) butterfly->contiguousDouble().at(this, i);
             if (v != v)
                 break;
             callFrame->r(firstElementDest + i - offset) = JSValue(JSValue::EncodeAsDouble, v);

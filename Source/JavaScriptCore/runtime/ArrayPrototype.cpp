@@ -3,6 +3,7 @@
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
  *  Copyright (C) 2003 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2006 Alexey Proskuryakov (ap@nypop.com)
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -1481,7 +1482,7 @@ void clearElement(T& element)
 }
 
 template<>
-void clearElement(double& element)
+void clearElement(DoubleSlot& element)
 {
     element = PNaN;
 }
@@ -1571,7 +1572,7 @@ EncodedJSValue JSC_HOST_CALL arrayProtoPrivateFuncConcatMemcpy(JSGlobalObject* g
     }
 
     if (type == ArrayWithDouble) {
-        double* buffer = result->butterfly()->contiguousDouble().data();
+        DoubleSlot* buffer = result->butterfly()->contiguousDouble().data();
         copyElements(buffer, 0, firstButterfly->contiguousDouble().data(), firstArraySize, firstType);
         copyElements(buffer, firstArraySize, secondButterfly->contiguousDouble().data(), secondArraySize, secondType);
 

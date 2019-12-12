@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,7 +80,7 @@ public:
     {
         if (!hasDouble(indexingMode()))
             return toButterfly()->contiguous().at(this, index).get();
-        double value = toButterfly()->contiguousDouble().at(this, index);
+        double value = (DoubleSlot) toButterfly()->contiguousDouble().at(this, index);
         // Holes are not supported yet.
         ASSERT(!std::isnan(value));
         return jsNumber(value);
