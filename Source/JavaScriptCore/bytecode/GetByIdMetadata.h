@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,7 +60,11 @@ struct GetByIdModeMetadataProtoLoad {
     JSObject* cachedSlot;
 };
 #if CPU(LITTLE_ENDIAN) && CPU(ADDRESS64)
+#ifdef __CHERI_PURE_CAPABILITY__
+static_assert(sizeof(GetByIdModeMetadataProtoLoad) == 32);
+#else
 static_assert(sizeof(GetByIdModeMetadataProtoLoad) == 16);
+#endif
 #endif
 
 // In 64bit Little endian architecture, this union shares ProtoLoad's JSObject* cachedSlot with "hitCountForLLIntCaching" and "mode".
@@ -93,7 +98,11 @@ union GetByIdModeMetadata {
     GetByIdModeMetadataArrayLength arrayLengthMode;
     GetByIdModeMetadataProtoLoad protoLoadMode;
 };
+#ifdef __CHERI_PURE_CAPABILITY__
+static_assert(sizeof(GetByIdModeMetadata) == 32);
+#else
 static_assert(sizeof(GetByIdModeMetadata) == 16);
+#endif
 #else
 struct GetByIdModeMetadata {
     GetByIdModeMetadata()
