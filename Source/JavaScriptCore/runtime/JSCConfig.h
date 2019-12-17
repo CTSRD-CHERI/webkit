@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,7 +41,11 @@ constexpr size_t PageSize = 16 * KB;
 constexpr size_t PageSize = 4 * KB;
 #endif
 
+#ifdef __CHERI_PURE_CAPABILITY__
+constexpr size_t ConfigSizeToProtect = 64 * KB;
+#else
 constexpr size_t ConfigSizeToProtect = 32 * KB;
+#endif
 
 #if ENABLE(SEPARATED_WX_HEAP)
 using JITWriteSeparateHeapsFunction = void (*)(off_t, const void*, size_t);
