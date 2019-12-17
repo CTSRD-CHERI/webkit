@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 
 #include <limits.h>
 #include <wtf/HashMap.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/PrintStream.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/Vector.h>
@@ -39,10 +41,16 @@ class CodeBlock;
 struct DumpContext;
 struct InlineCallFrame;
 
+#ifdef __CHERI_PURE_CAPABILITY__
+#define CAN_USE_TOP_POINTER_BITS 0
+#else
+#define CAN_USE_TOP_POINTER_BITS 1
+#endif
+
 class CodeOrigin {
 public:
     CodeOrigin()
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         : m_compositeValue(buildCompositeValue(nullptr, BytecodeIndex()))
 #else
         : m_inlineCallFrame(nullptr)
@@ -51,7 +59,7 @@ public:
     }
 
     CodeOrigin(WTF::HashTableDeletedValueType)
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         : m_compositeValue(buildCompositeValue(deletedMarker(), BytecodeIndex()))
 #else
         : m_bytecodeIndex(WTF::HashTableDeletedValue)
@@ -61,7 +69,7 @@ public:
     }
     
     explicit CodeOrigin(BytecodeIndex bytecodeIndex, InlineCallFrame* inlineCallFrame = nullptr)
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         : m_compositeValue(buildCompositeValue(inlineCallFrame, bytecodeIndex))
 #else
         : m_bytecodeIndex(bytecodeIndex)
@@ -69,12 +77,12 @@ public:
 #endif
     {
         ASSERT(!!bytecodeIndex);
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         ASSERT(!(bitwise_cast<uintptr_t>(inlineCallFrame) & ~s_maskCompositeValueForPointer));
 #endif
     }
     
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
     CodeOrigin& operator=(const CodeOrigin& other)
     {
         if (this != &other) {
@@ -122,7 +130,7 @@ public:
     
     bool isSet() const
     {
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         return !(m_compositeValue & s_maskIsBytecodeIndexInvalid);
 #else
         return !!m_bytecodeIndex;
@@ -132,7 +140,7 @@ public:
     
     bool isHashTableDeletedValue() const
     {
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         return !isSet() && (m_compositeValue & s_maskCompositeValueForPointer);
 #else
         return m_bytecodeIndex.isHashTableDeletedValue() && !!m_inlineCallFrame;
@@ -170,7 +178,7 @@ public:
 
     BytecodeIndex bytecodeIndex() const
     {
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         if (!isSet())
             return BytecodeIndex();
         if (UNLIKELY(isOutOfLine()))
@@ -183,7 +191,7 @@ public:
 
     InlineCallFrame* inlineCallFrame() const
     {
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         if (UNLIKELY(isOutOfLine()))
             return outOfLineCodeOrigin()->inlineCallFrame;
         return bitwise_cast<InlineCallFrame*>(m_compositeValue & s_maskCompositeValueForPointer);
@@ -193,9 +201,9 @@ public:
     }
 
 private:
-#if CPU(ADDRESS64)
-    static constexpr uintptr_t s_maskIsOutOfLine = 1;
-    static constexpr uintptr_t s_maskIsBytecodeIndexInvalid = 2;
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
+    static constexpr unsigned s_maskIsOutOfLine = 1;
+    static constexpr unsigned s_maskIsBytecodeIndexInvalid = 2;
 
     struct OutOfLineCodeOrigin {
         WTF_MAKE_FAST_ALLOCATED;
@@ -224,14 +232,14 @@ private:
     static InlineCallFrame* deletedMarker()
     {
         auto value = static_cast<uintptr_t>(1 << 3);
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
         ASSERT(value & s_maskCompositeValueForPointer);
         ASSERT(!(value & ~s_maskCompositeValueForPointer));
 #endif
         return bitwise_cast<InlineCallFrame*>(value);
     }
 
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
     static constexpr unsigned s_freeBitsAtTop = 64 - WTF_CPU_EFFECTIVE_ADDRESS_WIDTH;
     static constexpr uintptr_t s_maskCompositeValueForPointer = ((1ULL << WTF_CPU_EFFECTIVE_ADDRESS_WIDTH) - 1) & ~(8ULL - 1);
     static uintptr_t buildCompositeValue(InlineCallFrame* inlineCallFrame, BytecodeIndex bytecodeIndex)
@@ -270,7 +278,7 @@ inline unsigned CodeOrigin::hash() const
 
 inline bool CodeOrigin::operator==(const CodeOrigin& other) const
 {
-#if CPU(ADDRESS64)
+#if CPU(ADDRESS64) && CAN_USE_TOP_POINTER_BITS
     if (m_compositeValue == other.m_compositeValue)
         return true;
 #endif
