@@ -81,7 +81,7 @@ private:
     static VarOffset varOffsetFromBits(intptr_t bits)
     {
         VarKind kind;
-        intptr_t kindBits = uintptr_t(bits) & KindBitsMask;
+        intptr_t kindBits = WTF::Pointer::getLowBits<KindBitsMask>(uintptr_t(bits));
         if (kindBits <= UnwatchableScopeKindBits)
             kind = VarKind::Scope;
         else if (kindBits == StackKindBits)
@@ -93,7 +93,7 @@ private:
     
     static ScopeOffset scopeOffsetFromBits(intptr_t bits)
     {
-        ASSERT((bits & KindBitsMask) <= UnwatchableScopeKindBits);
+        ASSERT(WTF::Pointer::getLowBits<KindBitsMask>(bits) <= UnwatchableScopeKindBits);
         return ScopeOffset(static_cast<int>(uintptr_t(bits) >> FlagBits));
     }
 
@@ -231,7 +231,7 @@ public:
     
     bool isWatchable() const
     {
-        return (uintptr_t(m_bits) & KindBitsMask) == ScopeKindBits && VM::canUseJIT();
+        return WTF::Pointer::getLowBits<KindBitsMask>(uintptr_t(m_bits)) == ScopeKindBits && VM::canUseJIT();
     }
     
     // Asserts if the offset is anything but a scope offset. This structures the assertions
@@ -404,21 +404,21 @@ private:
         bitsRef =
             WTF::Pointer::setLowBits(uintptr_t(offset.rawOffset()) << FlagBits, NotNullFlag | SlimFlag);
         if (readOnly)
-            bitsRef |= ReadOnlyFlag;
+            bitsRef = WTF::Pointer::setLowBits(bitsRef, ReadOnlyFlag);
         if (dontEnum)
-            bitsRef |= DontEnumFlag;
+            bitsRef = WTF::Pointer::setLowBits(bitsRef, DontEnumFlag);
         switch (offset.kind()) {
         case VarKind::Scope:
             if (isWatchable)
-                bitsRef |= ScopeKindBits;
+                bitsRef = WTF::Pointer::setLowBits(bitsRef, ScopeKindBits);
             else
-                bitsRef |= UnwatchableScopeKindBits;
+                bitsRef = WTF::Pointer::setLowBits(bitsRef, UnwatchableScopeKindBits);
             break;
         case VarKind::Stack:
-            bitsRef |= StackKindBits;
+            bitsRef = WTF::Pointer::setLowBits(bitsRef, StackKindBits);
             break;
         case VarKind::DirectArgument:
-            bitsRef |= DirectArgumentKindBits;
+            bitsRef = WTF::Pointer::setLowBits(bitsRef, DirectArgumentKindBits);
             break;
         default:
             RELEASE_ASSERT_NOT_REACHED();

@@ -35,6 +35,7 @@
 #include <array>
 #include <wtf/CheckedArithmetic.h>
 #include <wtf/ForbidHeapAllocation.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/text/StringView.h>
 
 namespace JSC {
@@ -230,7 +231,7 @@ public:
 
     ALWAYS_INLINE bool isRope() const
     {
-        return m_fiber & isRopeInPointer;
+        return WTF::Pointer::getLowBits<isRopeInPointer>(m_fiber);
     }
 
     bool is8Bit() const;
@@ -682,8 +683,8 @@ private:
     void initializeFiber0(JSString* fiber)
     {
         uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
-        ASSERT(!(WTF::Pointer::clearLowBits<invStringMask>(pointer)));
-        m_fiber = (pointer | (WTF::Pointer::clearLowBits<invStringMask>(m_fiber)));
+        ASSERT(!(WTF::Pointer::getLowBits<invStringMask>(pointer)));
+        m_fiber = (pointer | (WTF::Pointer::getLowBits<invStringMask>(m_fiber)));
     }
 
     void initializeFiber1(JSString* fiber)
@@ -733,7 +734,7 @@ JS_EXPORT_PRIVATE JSString* jsStringWithCacheSlowCase(VM&, StringImpl&);
 ALWAYS_INLINE bool JSString::is8Bit() const
 {
     uintptr_t pointer = m_fiber;
-    if (pointer & isRopeInPointer) {
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer)) {
         // Do not load m_fiber twice. We should use the information in pointer.
         // Otherwise, JSRopeString may be converted to JSString between the first and second accesses.
         return WTF::Pointer::getLowBits<JSRopeString::is8BitInPointer>(pointer);
@@ -747,7 +748,7 @@ ALWAYS_INLINE bool JSString::is8Bit() const
 ALWAYS_INLINE unsigned JSString::length() const
 {
     uintptr_t pointer = m_fiber;
-    if (pointer & isRopeInPointer)
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer))
         return jsCast<const JSRopeString*>(this)->length();
     return bitwise_cast<StringImpl*>(pointer)->length();
 }
@@ -755,7 +756,7 @@ ALWAYS_INLINE unsigned JSString::length() const
 inline const StringImpl* JSString::tryGetValueImpl() const
 {
     uintptr_t pointer = m_fiber;
-    if (pointer & isRopeInPointer)
+    if (WTF::Pointer::getLowBits<isRopeInPointer>(pointer))
         return nullptr;
     return bitwise_cast<StringImpl*>(pointer);
 }

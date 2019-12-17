@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,15 +31,16 @@ namespace JSC { namespace Wasm {
 
 IndexOrName::IndexOrName(Index index, std::pair<const Name*, RefPtr<NameSection>>&& name)
 {
-    static_assert(sizeof(m_indexName.index) == sizeof(m_indexName.name), "bit-tagging depends on sizes being equal");
-
-    if ((index & allTags) || (bitwise_cast<Index>(name.first) & allTags))
+    if ((index & allTags) || WTF::Pointer::getLowBits<allTags>((uintptr_t) name.first))
         *this = IndexOrName();
     else {
-        if (name.first)
+        if (name.first) {
+            ASSERT(WTF::Pointer::getLowBits<allTags>(name.first) == 0);
+
             m_indexName.name = name.first;
+	}
         else
-            m_indexName.index = indexTag | index;
+            m_indexName.index = indexTag | (index << indexShift);
     }
     m_nameSection = WTFMove(name.second);
 }
@@ -49,7 +51,7 @@ String makeString(const IndexOrName& ion)
         return "wasm-stub"_s;
     const String moduleName = ion.nameSection()->moduleName.size() ? String(ion.nameSection()->moduleName.data(), ion.nameSection()->moduleName.size()) : String(ion.nameSection()->moduleHash.data(), ion.nameSection()->moduleHash.size());
     if (ion.isIndex())
-        return makeString(moduleName, ".wasm-function[", String::number(ion.m_indexName.index & ~IndexOrName::indexTag), ']');
+        return makeString(moduleName, ".wasm-function[", String::number(ion.m_indexName.index >> IndexOrName::indexShift), ']');
     return makeString(moduleName, ".wasm-function[", String(ion.m_indexName.name->data(), ion.m_indexName.name->size()), ']');
 }
 

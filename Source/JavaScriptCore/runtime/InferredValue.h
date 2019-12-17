@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 #include "Watchpoint.h"
 #include "WriteBarrier.h"
 #include <wtf/Nonmovable.h>
+#include <wtf/PointerMacro.h>
 
 namespace JSC {
 
@@ -54,7 +56,7 @@ public:
         uintptr_t data = m_data;
         if (isFat(data))
             return fat(data)->inferredValue();
-        return bitwise_cast<JSCellType*>(data & ValueMask);
+        return bitwise_cast<JSCellType*>(WTF::Pointer::clearLowBits<ValueClearMask>(data));
     }
 
     explicit InferredValue()
@@ -162,23 +164,24 @@ private:
         JSCellType* m_value;
     };
 
-    static constexpr uintptr_t IsThinFlag        = 1;
-    static constexpr uintptr_t StateMask         = 6;
-    static constexpr uintptr_t StateShift        = 1;
-    static constexpr uintptr_t ValueMask         = ~static_cast<uintptr_t>(IsThinFlag | StateMask);
+    static constexpr unsigned IsThinFlag        = 1;
+    static constexpr unsigned StateMask         = 6;
+    static constexpr unsigned StateShift        = 1;
+    static constexpr unsigned ValueClearMask    = (IsThinFlag | StateMask);
     
-    static bool isThin(uintptr_t data) { return data & IsThinFlag; }
+    static bool isThin(uintptr_t data) { return WTF::Pointer::getLowBits<IsThinFlag>(data); }
     static bool isFat(uintptr_t data) { return !isThin(data); }
     
     static WatchpointState decodeState(uintptr_t data)
     {
         ASSERT(isThin(data));
-        return static_cast<WatchpointState>((data & StateMask) >> StateShift);
+        return static_cast<WatchpointState>(WTF::Pointer::getLowBits<StateMask>(data) >> StateShift);
     }
     
     static uintptr_t encodeState(WatchpointState state)
     {
-        return (static_cast<uintptr_t>(state) << StateShift) | IsThinFlag;
+        return WTF::Pointer::setLowBits(static_cast<uintptr_t>(state) << StateShift,
+                                        IsThinFlag);
     }
     
     bool isThin() const { return isThin(m_data); }
@@ -254,7 +257,8 @@ void InferredValue<JSCellType>::notifyWriteSlow(VM& vm, JSCell* owner, JSCellTyp
     switch (state()) {
     case ClearWatchpoint:
         ASSERT(decodeState(m_data) != IsInvalidated);
-        m_data = (bitwise_cast<uintptr_t>(value) & ValueMask) | encodeState(IsWatched);
+        m_data = (WTF::Pointer::clearLowBits<ValueClearMask>(bitwise_cast<uintptr_t>(value))
+                  | encodeState(IsWatched));
         vm.heap.writeBarrier(owner, value);
         return;
 
@@ -291,7 +295,7 @@ auto InferredValue<JSCellType>::inflateSlow() -> InferredValueWatchpointSet*
     ASSERT(isThin());
     ASSERT(!isCompilationThread());
     uintptr_t data = m_data;
-    InferredValueWatchpointSet* fat = adoptRef(new InferredValueWatchpointSet(decodeState(m_data), bitwise_cast<JSCellType*>(data & ValueMask))).leakRef();
+    InferredValueWatchpointSet* fat = adoptRef(new InferredValueWatchpointSet(decodeState(m_data), bitwise_cast<JSCellType*>(WTF::Pointer::clearLowBits<ValueClearMask>(data)))).leakRef();
     WTF::storeStoreFence();
     m_data = bitwise_cast<uintptr_t>(fat);
     return fat;

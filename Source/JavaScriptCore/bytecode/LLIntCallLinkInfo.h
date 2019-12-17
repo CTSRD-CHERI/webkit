@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 #include "JSCPtrTag.h"
 #include "JSFunction.h"
 #include "MacroAssemblerCodeRef.h"
+#include <wtf/PointerMacro.h>
 #include <wtf/SentinelLinkedList.h>
 
 namespace JSC {
@@ -38,7 +40,7 @@ class LLIntCallLinkInfo : public PackedRawSentinelNode<LLIntCallLinkInfo> {
 public:
     friend class LLIntOffsetsExtractor;
 
-    static constexpr uintptr_t unlinkedBit = 0x1;
+    static constexpr unsigned unlinkedBit = 0x1;
 
     LLIntCallLinkInfo() = default;
     
@@ -48,7 +50,7 @@ public:
             remove();
     }
     
-    bool isLinked() const { return !(m_calleeOrLastSeenCalleeWithLinkBit & unlinkedBit); }
+    bool isLinked() const { return !WTF::Pointer::getLowBits<unlinkedBit>(m_calleeOrLastSeenCalleeWithLinkBit); }
     
 
     void link(VM& vm, JSCell* owner, JSObject* callee, MacroAssemblerCodePtr<JSEntryPtrTag> codePtr)
@@ -63,7 +65,8 @@ public:
     void unlink()
     {
         // Make link invalidated. It works because LLInt tests the given callee with this pointer. But it is still valid as lastSeenCallee!
-        m_calleeOrLastSeenCalleeWithLinkBit |= unlinkedBit;
+        m_calleeOrLastSeenCalleeWithLinkBit = WTF::Pointer::setLowBits(m_calleeOrLastSeenCalleeWithLinkBit,
+                                                                       unlinkedBit);
         m_machineCodeTarget = MacroAssemblerCodePtr<JSEntryPtrTag>();
         if (isOnList())
             remove();
@@ -78,7 +81,7 @@ public:
 
     JSObject* lastSeenCallee() const
     {
-        return bitwise_cast<JSObject*>(m_calleeOrLastSeenCalleeWithLinkBit & ~unlinkedBit);
+        return bitwise_cast<JSObject*>(WTF::Pointer::clearLowBits<unlinkedBit>(m_calleeOrLastSeenCalleeWithLinkBit));
     }
 
     void clearLastSeenCallee()

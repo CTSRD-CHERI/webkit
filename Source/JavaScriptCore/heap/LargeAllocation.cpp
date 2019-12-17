@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,7 +38,7 @@ namespace JSC {
 static inline bool isAlignedForLargeAllocation(void* memory)
 {
     uintptr_t allocatedPointer = bitwise_cast<uintptr_t>(memory);
-    return !(allocatedPointer & (LargeAllocation::alignment - 1));
+    return !WTF::Pointer::getLowBits<(LargeAllocation::alignment - 1)>(allocatedPointer);
 }
 
 LargeAllocation* LargeAllocation::tryCreate(Heap& heap, size_t size, Subspace* subspace, unsigned indexInSpace)

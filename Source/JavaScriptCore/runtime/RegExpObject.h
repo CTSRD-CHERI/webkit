@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -32,7 +33,7 @@ public:
     using Base = JSNonFinalObject;
     static constexpr unsigned StructureFlags = Base::StructureFlags | OverridesGetOwnPropertySlot | OverridesGetPropertyNames;
 
-    static constexpr uintptr_t lastIndexIsNotWritableFlag = 1;
+    static constexpr unsigned lastIndexIsNotWritableFlag = 1;
 
     static RegExpObject* create(VM& vm, Structure* structure, RegExp* regExp)
     {
@@ -50,14 +51,15 @@ public:
 
     void setRegExp(VM& vm, RegExp* regExp)
     {
-        uintptr_t result = (m_regExpAndLastIndexIsNotWritableFlag & lastIndexIsNotWritableFlag) | bitwise_cast<uintptr_t>(regExp);
+        uintptr_t result = WTF::Pointer::setLowBits(bitwise_cast<uintptr_t>(regExp),
+                                                    WTF::Pointer::getLowBits<lastIndexIsNotWritableFlag>(m_regExpAndLastIndexIsNotWritableFlag));
         m_regExpAndLastIndexIsNotWritableFlag = result;
         vm.heap.writeBarrier(this, regExp);
     }
 
     RegExp* regExp() const
     {
-        return bitwise_cast<RegExp*>(m_regExpAndLastIndexIsNotWritableFlag & (~lastIndexIsNotWritableFlag));
+        return bitwise_cast<RegExp*>(WTF::Pointer::clearLowBits<lastIndexIsNotWritableFlag>(m_regExpAndLastIndexIsNotWritableFlag));
     }
 
     bool setLastIndex(JSGlobalObject* globalObject, size_t lastIndex)
@@ -129,12 +131,12 @@ protected:
 
     bool lastIndexIsWritable() const
     {
-        return !(m_regExpAndLastIndexIsNotWritableFlag & lastIndexIsNotWritableFlag);
+        return !(WTF::Pointer::getLowBits<lastIndexIsNotWritableFlag>(m_regExpAndLastIndexIsNotWritableFlag));
     }
 
     void setLastIndexIsNotWritable()
     {
-        m_regExpAndLastIndexIsNotWritableFlag = (m_regExpAndLastIndexIsNotWritableFlag | lastIndexIsNotWritableFlag);
+        m_regExpAndLastIndexIsNotWritableFlag = WTF::Pointer::setLowBits(m_regExpAndLastIndexIsNotWritableFlag, lastIndexIsNotWritableFlag);
     }
 
     JS_EXPORT_PRIVATE static bool deleteProperty(JSCell*, JSGlobalObject*, PropertyName);

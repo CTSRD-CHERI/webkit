@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -443,7 +444,7 @@ public:
     static constexpr int64_t DoubleEncodeOffset = 1ll << DoubleEncodeOffsetBit;
     // If all bits in the mask are set, this indicates an integer number,
     // if any but not all are set this value is a double precision number.
-    static constexpr int64_t NumberTag = 0xfffe000000000000ll;
+    static constexpr uint64_t NumberTag = 0xfffe000000000000ll;
 
     // All non-numeric (bool, null, undefined) immediates have bit 2 set.
     static constexpr int32_t OtherTag       = 0x2;

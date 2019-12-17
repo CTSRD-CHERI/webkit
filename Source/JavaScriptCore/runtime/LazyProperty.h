@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -85,16 +86,17 @@ public:
     ElementType* getConcurrently() const
     {
         uintptr_t pointer = m_pointer;
-        if (pointer & lazyTag)
+        if (WTF::Pointer::getLowBits<lazyTag>(pointer))
             return nullptr;
         return bitwise_cast<ElementType*>(pointer);
     }
 
     ElementType* getInitializedOnMainThread(const OwnerType* owner) const
     {
-        if (UNLIKELY(m_pointer & lazyTag)) {
+        if (UNLIKELY(WTF::Pointer::getLowBits<lazyTag>(m_pointer))) {
             ASSERT(!isCompilationThread());
-            FuncType func = *bitwise_cast<FuncType*>(m_pointer & ~(lazyTag | initializingTag));
+            FuncType func = *bitwise_cast<FuncType*>(
+                                   WTF::Pointer::clearLowBits<lazyTag | initializingTag>(m_pointer));
             return func(Initializer(const_cast<OwnerType*>(owner), *const_cast<LazyProperty*>(this)));
         }
         return bitwise_cast<ElementType*>(m_pointer);
@@ -111,8 +113,8 @@ private:
     template<typename Func>
     static ElementType* callFunc(const Initializer&);
     
-    static const uintptr_t lazyTag = 1;
-    static const uintptr_t initializingTag = 2;
+    static const unsigned lazyTag = 1;
+    static const unsigned initializingTag = 2;
     
     uintptr_t m_pointer { 0 };
 };

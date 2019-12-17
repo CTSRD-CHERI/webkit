@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,6 +26,7 @@
 
 #pragma once
 
+#include <wtf/PointerMacro.h>
 #include <wtf/StdLibExtras.h>
 
 namespace JSC {
@@ -63,8 +65,8 @@ public:
     
     explicit operator bool() const { return !!m_encodedPointer; }
     
-    bool isMarkedBlock() const { return m_encodedPointer && !(m_encodedPointer & isLargeAllocationBit); }
-    bool isLargeAllocation() const { return m_encodedPointer & isLargeAllocationBit; }
+    bool isMarkedBlock() const { return m_encodedPointer && !isLargeAllocation(); }
+    bool isLargeAllocation() const { return WTF::Pointer::getLowBits<isLargeAllocationBit>(m_encodedPointer); }
     
     MarkedBlock& markedBlock() const
     {
@@ -94,7 +96,7 @@ public:
     WeakSet& weakSet() const;
     
 private:
-    static constexpr uintptr_t isLargeAllocationBit = 1;
+    static constexpr unsigned isLargeAllocationBit = 1;
     uintptr_t m_encodedPointer;
 };
 

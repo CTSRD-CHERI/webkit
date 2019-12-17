@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,6 +25,8 @@
  */
 
 #pragma once
+
+#include <wtf/PointerMacro.h>
 
 #include "MarkedBlock.h"
 #include "WeakSet.h"
@@ -59,7 +62,7 @@ public:
     
     static bool isLargeAllocation(HeapCell* cell)
     {
-        return bitwise_cast<uintptr_t>(cell) & halfAlignment;
+        return WTF::Pointer::getLowBits<halfAlignment>((uintptr_t) cell);
     }
     
     Subspace* subspace() const { return m_subspace; }

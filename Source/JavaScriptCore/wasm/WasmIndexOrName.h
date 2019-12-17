@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,8 +43,8 @@ struct IndexOrName {
 
     IndexOrName() { m_indexName.index = emptyTag; }
     IndexOrName(Index, std::pair<const Name*, RefPtr<NameSection>>&&);
-    bool isEmpty() const { return bitwise_cast<Index>(m_indexName) & emptyTag; }
-    bool isIndex() const { return bitwise_cast<Index>(m_indexName) & indexTag; }
+    bool isEmpty() const { return m_indexName.index == emptyTag; }
+    bool isIndex() const { return m_indexName.index & indexTag; }
     bool isName() const { return !(isEmpty() || isName()); }
     NameSection* nameSection() const { return m_nameSection.get(); }
 
@@ -56,10 +57,10 @@ private:
     } m_indexName;
     RefPtr<NameSection> m_nameSection;
 
-    // Use the top bits as tags. Neither pointers nor the function index space should use them.
-    static constexpr Index indexTag = 1ull << (CHAR_BIT * sizeof(Index) - 1);
-    static constexpr Index emptyTag = 1ull << (CHAR_BIT * sizeof(Index) - 2);
-    static constexpr Index allTags = indexTag | emptyTag;
+    static constexpr unsigned indexTag = 1;
+    static constexpr unsigned emptyTag = 2;
+    static constexpr unsigned indexShift = 2;
+    static constexpr unsigned allTags = indexTag | emptyTag;
 };
 
 String makeString(const IndexOrName&);

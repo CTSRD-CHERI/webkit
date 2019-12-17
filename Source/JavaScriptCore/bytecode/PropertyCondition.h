@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,33 +36,38 @@ class TrackedReferences;
 
 class PropertyCondition {
 public:
-    enum Kind : uint8_t {
-        Presence,
-        Absence,
-        AbsenceOfSetEffect,
-        Equivalence, // An adaptive watchpoint on this will be a pair of watchpoints, and when the structure transitions, we will set the replacement watchpoint on the new structure.
-        CustomFunctionEquivalence, // Custom value or accessor.
-        HasPrototype
+    enum Kind : unsigned {
+        Presence = 0x00,
+        Absence = 0x01,
+        AbsenceOfSetEffect = 0x02,
+        Equivalence = 0x03, // An adaptive watchpoint on this will be a pair of watchpoints, and when the structure transitions, we will set the replacement watchpoint on the new structure.
+        CustomFunctionEquivalence = 0x04, // Custom value or accessor.
+        HasPrototype = 0x05,
+
+        Mask = 0x07
     };
 
-    using Header = CompactPointerTuple<UniquedStringImpl*, Kind>;
+    using Header = uintptr_t;
     
     PropertyCondition()
-        : m_header(nullptr, Presence)
     {
+        m_header = Presence;
         memset(&u, 0, sizeof(u));
     }
     
     PropertyCondition(WTF::HashTableDeletedValueType)
-        : m_header(nullptr, Absence)
     {
+        m_header = Absence;
         memset(&u, 0, sizeof(u));
     }
     
     static PropertyCondition presenceWithoutBarrier(UniquedStringImpl* uid, PropertyOffset offset, unsigned attributes)
     {
         PropertyCondition result;
-        result.m_header = Header(uid, Presence);
+
+        ASSERT(WTF::Pointer::getLowBits<Kind::Mask>(uid) == 0);
+        result.m_header = (Header) WTF::Pointer::setLowBits(uid, Presence);
+
         result.u.presence.offset = offset;
         result.u.presence.attributes = attributes;
         return result;
@@ -77,7 +83,10 @@ public:
     static PropertyCondition absenceWithoutBarrier(UniquedStringImpl* uid, JSObject* prototype)
     {
         PropertyCondition result;
-        result.m_header = Header(uid, Absence);
+
+        ASSERT(WTF::Pointer::getLowBits<Kind::Mask>(uid) == 0);
+        result.m_header = (Header) WTF::Pointer::setLowBits(uid, Absence);
+
         result.u.prototype.prototype = prototype;
         return result;
     }
@@ -94,7 +103,10 @@ public:
         UniquedStringImpl* uid, JSObject* prototype)
     {
         PropertyCondition result;
-        result.m_header = Header(uid, AbsenceOfSetEffect);
+
+        ASSERT(WTF::Pointer::getLowBits<Kind::Mask>(uid) == 0);
+        result.m_header = (Header) WTF::Pointer::setLowBits(uid, AbsenceOfSetEffect);
+
         result.u.prototype.prototype = prototype;
         return result;
     }
@@ -111,7 +123,10 @@ public:
         UniquedStringImpl* uid, JSValue value)
     {
         PropertyCondition result;
-        result.m_header = Header(uid, Equivalence);
+
+        ASSERT(WTF::Pointer::getLowBits<Kind::Mask>(uid) == 0);
+        result.m_header = (Header) WTF::Pointer::setLowBits(uid, Equivalence);
+
         result.u.equivalence.value = JSValue::encode(value);
         return result;
     }
@@ -127,14 +142,19 @@ public:
     static PropertyCondition customFunctionEquivalence(UniquedStringImpl* uid)
     {
         PropertyCondition result;
-        result.m_header = Header(uid, CustomFunctionEquivalence);
+
+        ASSERT(WTF::Pointer::getLowBits<Kind::Mask>(uid) == 0);
+        result.m_header = (Header) WTF::Pointer::setLowBits(uid, CustomFunctionEquivalence);
+
         return result;
     }
     
     static PropertyCondition hasPrototypeWithoutBarrier(JSObject* prototype)
     {
         PropertyCondition result;
-        result.m_header = Header(nullptr, HasPrototype);
+
+        result.m_header = HasPrototype;
+
         result.u.prototype.prototype = prototype;
         return result;
     }
@@ -146,18 +166,18 @@ public:
         return hasPrototypeWithoutBarrier(prototype);
     }
     
-    explicit operator bool() const { return m_header.pointer() || m_header.type() != Presence; }
+    explicit operator bool() const { return uid() || kind() != Presence; }
     
-    Kind kind() const { return m_header.type(); }
-    UniquedStringImpl* uid() const { return m_header.pointer(); }
+    Kind kind() const { return (Kind) WTF::Pointer::getLowBits<Kind::Mask>(m_header); }
+    UniquedStringImpl* uid() const { return (UniquedStringImpl *) WTF::Pointer::clearLowBits<Kind::Mask>(m_header); }
     
-    bool hasOffset() const { return !!*this && m_header.type() == Presence; };
+    bool hasOffset() const { return !!*this && kind() == Presence; };
     PropertyOffset offset() const
     {
         ASSERT(hasOffset());
         return u.presence.offset;
     }
-    bool hasAttributes() const { return !!*this && m_header.type() == Presence; };
+    bool hasAttributes() const { return !!*this && kind() == Presence; };
     unsigned attributes() const
     {
         ASSERT(hasAttributes());
@@ -167,7 +187,7 @@ public:
     bool hasPrototype() const
     {
         return !!*this
-            && (m_header.type() == Absence || m_header.type() == AbsenceOfSetEffect || m_header.type() == HasPrototype);
+            && (kind() == Absence || kind() == AbsenceOfSetEffect || kind() == HasPrototype);
     }
     JSObject* prototype() const
     {
@@ -175,7 +195,7 @@ public:
         return u.prototype.prototype;
     }
     
-    bool hasRequiredValue() const { return !!*this && m_header.type() == Equivalence; }
+    bool hasRequiredValue() const { return !!*this && kind() == Equivalence; }
     JSValue requiredValue() const
     {
         ASSERT(hasRequiredValue());
@@ -187,8 +207,8 @@ public:
     
     unsigned hash() const
     {
-        unsigned result = WTF::PtrHash<UniquedStringImpl*>::hash(m_header.pointer()) + static_cast<unsigned>(m_header.type());
-        switch (m_header.type()) {
+        unsigned result = WTF::PtrHash<UniquedStringImpl*>::hash(uid()) + static_cast<unsigned>(kind());
+        switch (kind()) {
         case Presence:
             result ^= u.presence.offset;
             result ^= u.presence.attributes;
@@ -203,17 +223,19 @@ public:
             break;
         case CustomFunctionEquivalence:
             break;
+        case Mask:
+            CRASH();
         }
         return result;
     }
     
     bool operator==(const PropertyCondition& other) const
     {
-        if (m_header.pointer() != other.m_header.pointer())
+        if (uid() != other.uid())
             return false;
-        if (m_header.type() != other.m_header.type())
+        if (kind() != other.kind())
             return false;
-        switch (m_header.type()) {
+        switch (kind()) {
         case Presence:
             return u.presence.offset == other.u.presence.offset
                 && u.presence.attributes == other.u.presence.attributes;
@@ -225,6 +247,8 @@ public:
             return u.equivalence.value == other.u.equivalence.value;
         case CustomFunctionEquivalence:
             return true;
+        case Mask:
+            CRASH();
         }
         RELEASE_ASSERT_NOT_REACHED();
         return false;
@@ -232,7 +256,7 @@ public:
     
     bool isHashTableDeletedValue() const
     {
-        return !m_header.pointer() && m_header.type() == Absence;
+        return !uid() && kind() == Absence;
     }
     
     // Two conditions are compatible if they are identical or if they speak of different uids. If
@@ -305,7 +329,7 @@ public:
     }
     bool watchingRequiresReplacementWatchpoint() const
     {
-        return !!*this && m_header.type() == Equivalence;
+        return !!*this && kind() == Equivalence;
     }
 
     template<typename Functor>

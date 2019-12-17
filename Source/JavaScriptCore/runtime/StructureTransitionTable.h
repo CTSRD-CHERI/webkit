@@ -142,7 +142,7 @@ inline bool setsReadOnlyOnNonAccessorProperties(NonPropertyTransition transition
 }
 
 class StructureTransitionTable {
-    static constexpr intptr_t UsingSingleSlotFlag = 1;
+    static constexpr unsigned UsingSingleSlotFlag = 1;
 
     
     struct Hash {

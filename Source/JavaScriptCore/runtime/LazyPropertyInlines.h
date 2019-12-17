@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,14 +48,14 @@ void LazyProperty<OwnerType, ElementType>::initLater(const Func&)
     // variable. The "theFunc" variable is guaranteed to be native-aligned, i.e. at least a
     // multiple of 4.
     static const FuncType theFunc = callFunc<Func>;
-    m_pointer = lazyTag | bitwise_cast<uintptr_t>(&theFunc);
+    m_pointer = WTF::Pointer::setLowBits(bitwise_cast<uintptr_t>(&theFunc), lazyTag);
 }
 
 template<typename OwnerType, typename ElementType>
 void LazyProperty<OwnerType, ElementType>::setMayBeNull(VM& vm, const OwnerType* owner, ElementType* value)
 {
     m_pointer = bitwise_cast<uintptr_t>(value);
-    RELEASE_ASSERT(!(m_pointer & lazyTag));
+    RELEASE_ASSERT(!(WTF::Pointer::getLowBits<lazyTag>(m_pointer)));
     vm.heap.writeBarrier(owner, value);
 }
 
@@ -68,7 +69,7 @@ void LazyProperty<OwnerType, ElementType>::set(VM& vm, const OwnerType* owner, E
 template<typename OwnerType, typename ElementType>
 void LazyProperty<OwnerType, ElementType>::visit(SlotVisitor& visitor)
 {
-    if (m_pointer && !(m_pointer & lazyTag))
+    if (m_pointer && !(WTF::Pointer::getLowBits<lazyTag>(m_pointer)))
         visitor.appendUnbarriered(bitwise_cast<ElementType*>(m_pointer));
 }
 
@@ -79,9 +80,9 @@ void LazyProperty<OwnerType, ElementType>::dump(PrintStream& out) const
         out.print("<null>");
         return;
     }
-    if (m_pointer & lazyTag) {
-        out.print("Lazy:", RawPointer(bitwise_cast<void*>(m_pointer & ~lazyTag)));
-        if (m_pointer & initializingTag)
+    if (WTF::Pointer::getLowBits<lazyTag>(m_pointer)) {
+        out.print("Lazy:", RawPointer(bitwise_cast<void*>(WTF::Pointer::clearLowBits<lazyTag>(m_pointer))));
+        if (WTF::Pointer::getLowBits<initializingTag>(m_pointer))
             out.print("(Initializing)");
         return;
     }
@@ -92,12 +93,12 @@ template<typename OwnerType, typename ElementType>
 template<typename Func>
 ElementType* LazyProperty<OwnerType, ElementType>::callFunc(const Initializer& initializer)
 {
-    if (initializer.property.m_pointer & initializingTag)
+    if (WTF::Pointer::getLowBits<initializingTag>(initializer.property.m_pointer))
         return nullptr;
-    initializer.property.m_pointer |= initializingTag;
+    initializer.property.m_pointer = WTF::Pointer::setLowBits(initializer.property.m_pointer, initializingTag);
     callStatelessLambda<void, Func>(initializer);
-    RELEASE_ASSERT(!(initializer.property.m_pointer & lazyTag));
-    RELEASE_ASSERT(!(initializer.property.m_pointer & initializingTag));
+    RELEASE_ASSERT(!(WTF::Pointer::getLowBits<lazyTag>(initializer.property.m_pointer)));
+    RELEASE_ASSERT(!(WTF::Pointer::getLowBits<initializingTag>(initializer.property.m_pointer)));
     return bitwise_cast<ElementType*>(initializer.property.m_pointer);
 }
 
