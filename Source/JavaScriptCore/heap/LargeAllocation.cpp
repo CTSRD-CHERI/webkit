@@ -47,7 +47,7 @@ LargeAllocation* LargeAllocation::tryCreate(Heap& heap, size_t size, Subspace* s
         RELEASE_ASSERT(heap.expectDoesGC());
 
     size_t adjustedAlignmentAllocationSize = headerSize() + size + halfAlignment;
-    static_assert(halfAlignment == 8, "We assume that memory returned by malloc has alignment >= 8.");
+    static_assert(halfAlignment >= 8, "We assume that memory returned by malloc has alignment >= 8.");
     
     // We must use tryAllocateMemory instead of tryAllocateAlignedMemory since we want to use "realloc" feature.
     void* space = subspace->alignedMemoryAllocator()->tryAllocateMemory(adjustedAlignmentAllocationSize);
@@ -69,7 +69,7 @@ LargeAllocation* LargeAllocation::tryCreate(Heap& heap, size_t size, Subspace* s
 LargeAllocation* LargeAllocation::tryReallocate(size_t size, Subspace* subspace)
 {
     size_t adjustedAlignmentAllocationSize = headerSize() + size + halfAlignment;
-    static_assert(halfAlignment == 8, "We assume that memory returned by malloc has alignment >= 8.");
+    static_assert(halfAlignment >= 8, "We assume that memory returned by malloc has alignment >= 8.");
 
     ASSERT(subspace == m_subspace);
 

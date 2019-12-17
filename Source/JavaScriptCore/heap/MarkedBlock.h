@@ -67,7 +67,11 @@ private:
     friend class Footer;
     friend class Handle;
 public:
+#ifdef __CHERI_PURE_CAPABILITY__
+    static constexpr size_t atomSize = 32; // bytes
+#else
     static constexpr size_t atomSize = 16; // bytes
+#endif
 
     // Block size must be at least as large as the system page size.
 #if CPU(PPC64) || CPU(PPC64LE) || CPU(PPC) || CPU(UNKNOWN)
