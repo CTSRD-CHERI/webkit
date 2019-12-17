@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -64,24 +65,24 @@ class BitVector final {
     WTF_MAKE_FAST_ALLOCATED;
 public: 
 #ifdef __CHERI_PURE_CAPABILITY__
-    typedef vaddr_t inline_storage_type;
+    typedef size_t inline_storage_type;
 #else
     typedef uintptr_t inline_storage_type;
 #endif
 
     BitVector()
-        : m_bitsOrPointer(makeInlineBits(0))
+        : m_bits(makeInlineBits(0))
     {
     }
     
     explicit BitVector(size_t numBits)
-        : m_bitsOrPointer(makeInlineBits(0))
+        : m_bits(makeInlineBits(0))
     {
         ensureSize(numBits);
     }
     
     BitVector(const BitVector& other)
-        : m_bitsOrPointer(makeInlineBits(0))
+        : m_bits(makeInlineBits(0))
     {
         (*this) = other;
     }
@@ -97,7 +98,7 @@ public:
     BitVector& operator=(const BitVector& other)
     {
         if (isInline() && other.isInline())
-            m_bitsOrPointer = other.m_bitsOrPointer;
+            m_bits = other.m_bits;
         else
             setSlow(other);
         return *this;
@@ -211,7 +212,7 @@ public:
             mergeSlow(other);
             return;
         }
-        m_bitsOrPointer |= other.m_bitsOrPointer;
+        m_bits |= other.m_bits;
         ASSERT(isInline());
     }
     
@@ -221,11 +222,7 @@ public:
             filterSlow(other);
             return;
         }
-#ifdef __CHERI_PURE_CAPABILITY__
-        abort();
-#else
-        m_bitsOrPointer &= other.m_bitsOrPointer;
-#endif
+        m_bits &= other.m_bits;
         ASSERT(isInline());
     }
     
@@ -235,26 +232,22 @@ public:
             excludeSlow(other);
             return;
         }
-#ifdef __CHERI_PURE_CAPABILITY__
-        abort();
-#else
-        m_bitsOrPointer &= ~other.m_bitsOrPointer;
-#endif
-        m_bitsOrPointer |= (static_cast<inline_storage_type>(1) << maxInlineBits());
+        m_bits &= ~other.m_bits;
+        m_bits |= (static_cast<inline_storage_type>(1) << maxInlineBits());
         ASSERT(isInline());
     }
     
     size_t bitCount() const
     {
         if (isInline())
-            return bitCount(cleanseInlineBits(m_bitsOrPointer));
+            return bitCount(cleanseInlineBits(m_bits));
         return bitCountSlow();
     }
 
     bool isEmpty() const
     {
         if (isInline())
-            return !cleanseInlineBits(m_bitsOrPointer);
+            return !cleanseInlineBits(m_bits);
         return isEmptySlow();
     }
     
@@ -277,24 +270,24 @@ public:
     enum DeletedValueTag { DeletedValue };
     
     BitVector(EmptyValueTag)
-        : m_bitsOrPointer(0)
+        : m_bits(0)
     {
     }
     
     BitVector(DeletedValueTag)
-        : m_bitsOrPointer(1)
+        : m_bits(1)
     {
     }
     
-    bool isEmptyValue() const { return !m_bitsOrPointer; }
-    bool isDeletedValue() const { return m_bitsOrPointer == 1; }
+    bool isEmptyValue() const { return !isInline() && !m_bits; }
+    bool isDeletedValue() const { return !isInline() && m_bits == 1; }
     
-    bool isEmptyOrDeletedValue() const { return m_bitsOrPointer <= 1; }
+    bool isEmptyOrDeletedValue() const { return !isInline() && m_bits <= 1; }
     
     bool operator==(const BitVector& other) const
     {
         if (isInline() && other.isInline())
-            return m_bitsOrPointer == other.m_bitsOrPointer;
+            return m_bits == other.m_bits;
         return equalsSlowCase(other);
     }
     
@@ -305,7 +298,7 @@ public:
         // that have a lot of trailing zero's.
         inline_storage_type value;
         if (isInline())
-            value = cleanseInlineBits(m_bitsOrPointer);
+            value = cleanseInlineBits(m_bits);
         else
             value = hashSlowCase();
         return IntHash<inline_storage_type>::hash(value);
@@ -404,7 +397,7 @@ private:
     {
         if (isInline()) {
             size_t index = startIndex;
-            findBitInWord(m_bitsOrPointer, index, maxInlineBits(), value);
+            findBitInWord(m_bits, index, maxInlineBits(), value);
             return index;
         }
         
@@ -465,27 +458,19 @@ private:
     
     bool isInline() const {
 #ifdef __CHERI_PURE_CAPABILITY__
-      abort();
+      return __builtin_cheri_tag_get(m_pointer) == 0;
 #else
-      return m_bitsOrPointer >> maxInlineBits();
+      return m_bits >> maxInlineBits();
 #endif
     }
     
     //XXXKG: Not sure about these two functions
     const OutOfLineBits* outOfLineBits() const {
-#ifdef __CHERI_PURE_CAPABILITY__
-      abort();
-#else
-      return bitwise_cast<const OutOfLineBits*>(m_bitsOrPointer << 1);
-#endif
+      return m_pointer;
     }
 
     OutOfLineBits* outOfLineBits() {
-#ifdef __CHERI_PURE_CAPABILITY__
-      abort();
-#else
-      return bitwise_cast<OutOfLineBits*>(m_bitsOrPointer << 1);
-#endif
+      return m_pointer;
     }
     
     WTF_EXPORT_PRIVATE void resizeOutOfLine(size_t numBits);
@@ -505,29 +490,26 @@ private:
     
     inline_storage_type* bits()
     {
-#ifdef __CHERI_PURE_CAPABILITY__
-        // XXXAR: TODO: fix this later
-        abort();
-#else
         if (isInline())
-            return &m_bitsOrPointer;
-#endif
+            return &m_bits;
+
         return outOfLineBits()->bits();
     }
     
     const inline_storage_type* bits() const
     {
-#ifdef __CHERI_PURE_CAPABILITY__
-        // XXXAR: TODO: fix this later
-        abort();
-#else
         if (isInline())
-            return &m_bitsOrPointer;
-#endif
+            return &m_bits;
+
         return outOfLineBits()->bits();
     }
     
-    uintptr_t m_bitsOrPointer;
+    union {
+        inline_storage_type m_bits; /* TODO: For CHERI, at least 64 bits are lost here,
+                                             so defining an array of the items might be more
+                                             efficient */
+        OutOfLineBits *m_pointer;
+    };
 };
 
 struct BitVectorHash {

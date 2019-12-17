@@ -33,26 +33,19 @@
 #include <wtf/FastMalloc.h>
 #include <wtf/StdLibExtras.h>
 
-#ifdef __CHERI__
-#warning "THIS IS COMPLETELY BROKEN FOR CHERIABI"
-#endif
-
 namespace WTF {
 
 void BitVector::setSlow(const BitVector& other)
 {
-    uintptr_t newBitsOrPointer;
+    if (!isInline() && !isEmptyOrDeletedValue())
+        OutOfLineBits::destroy(outOfLineBits());
     if (other.isInline() || other.isEmptyOrDeletedValue())
-        newBitsOrPointer = other.m_bitsOrPointer;
+        m_bits = other.m_bits;
     else {
         OutOfLineBits* newOutOfLineBits = OutOfLineBits::create(other.size());
         memcpy(newOutOfLineBits->bits(), other.bits(), byteCount(other.size()));
-        // XXXAR: this will probably not work...
-        newBitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
+        m_pointer = newOutOfLineBits;
     }
-    if (!isInline() && !isEmptyOrDeletedValue())
-        OutOfLineBits::destroy(outOfLineBits());
-    m_bitsOrPointer = newBitsOrPointer;
 }
 
 void BitVector::resize(size_t numBits)
@@ -62,7 +55,7 @@ void BitVector::resize(size_t numBits)
             return;
     
         OutOfLineBits* myOutOfLineBits = outOfLineBits();
-        m_bitsOrPointer = makeInlineBits(*myOutOfLineBits->bits());
+        m_bits = makeInlineBits(*myOutOfLineBits->bits());
         OutOfLineBits::destroy(myOutOfLineBits);
         return;
     }
@@ -73,7 +66,7 @@ void BitVector::resize(size_t numBits)
 void BitVector::clearAll()
 {
     if (isInline())
-        m_bitsOrPointer = makeInlineBits(0);
+        m_bits = makeInlineBits(0);
     else
         memset(outOfLineBits()->bits(), 0, byteCount(size()));
 }
@@ -98,7 +91,7 @@ void BitVector::resizeOutOfLine(size_t numBits)
     size_t newNumWords = newOutOfLineBits->numWords();
     if (isInline()) {
         // Make sure that all of the bits are zero in case we do a no-op resize.
-        *newOutOfLineBits->bits() = m_bitsOrPointer & ~(static_cast<uintptr_t>(1) << maxInlineBits());
+        *newOutOfLineBits->bits() = m_bits & ~(static_cast<inline_storage_type>(1) << maxInlineBits());
         memset(newOutOfLineBits->bits() + 1, 0, (newNumWords - 1) * sizeof(void*));
     } else {
         if (numBits > size()) {
@@ -109,14 +102,14 @@ void BitVector::resizeOutOfLine(size_t numBits)
             memcpy(newOutOfLineBits->bits(), outOfLineBits()->bits(), newOutOfLineBits->numWords() * sizeof(void*));
         OutOfLineBits::destroy(outOfLineBits());
     }
-    m_bitsOrPointer = uintptr_t(newOutOfLineBits) >> 1;
+    m_pointer = newOutOfLineBits;
 }
 
 void BitVector::mergeSlow(const BitVector& other)
 {
     if (other.isInline()) {
         ASSERT(!isInline());
-        *bits() |= cleanseInlineBits(other.m_bitsOrPointer);
+        *bits() |= cleanseInlineBits(other.m_bits);
         return;
     }
     
@@ -134,14 +127,14 @@ void BitVector::filterSlow(const BitVector& other)
 {
     if (other.isInline()) {
         ASSERT(!isInline());
-        *bits() &= cleanseInlineBits(other.m_bitsOrPointer);
+        *bits() &= cleanseInlineBits(other.m_bits);
         return;
     }
     
     if (isInline()) {
         ASSERT(!other.isInline());
-        m_bitsOrPointer &= *other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (uintptr_t(1) << maxInlineBits());
+        m_bits &= *other.outOfLineBits()->bits();
+        m_bits |= (inline_storage_type(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }
@@ -159,14 +152,14 @@ void BitVector::excludeSlow(const BitVector& other)
 {
     if (other.isInline()) {
         ASSERT(!isInline());
-        *bits() &= ~cleanseInlineBits(other.m_bitsOrPointer);
+        *bits() &= ~cleanseInlineBits(other.m_bits);
         return;
     }
     
     if (isInline()) {
         ASSERT(!other.isInline());
-        m_bitsOrPointer &= ~*other.outOfLineBits()->bits();
-        m_bitsOrPointer |= (uintptr_t(1) << maxInlineBits());
+        m_bits &= ~*other.outOfLineBits()->bits();
+        m_bits |= (inline_storage_type(1) << maxInlineBits());
         ASSERT(isInline());
         return;
     }
