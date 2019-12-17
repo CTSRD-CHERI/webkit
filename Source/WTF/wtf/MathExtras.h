@@ -610,10 +610,18 @@ T opaque(T pointer)
 template<typename T>
 inline T* preciseIndexMaskPtr(uintptr_t index, uintptr_t length, T* value)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    if (index < length) {
+        return value;
+    } else {
+        return nullptr;
+    }
+#else
     uintptr_t result = bitwise_cast<uintptr_t>(value) & static_cast<uintptr_t>(
         static_cast<intptr_t>(index - opaque(length)) >>
         static_cast<intptr_t>(preciseIndexMaskShift<T*>()));
     return bitwise_cast<T*>(result);
+#endif
 }
 
 template<typename VectorType, typename RandomFunc>
