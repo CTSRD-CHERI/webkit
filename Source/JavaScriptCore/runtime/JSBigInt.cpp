@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2017 Caio Lima <ticaiolima@gmail.com>
  * Copyright (C) 2017-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -756,8 +757,13 @@ inline JSBigInt::Digit JSBigInt::digitDiv(Digit high, Digit low, Digit divisor, 
     // left operand". We mask the right operand of the shift by {shiftMask} (`digitBits - 1`), which makes `digitBits - 0` zero.
     // This shifting produces a value which covers 0 < {s} <= (digitBits - 1) cases. {s} == digitBits never happen as we asserted.
     // Since {sZeroMask} clears the value in the case of {s} == 0, {s} == 0 case is also covered.
+#ifdef __CHERI_PURE_CAPABILITY__
+    STATIC_ASSERT(sizeof(size_t) == sizeof(Digit));
+    Digit sZeroMask = static_cast<Digit>((-static_cast<size_t>(s)) >> (digitBits - 1));
+#else
     STATIC_ASSERT(sizeof(CPURegister) == sizeof(Digit));
     Digit sZeroMask = static_cast<Digit>((-static_cast<CPURegister>(s)) >> (digitBits - 1));
+#endif
     static constexpr unsigned shiftMask = digitBits - 1;
     Digit un32 = (high << s) | ((low >> ((digitBits - s) & shiftMask)) & sZeroMask);
 

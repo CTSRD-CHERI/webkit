@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2017 Caio Lima <ticaiolima@gmail.com>
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -135,7 +136,11 @@ public:
 
 private:
 
+#ifdef __CHERI_PURE_CAPABILITY__
+    using Digit = size_t;
+#else
     using Digit = UCPURegister;
+#endif
     static constexpr unsigned bitsPerByte = 8;
     static constexpr unsigned digitBits = sizeof(Digit) * bitsPerByte;
     static constexpr unsigned halfDigitBits = digitBits / 2;
