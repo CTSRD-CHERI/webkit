@@ -88,12 +88,18 @@ public:
             char* previousPointer = bitwise_cast<char*>(bitwise_cast<uintptr_t>(pointer) - sizeof(IndexingHeader) - 1);
             MarkedBlock* previousCandidate = MarkedBlock::blockFor(previousPointer);
 
-            bool isRuleOut = filter.ruleOut(bitwise_cast<Bits>(previousCandidate));
+#ifdef __CHERI_PURE_CAPABILITY__
+            size_t previousCandidateOffs = (__cheri_addr size_t) previousCandidate;
+
+            bool isRuleOut = filter.ruleOut(previousCandidateOffs);
 
             if (__builtin_cheri_tag_get(previousCandidate) == 0
                 || __builtin_cheri_base_get(previousCandidate) > __builtin_cheri_address_get(previousCandidate)) {
                 isRuleOut = true;
             }
+#else
+            bool isRuleOut = filter.ruleOut(bitwise_cast<size_t>(previousCandidate));
+#endif
 
             if (!isRuleOut
                 && set.contains(previousCandidate)
@@ -104,7 +110,15 @@ public:
             }
         }
     
-        if (filter.ruleOut(bitwise_cast<size_t>(candidate))) {
+#ifdef __CHERI_PURE_CAPABILITY__
+        size_t candidateOffs = (__cheri_addr size_t) candidate;
+
+        bool isRuleOut = filter.ruleOut(candidateOffs);
+#else
+        bool isRuleOut = filter.ruleOut(bitwise_cast<size_t>(candidate));
+#endif
+
+        if (isRuleOut) {
             ASSERT(!candidate || !set.contains(candidate));
             return;
         }
@@ -168,7 +182,15 @@ public:
         const HashSet<MarkedBlock*>& set = heap.objectSpace().blocks().set();
         
         MarkedBlock* candidate = MarkedBlock::blockFor(pointer);
-        if (filter.ruleOut(bitwise_cast<size_t>(candidate))) {
+#ifdef __CHERI_PURE_CAPABILITY__
+        size_t candidateOffs = (__cheri_addr size_t) candidate;
+
+        bool isRuleOut = filter.ruleOut(candidateOffs);
+#else
+        bool isRuleOut = filter.ruleOut(bitwise_cast<size_t>(candidate));
+#endif
+
+        if (isRuleOut) {
             ASSERT(!candidate || !set.contains(candidate));
             return false;
         }
