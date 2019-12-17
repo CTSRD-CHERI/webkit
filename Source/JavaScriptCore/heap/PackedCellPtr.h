@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +33,11 @@
 
 namespace JSC {
 
+#ifdef __CHERI_PURE_CAPABILITY__
+/* CHERI pointers can't be packed */
+template<typename T>
+using PackedCellPtr = T*;
+#else
 template<typename T>
 class PackedCellPtr : public PackedAlignedPtr<T, MarkedBlock::atomSize> {
 public:
@@ -43,5 +49,6 @@ public:
         ASSERT(!(bitwise_cast<uintptr_t>(pointer) & (16 - 1)));
     }
 };
+#endif
 
 } // namespace JSC
