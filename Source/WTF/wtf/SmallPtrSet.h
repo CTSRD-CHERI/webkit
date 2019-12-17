@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -130,7 +131,8 @@ public:
         {
             m_index++;
             ASSERT(m_index <= m_capacity);
-            while (m_index < m_capacity && m_buffer[m_index] == emptyValue())
+            while (m_index < m_capacity
+                   && !isValidEntry(reinterpret_cast<PtrType>(m_buffer[m_index])))
                 m_index++;
             return *this;
         }
@@ -179,12 +181,20 @@ public:
 private:
     constexpr static void* emptyValue()
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+        return nullptr;
+#else
         return bitwise_cast<void*>(std::numeric_limits<uintptr_t>::max());
+#endif
     }
 
-    bool isValidEntry(const PtrType ptr) const
+    static bool isValidEntry(const PtrType ptr)
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+	return __builtin_cheri_tag_get(ptr) != 0;
+#else
         return ptr != emptyValue();
+#endif
     }
 
     inline bool isSmall() const
@@ -203,8 +213,6 @@ private:
 
     inline void grow(unsigned size)
     {
-        ASSERT(static_cast<int32_t>(bitwise_cast<intptr_t>(emptyValue())) == -1);
-
         size_t allocationSize = sizeof(void*) * size;
         bool wasSmall = isSmall();
         void** oldBuffer = wasSmall ? m_smallStorage : m_buffer;
@@ -214,7 +222,7 @@ private:
         m_capacity = size;
 
         for (unsigned i = 0; i < oldCapacity; i++) {
-            if (oldBuffer[i] != emptyValue()) {
+            if (isValidEntry(reinterpret_cast<PtrType>(oldBuffer[i]))) {
                 void** ptr = this->bucket(static_cast<PtrType>(oldBuffer[i]));
                 *ptr = oldBuffer[i];
             }
@@ -232,7 +240,7 @@ private:
         unsigned index = 0;
         while (true) {
             void** ptr = m_buffer + bucket;
-            if (*ptr == emptyValue())
+            if (!isValidEntry(reinterpret_cast<PtrType>(*ptr)))
                 return ptr;
             if (*ptr == target)
                 return ptr;
