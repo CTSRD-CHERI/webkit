@@ -451,12 +451,16 @@ inline bool MarkedBlock::isAtomAligned(const void* p)
 
 inline void* MarkedBlock::Handle::cellAlign(void* p)
 {
-    uintptr_t base = reinterpret_cast<uintptr_t>(block().atoms());
-    uintptr_t bits = reinterpret_cast<uintptr_t>(p);
+    size_t base = reinterpret_cast<size_t>(block().atoms());
+    size_t bits = reinterpret_cast<size_t>(p);
     bits -= base;
     bits -= bits % cellSize();
     bits += base;
+#ifdef __CHERI_PURE_CAPABILITY__
+    return __builtin_cheri_cap_from_pointer(p, bits);
+#else
     return reinterpret_cast<void*>(bits);
+#endif
 }
 
 inline MarkedBlock* MarkedBlock::blockFor(const void* p)
