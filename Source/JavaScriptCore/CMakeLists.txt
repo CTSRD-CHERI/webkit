@@ -570,6 +570,7 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     heap/DeferGC.h
     heap/DeleteAllCodeEffort.h
     heap/DestructionMode.h
+    heap/ContinuousArenaAlignedMemoryAllocator.h
     heap/FastMallocAlignedMemoryAllocator.h
     heap/FreeList.h
     heap/FreeListInlines.h

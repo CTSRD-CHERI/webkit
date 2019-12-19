@@ -21,34 +21,29 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
  * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #pragma once
 
 #include "AlignedMemoryAllocator.h"
-#include "ContinuousArenaAlignedMemoryAllocator.h"
 
 namespace JSC {
 
-#if USE(CONTINUOUS_ARENA)
-using FastMallocAlignedMemoryAllocator = ContinuousArenaAlignedMemoryAllocator;
-#else // !USE(CONTINUOUS_ARENA)
-class FastMallocAlignedMemoryAllocator : public AlignedMemoryAllocator {
+class ContinuousArenaAlignedMemoryAllocator : public AlignedMemoryAllocator {
 public:
-    FastMallocAlignedMemoryAllocator();
-    ~FastMallocAlignedMemoryAllocator();
-    
+    ContinuousArenaAlignedMemoryAllocator();
+    ~ContinuousArenaAlignedMemoryAllocator();
+
     void* tryAllocateAlignedMemory(size_t alignment, size_t size) override;
     void freeAlignedMemory(void*) override;
-    
+
     void dump(PrintStream&) const override;
 
     void* tryAllocateMemory(size_t) override;
     void freeMemory(void*) override;
     void* tryReallocateMemory(void*, size_t) override;
 };
-#endif // !USE(CONTINUOUS_ARENA)
 
 } // namespace JSC
 

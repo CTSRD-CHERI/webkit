@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,8 +38,10 @@
 #include "DeleteAllCodeEffort.h"
 #include "ExceptionEventLocation.h"
 #include "ExecutableAllocator.h"
+#include "FastMallocAlignedMemoryAllocator.h"
 #include "FunctionHasExecutedCache.h"
 #include "FuzzerAgent.h"
+#include "GigacageAlignedMemoryAllocator.h"
 #include "Heap.h"
 #include "Integrity.h"
 #include "Intrinsic.h"
@@ -111,8 +114,6 @@ class CustomGetterSetter;
 class DOMAttributeGetterSetter;
 class Exception;
 class ExceptionScope;
-class FastMallocAlignedMemoryAllocator;
-class GigacageAlignedMemoryAllocator;
 class HandleStack;
 class TypeProfiler;
 class TypeProfilerLog;

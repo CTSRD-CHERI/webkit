@@ -21,34 +21,55 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
  * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include "AlignedMemoryAllocator.h"
+#include "config.h"
 #include "ContinuousArenaAlignedMemoryAllocator.h"
+#include <wtf/ContinuousArenaMalloc.h>
+
+#if USE(CONTINUOUS_ARENA)
 
 namespace JSC {
 
-#if USE(CONTINUOUS_ARENA)
-using FastMallocAlignedMemoryAllocator = ContinuousArenaAlignedMemoryAllocator;
-#else // !USE(CONTINUOUS_ARENA)
-class FastMallocAlignedMemoryAllocator : public AlignedMemoryAllocator {
-public:
-    FastMallocAlignedMemoryAllocator();
-    ~FastMallocAlignedMemoryAllocator();
-    
-    void* tryAllocateAlignedMemory(size_t alignment, size_t size) override;
-    void freeAlignedMemory(void*) override;
-    
-    void dump(PrintStream&) const override;
+ContinuousArenaAlignedMemoryAllocator::ContinuousArenaAlignedMemoryAllocator()
+{
+}
 
-    void* tryAllocateMemory(size_t) override;
-    void freeMemory(void*) override;
-    void* tryReallocateMemory(void*, size_t) override;
-};
-#endif // !USE(CONTINUOUS_ARENA)
+ContinuousArenaAlignedMemoryAllocator::~ContinuousArenaAlignedMemoryAllocator()
+{
+}
+
+void* ContinuousArenaAlignedMemoryAllocator::tryAllocateAlignedMemory(size_t alignment, size_t size)
+{
+    return WTF::ContinuousArenaMalloc::tryAlignedMalloc(alignment, size);
+}
+
+void ContinuousArenaAlignedMemoryAllocator::freeAlignedMemory(void* basePtr)
+{
+    WTF::ContinuousArenaMalloc::alignedFree(basePtr);
+}
+
+void ContinuousArenaAlignedMemoryAllocator::dump(PrintStream& out) const
+{
+    out.print("ContinuousArenaMalloc");
+}
+
+void* ContinuousArenaAlignedMemoryAllocator::tryAllocateMemory(size_t size)
+{
+    return WTF::ContinuousArenaMalloc::tryMalloc(size);
+}
+
+void ContinuousArenaAlignedMemoryAllocator::freeMemory(void* pointer)
+{
+    WTF::ContinuousArenaMalloc::free(pointer);
+}
+
+void* ContinuousArenaAlignedMemoryAllocator::tryReallocateMemory(void* pointer, size_t size)
+{
+    return WTF::ContinuousArenaMalloc::tryRealloc(pointer, size);
+}
 
 } // namespace JSC
 
+#endif // USE(CONTINUOUS_ARENA)

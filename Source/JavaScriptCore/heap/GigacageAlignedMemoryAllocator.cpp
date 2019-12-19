@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #include "config.h"
 #include "GigacageAlignedMemoryAllocator.h"
 
+#if !USE(CONTINUOUS_ARENA)
 namespace JSC {
 
 GigacageAlignedMemoryAllocator::GigacageAlignedMemoryAllocator(Gigacage::Kind kind)
@@ -68,4 +70,5 @@ void* GigacageAlignedMemoryAllocator::tryReallocateMemory(void* pointer, size_t 
 }
 
 } // namespace JSC
+#endif // !USE(CONTINUOUS_ARENA)
 

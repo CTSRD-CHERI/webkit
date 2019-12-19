@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 #include <cmath>
 #include <cstring>
 #include <thread>
+#include <wtf/ContinuousArenaMalloc.h>
 #include <wtf/DateMath.h>
 #include <wtf/PrintStream.h>
 #include <wtf/RandomNumberSeed.h>
@@ -337,6 +339,10 @@ void initializeThreading()
 #endif
         initializeDates();
         Thread::initializePlatformThreading();
+
+#if USE(CONTINUOUS_ARENA)
+        ContinuousArenaMalloc::initialize();
+#endif // USE(CONTINUOUS_ARENA)
     });
 }
 

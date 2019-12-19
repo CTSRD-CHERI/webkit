@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,10 +27,17 @@
 #pragma once
 
 #include "AlignedMemoryAllocator.h"
+#include "ContinuousArenaAlignedMemoryAllocator.h"
 #include <wtf/Gigacage.h>
 
 namespace JSC {
 
+#if USE(CONTINUOUS_ARENA)
+class GigacageAlignedMemoryAllocator : public ContinuousArenaAlignedMemoryAllocator {
+public:
+    GigacageAlignedMemoryAllocator(Gigacage::Kind) : ContinuousArenaAlignedMemoryAllocator() {}
+};
+#else // !USE(CONTINUOUS_ARENA)
 class GigacageAlignedMemoryAllocator : public AlignedMemoryAllocator {
 public:
     GigacageAlignedMemoryAllocator(Gigacage::Kind);
@@ -47,6 +55,7 @@ public:
 private:
     Gigacage::Kind m_kind;
 };
+#endif // !USE(CONTINUOUS_ARENA)
 
 } // namespace JSC
 

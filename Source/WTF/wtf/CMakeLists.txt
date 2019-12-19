@@ -61,6 +61,7 @@ set(WTF_PUBLIC_HEADERS
     ExportMacros.h
     FastBitVector.h
     FastMalloc.h
+    ContinuousArenaMalloc.h
     FastTLS.h
     FeatureDefines.h
     FileMetadata.h
@@ -364,6 +365,7 @@ set(WTF_SOURCES
     DateMath.cpp
     FastBitVector.cpp
     FastMalloc.cpp
+    ContinuousArenaMalloc.cpp
     FilePrintStream.cpp
     FileSystem.cpp
     FunctionDispatcher.cpp
