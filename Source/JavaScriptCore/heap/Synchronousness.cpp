@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,17 +29,15 @@
 
 #include <wtf/PrintStream.h>
 
-using namespace JSC;
-
 namespace WTF {
 
-void printInternal(PrintStream& out, Synchronousness synchronousness)
+void printInternal(PrintStream& out, JSC::Synchronousness synchronousness)
 {
     switch (synchronousness) {
-    case Async:
+    case JSC::Async:
         out.print("Async");
         return;
-    case Sync:
+    case JSC::Sync:
         out.print("Sync");
         return;
     }
