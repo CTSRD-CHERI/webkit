@@ -176,13 +176,13 @@ inline JSValue::JSValue(double d)
 
 inline EncodedJSValue JSValue::encode(JSValue value)
 {
-    return value.u.asInt64;
+    return value.u.asEncodedJSValue;
 }
 
 inline JSValue JSValue::decode(EncodedJSValue encodedJSValue)
 {
     JSValue v;
-    v.u.asInt64 = encodedJSValue;
+    v.u.asEncodedJSValue = encodedJSValue;
     return v;
 }
 
@@ -261,12 +261,12 @@ inline JSValue::operator bool() const
 
 inline bool JSValue::operator==(const JSValue& other) const
 {
-    return u.asInt64 == other.u.asInt64;
+    return u.asEncodedJSValue == other.u.asEncodedJSValue;
 }
 
 inline bool JSValue::operator!=(const JSValue& other) const
 {
-    return u.asInt64 != other.u.asInt64;
+    return u.asEncodedJSValue != other.u.asEncodedJSValue;
 }
 
 inline bool JSValue::isEmpty() const
@@ -381,45 +381,45 @@ inline bool JSValue::asBoolean() const
 // 0x0 can never occur naturally because it has a tag of 00, indicating a pointer value, but a payload of 0x0, which is in the (invalid) zero page.
 inline JSValue::JSValue()
 {
-    u.asInt64 = ValueEmpty;
+    u.asEncodedJSValue = ValueEmpty;
 }
 
 // 0x4 can never occur naturally because it has a tag of 00, indicating a pointer value, but a payload of 0x4, which is in the (invalid) zero page.
 inline JSValue::JSValue(HashTableDeletedValueTag)
 {
-    u.asInt64 = ValueDeleted;
+    u.asEncodedJSValue = ValueDeleted;
 }
 
 inline JSValue::JSValue(JSCell* ptr)
 {
     //LOG_CHERI("Creating JSValue from ptr: %p\n", ptr);
-    u.asInt64 = reinterpret_cast<uintptr_t>(ptr);
+    u.asEncodedJSValue = reinterpret_cast<uintptr_t>(ptr);
 }
 
 inline JSValue::JSValue(const JSCell* ptr)
 {
     //LOG_CHERI("Creating JSValue from const ptr: %p\n", ptr);
-    u.asInt64 = reinterpret_cast<uintptr_t>(const_cast<JSCell*>(ptr));
+    u.asEncodedJSValue = reinterpret_cast<uintptr_t>(const_cast<JSCell*>(ptr));
 }
 
 inline JSValue::operator bool() const
 {
-    return u.asInt64;
+    return u.asEncodedJSValue;
 }
 
 inline bool JSValue::operator==(const JSValue& other) const
 {
-    return u.asInt64 == other.u.asInt64;
+    return u.asEncodedJSValue == other.u.asEncodedJSValue;
 }
 
 inline bool JSValue::operator!=(const JSValue& other) const
 {
-    return u.asInt64 != other.u.asInt64;
+    return u.asEncodedJSValue != other.u.asEncodedJSValue;
 }
 
 inline bool JSValue::isEmpty() const
 {
-    return u.asInt64 == ValueEmpty;
+    return u.asEncodedJSValue == ValueEmpty;
 }
 
 inline bool JSValue::isUndefined() const
@@ -451,20 +451,13 @@ inline bool JSValue::asBoolean() const
 inline int32_t JSValue::asInt32() const
 {
     ASSERT(isInt32());
-    return static_cast<int32_t>(u.asInt64);
+    return static_cast<int32_t>(u.asEncodedJSValue);
 }
 
-#ifdef __CHERI_PURE_CAPABILITY__
-inline __intcap_t JSValue::asInt64() const
+inline EncodedJSValue JSValue::asEncodedJSValue() const
 {
-    return u.asInt64;
+    return u.asEncodedJSValue;
 }
-#else
-inline int64_t JSValue::asInt64() const
-{
-    return u.asInt64;
-}
-#endif
 
 inline bool JSValue::isDouble() const
 {
@@ -473,42 +466,42 @@ inline bool JSValue::isDouble() const
 
 inline JSValue::JSValue(JSNullTag)
 {
-    u.asInt64 = ValueNull;
+    u.asEncodedJSValue = ValueNull;
 }
     
 inline JSValue::JSValue(JSUndefinedTag)
 {
-    u.asInt64 = ValueUndefined;
+    u.asEncodedJSValue = ValueUndefined;
 }
 
 inline JSValue::JSValue(JSTrueTag)
 {
-    u.asInt64 = ValueTrue;
+    u.asEncodedJSValue = ValueTrue;
 }
 
 inline JSValue::JSValue(JSFalseTag)
 {
-    u.asInt64 = ValueFalse;
+    u.asEncodedJSValue = ValueFalse;
 }
 
 inline bool JSValue::isUndefinedOrNull() const
 {
     // Undefined and null share the same value, bar the 'undefined' bit in the extended tag.
-    return WTF::Pointer::clearLowBits<UndefinedTag>(u.asInt64) == ValueNull;
+    return WTF::Pointer::clearLowBits<UndefinedTag>(u.asEncodedJSValue) == ValueNull;
 }
 
 inline bool JSValue::isBoolean() const
 {
-    return WTF::Pointer::clearLowBits<1>(u.asInt64) == ValueFalse;
+    return WTF::Pointer::clearLowBits<1>(u.asEncodedJSValue) == ValueFalse;
 }
 
 inline bool JSValue::isCell() const
 {
 #ifdef __CHERI_PURE_CAPABILITY__ //XXXKG: need to do bitwise-and with the virtual address
-    //LOG_CHERI("JSValue::isCell(), u.asInt64: %p, cheri_addr_get: %ld, TagMask: %lx\n, bitwise-and (direct): %p, bitwise-and (w/ addr): %ld\n", u.asInt64, __builtin_cheri_address_get(u.ptr), TagMask, u.asInt64 & TagMask, __builtin_cheri_address_get(u.ptr) & TagMask);
+    //LOG_CHERI("JSValue::isCell(), u.asEncodedJSValue: %p, cheri_addr_get: %ld, TagMask: %lx\n, bitwise-and (direct): %p, bitwise-and (w/ addr): %ld\n", u.asEncodedJSValue, __builtin_cheri_address_get(u.ptr), TagMask, u.asEncodedJSValue & TagMask, __builtin_cheri_address_get(u.ptr) & TagMask);
     return !(__builtin_cheri_address_get(u.ptr) & NotCellMask);
 #else
-    return !(u.asInt64 & NotCellMask);
+    return !(u.asEncodedJSValue & NotCellMask);
 #endif
 }
 
@@ -517,7 +510,7 @@ inline bool JSValue::isInt32() const
 #ifdef __CHERI_PURE_CAPABILITY__
     return (__builtin_cheri_address_get(u.ptr) & NumberTag) == NumberTag;
 #else
-    return (u.asInt64 & NumberTag) == NumberTag;
+    return (u.asEncodedJSValue & NumberTag) == NumberTag;
 #endif
 }
 
@@ -536,14 +529,14 @@ ALWAYS_INLINE JSValue::JSValue(EncodeAsDoubleTag, double d)
     if (isImpureNaN(d))
         d = purifyNaN(d);
     ASSERT(!isImpureNaN(d));
-    u.asInt64 = reinterpretDoubleToInt64(d) + JSValue::DoubleEncodeOffset;
-    //LOG_CHERI("storing %f as %p, isImpureNaN? %d", d, u.asInt64, isImpureNaN(d));
+    u.asEncodedJSValue = reinterpretDoubleToInt64(d) + JSValue::DoubleEncodeOffset;
+    //LOG_CHERI("storing %f as %p, isImpureNaN? %d", d, u.asEncodedJSValue, isImpureNaN(d));
 }
 
 inline JSValue::JSValue(int i)
 {
-    //LOG_CHERI("Setting u.asInt64 to %d (%p)\n", TagTypeNumber | static_cast<uint32_t>(i), intptr_t(TagTypeNumber | static_cast<uint32_t>(i)));
-    u.asInt64 = JSValue::NumberTag | static_cast<uint32_t>(i);
+    //LOG_CHERI("Setting u.asEncodedJSValue to %d (%p)\n", TagTypeNumber | static_cast<uint32_t>(i), intptr_t(TagTypeNumber | static_cast<uint32_t>(i)));
+    u.asEncodedJSValue = JSValue::NumberTag | static_cast<uint32_t>(i);
 }
 
 inline double JSValue::asDouble() const
@@ -552,7 +545,7 @@ inline double JSValue::asDouble() const
 #ifdef __CHERI_PURE_CAPABILITY__
     return reinterpretInt64ToDouble(__builtin_cheri_address_get(u.ptr) - JSValue::DoubleEncodeOffset);
 #else
-    return reinterpretInt64ToDouble(u.asInt64 - JSValue::DoubleEncodeOffset);
+    return reinterpretInt64ToDouble(u.asEncodedJSValue - JSValue::DoubleEncodeOffset);
 #endif
 }
 
@@ -561,7 +554,7 @@ inline bool JSValue::isNumber() const
 #ifdef __CHERI_PURE_CAPABILITY__
     return __builtin_cheri_address_get(u.ptr) & JSValue::NumberTag;
 #else
-    return u.asInt64 & JSValue::NumberTag;
+    return u.asEncodedJSValue & JSValue::NumberTag;
 #endif
 }
 

@@ -479,7 +479,7 @@ JSValue CLoop::execute(OpcodeID entryOpcodeID, void* executableAddress, VM* vm, 
             return JSValue(t1.i(), t0.i()); // returning JSValue(tag, payload);
 #else
             JSValue ret = JSValue::decode(t0.encodedJSValue());
-            LOG_CHERI("ret: %p\n", (void*)ret.u.asInt64);
+            LOG_CHERI("ret: %p\n", (void*)ret.asEncodedJSValue());
             LOG_CHERI("startCFR: %p, cfr.callFrame: %p\n", startCFR, cfr.callFrame());
             return ret;
 #endif

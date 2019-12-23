@@ -94,11 +94,7 @@ typedef int64_t EncodedJSValue;
 #endif
     
 union EncodedValueDescriptor {
-#ifdef __CHERI_PURE_CAPABILITY__
-    __intcap_t asInt64;
-#else
-    int64_t asInt64;
-#endif
+    EncodedJSValue asEncodedJSValue;
 #if USE(JSVALUE32_64)
     double asDouble;
 #elif USE(JSVALUE64)
@@ -224,11 +220,7 @@ public:
     bool isFalse() const;
 
     int32_t asInt32() const;
-#ifdef __CHERI_PURE_CAPABILITY__
-    __intcap_t asInt64() const;
-#else
-    int64_t asInt64() const;
-#endif
+    EncodedJSValue asEncodedJSValue() const;
     uint32_t asUInt32() const;
     int64_t asAnyInt() const;
     uint32_t asUInt32AsAnyInt() const;

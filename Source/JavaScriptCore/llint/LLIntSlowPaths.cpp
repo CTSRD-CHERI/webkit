@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -765,7 +766,7 @@ LLINT_SLOW_PATH_DECL(slow_path_get_by_id)
     const Identifier& ident = codeBlock->identifier(bytecode.m_property);
     JSValue baseValue = getOperand(callFrame, bytecode.m_base);
     LOG_CHERI("[slow_path_get_by_id]: %s\n", ident.utf8().data());
-    LOG_CHERI("   baseValue: %p\n", (void*)baseValue.asInt64());
+    LOG_CHERI("   baseValue: %p\n", (void*)baseValue.asEncodedJSValue());
     LOG_CHERI("   baseValue.isCell(): %d\n", baseValue.isCell());
     LOG_CHERI("   baseValue.isObject(): %d\n", baseValue.isObject());
     LOG_CHERI("   codeBlock: %p\n", codeBlock);
@@ -773,7 +774,7 @@ LLINT_SLOW_PATH_DECL(slow_path_get_by_id)
     PropertySlot slot(baseValue, PropertySlot::PropertySlot::InternalMethodType::Get);
 
     JSValue result = baseValue.get(globalObject, ident, slot);
-    LOG_CHERI("   result: %p\n", (void*)result.asInt64());
+    LOG_CHERI("   result: %p\n", (void*)result.asEncodedJSValue());
     LLINT_CHECK_EXCEPTION();
     callFrame->uncheckedR(bytecode.m_dst) = result;
     
