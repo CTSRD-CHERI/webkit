@@ -31,6 +31,8 @@ namespace WTF {
 template <typename T> class PlainPtr {
     WTF_MAKE_FAST_ALLOCATED;
 public:
+    typedef uintptr_t integer_t;
+
     PlainPtr() =default;
     ALWAYS_INLINE PlainPtr(T* ptr) {
         *this = ptr;

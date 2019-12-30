@@ -64,7 +64,7 @@ bool isJSString(JSCell*);
 bool isJSString(JSValue);
 JSString* asString(JSValue);
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 /*
  * Compact fibers aren't supported.
  */
@@ -280,13 +280,16 @@ public:
     static_assert(isRopeInPointer == 0b001, "");
     static constexpr unsigned invStringMask = (isRopeInPointer | is8BitInPointer | isSubstringInPointer);
 #if CPU(ADDRESS64)
+    typedef HeapPtr<JSString> JSStringPtr_t;
+    typedef JSStringPtr_t::integer_t JSStringIntPtr_t;
+
 #if !NON_COMPACT_FIBERS
-    static_assert(sizeof(uintptr_t) == sizeof(uint64_t), "");
+    static_assert(sizeof(JSStringPtr_t) == sizeof(uint64_t), "");
 #endif
     class CompactFibers {
     public:
 #if !NON_COMPACT_FIBERS
-        static constexpr uintptr_t addressMask = (1ULL << WTF_CPU_EFFECTIVE_ADDRESS_WIDTH) - 1;
+        static constexpr JSStringIntPtr_t addressMask = (1ULL << WTF_CPU_EFFECTIVE_ADDRESS_WIDTH) - 1;
 #endif
         JSString* fiber1() const
         {
@@ -294,16 +297,17 @@ public:
             return bitwise_cast<JSString*>(m_fiber1);
 #else
 #if CPU(LITTLE_ENDIAN)
-            return bitwise_cast<JSString*>(WTF::unalignedLoad<uintptr_t>(&m_fiber1Lower) & addressMask);
+            return bitwise_cast<JSStringPtr_t>(WTF::unalignedLoad<JSStringIntPtr_t>(&m_fiber1Lower) & addressMask);
 #else
-            return bitwise_cast<JSString*>(static_cast<uintptr_t>(m_fiber1Lower) | (static_cast<uintptr_t>(m_fiber1Upper) << 32));
+            return bitwise_cast<JSStringPtr_t>(static_cast<JSStringIntPtr_t>(m_fiber1Lower)
+                                               | (static_cast<JSStringIntPtr_t>(m_fiber1Upper) << 32));
 #endif
 #endif
         }
 
-        void initializeFiber1(JSString* fiber)
+        void initializeFiber1(HeapPtr<JSString> fiber)
         {
-            uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
+            JSStringIntPtr_t pointer = bitwise_cast<JSStringIntPtr_t>(fiber);
 
 #if NON_COMPACT_FIBERS
            m_fiber1 = pointer;
@@ -322,15 +326,16 @@ public:
             // This access exceeds the sizeof(JSRopeString). But this is OK because JSRopeString is always allocated in MarkedBlock,
             // and the last JSRopeString cell in the block has some subsequent bytes which are used for MarkedBlock::Footer.
             // So the following access does not step over the page boundary in which the latter page does not have read permission.
-            return bitwise_cast<JSString*>(WTF::unalignedLoad<uintptr_t>(&m_fiber2Lower) & addressMask);
+            return bitwise_cast<JSStringPtr_t>(WTF::unalignedLoad<JSStringIntPtr_t>(&m_fiber2Lower) & addressMask);
 #else
-            return bitwise_cast<JSString*>(static_cast<uintptr_t>(m_fiber2Lower) | (static_cast<uintptr_t>(m_fiber2Upper) << 16));
+            return bitwise_cast<JSStringPtr_t>(static_cast<JSStringIntPtr_t>(m_fiber2Lower)
+                                               | (static_cast<JSStringIntPtr_t>(m_fiber2Upper) << 16));
 #endif
 #endif
         }
-        void initializeFiber2(JSString* fiber)
+        void initializeFiber2(HeapPtr<JSString> fiber)
         {
-            uintptr_t pointer = bitwise_cast<uintptr_t>(fiber);
+            JSStringIntPtr_t pointer = bitwise_cast<JSStringIntPtr_t>(fiber);
 
 #if NON_COMPACT_FIBERS
            m_fiber2 = pointer;
@@ -373,7 +378,7 @@ public:
 #if NON_COMPACT_FIBERS
     static_assert(sizeof(CompactFibers) == sizeof(void*) * 3, "");
 #else
-    static_assert(sizeof(CompactFibers) == sizeof(void*) * 2, "");
+    static_assert(sizeof(CompactFibers) == sizeof(JSStringPtr_t) * 2, "");
 #endif
 #else
     class CompactFibers {

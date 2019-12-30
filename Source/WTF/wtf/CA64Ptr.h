@@ -39,6 +39,8 @@ namespace WTF {
 template <typename T> class CA64Ptr {
     WTF_MAKE_FAST_ALLOCATED;
 public:
+    typedef uint64_t integer_t;
+
     CA64Ptr() =default;
     ALWAYS_INLINE CA64Ptr(T* ptr) {
         *this = ptr;
