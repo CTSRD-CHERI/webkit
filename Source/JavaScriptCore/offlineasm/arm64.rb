@@ -281,7 +281,7 @@ def arm64LowerLabelReferences(list)
         | node |
         if node.is_a? Instruction
             case node.opcode
-            when "loadi", "loadis", "loadp", "loadq", "loadb", "loadbsi", "loadbsq", "loadh", "loadhsi", "loadhsq", "leap"
+            when "loadi", "loadis", "loadp", "loadq", "loadv", "loadvmc", "loadb", "loadbsi", "loadbsq", "loadh", "loadhsi", "loadhsq", "leap"
                 labelRef = node.operands[0]
                 if labelRef.is_a? LabelReference
                     tmp = Tmp.new(node.codeOrigin, :gpr)
@@ -390,6 +390,8 @@ class Sequence
                 "divd", "subd", "muld", "sqrtd", /^bp/, /^bq/, /^btp/, /^btq/, /^cp/, /^cq/, /^tp/, /^tq/, /^bd/,
                 "jmp", "call", "leap", "leaq", "printp"
                 size = $currentSettings["ADDRESS64"] ? 8 : 4
+            when "loadv", "loadvmc", "storev"
+                size = 8
             else
                 raise "Bad instruction #{node.opcode} for heap access at #{node.codeOriginString}: #{node.dump}"
             end
@@ -403,7 +405,7 @@ class Sequence
                 false
             end
         }
-        result = riscLowerMisplacedImmediates(result, ["storeb", "storei", "storep", "storeq"])
+        result = riscLowerMisplacedImmediates(result, ["storeb", "storei", "storep", "storeq", "storev"])
         result = riscLowerMalformedImmediates(result, 0..4095)
         result = riscLowerMisplacedAddresses(result)
         result = riscLowerMalformedAddresses(result) {
@@ -706,11 +708,17 @@ class Instruction
             emitARM64Access("ldr", "ldur", operands[1], operands[0], :ptr)
         when "loadq"
             emitARM64Access("ldr", "ldur", operands[1], operands[0], :quad)
+        when "loadv"
+            emitARM64Access("ldr", "ldur", operands[1], operands[0], :quad)
+        when "loadvmc"
+            emitARM64Access("ldr", "ldur", operands[1], operands[0], :quad)
         when "storei"
             emitARM64Unflipped("str", operands, :word)
         when "storep"
             emitARM64Unflipped("str", operands, :ptr)
         when "storeq"
+            emitARM64Unflipped("str", operands, :quad)
+        when "storev"
             emitARM64Unflipped("str", operands, :quad)
         when "loadb"
             emitARM64Access("ldrb", "ldurb", operands[1], operands[0], :word)

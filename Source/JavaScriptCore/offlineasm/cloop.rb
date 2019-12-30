@@ -791,6 +791,12 @@ class Instruction
         when "stored"
             $asm.putc "#{operands[1].dblMemRef} = #{operands[0].clValue(:double)};"
 
+        when "loadv"
+            $asm.putc "LOG_CHERI(\"Load JS Value\");"
+            $asm.putc "#{operands[1].clLValue(:intptr)} = #{operands[0].intptrMemRef};"
+        when "storev"
+            $asm.putc "LOG_CHERI(\"Store JS Value\");"
+            $asm.putc "#{operands[1].intptrMemRef} = #{operands[0].clValue(:intptr)};"
         when "addd"
             cloopEmitOperation(operands, :double, "+")
         when "divd"
