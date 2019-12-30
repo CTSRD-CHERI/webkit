@@ -23,6 +23,7 @@ set(WTF_PUBLIC_HEADERS
     BumpPointerAllocator.h
     ByteOrder.h
     CPUTime.h
+    CA64Ptr.h
     CagedPtr.h
     CagedUniquePtr.h
     CallbackAggregator.h

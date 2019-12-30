@@ -922,7 +922,7 @@ macro getFrameRegisterSizeForCodeBlock(codeBlock, size)
 end
 
 macro restoreStackPointerAfterCall()
-    loadv CodeBlock[cfr], t2
+    loadvmc CodeBlock[cfr], t2
     getFrameRegisterSizeForCodeBlock(t2, t2)
     if ARMv7
         subp cfr, t2, t2
@@ -987,7 +987,7 @@ macro prepareForTailCall(callee, temp1, temp2, temp3, callPtrTag)
     restoreCalleeSavesUsedByLLInt()
 
     loadi PayloadOffset + ArgumentCount[cfr], temp2
-    loadv CodeBlock[cfr], temp1
+    loadvmc CodeBlock[cfr], temp1
     loadi CodeBlock::m_numParameters[temp1], temp1
     bilteq temp1, temp2, .noArityFixup
     move temp1, temp2
@@ -1085,7 +1085,7 @@ macro notifyWrite(set, slow)
 end
 
 macro checkSwitchToJIT(increment, action)
-    loadv CodeBlock[cfr], t0
+    loadvmc CodeBlock[cfr], t0
     baddis increment, CodeBlock::m_llintExecuteCounter + BaselineExecutionCounter::m_counter[t0], .continue
     action()
     .continue:
@@ -1107,28 +1107,28 @@ end
 
 macro functionForCallCodeBlockGetter(targetRegister)
     if JSVALUE64
-        loadv Callee[cfr], targetRegister
+        loadvmc Callee[cfr], targetRegister
     else
         loadp Callee + PayloadOffset[cfr], targetRegister
     end
-    loadv JSFunction::m_executable[targetRegister], targetRegister
-    loadv FunctionExecutable::m_codeBlockForCall[targetRegister], targetRegister
-    loadv ExecutableToCodeBlockEdge::m_codeBlock[targetRegister], targetRegister
+    loadvmc JSFunction::m_executable[targetRegister], targetRegister
+    loadvmc FunctionExecutable::m_codeBlockForCall[targetRegister], targetRegister
+    loadvmc ExecutableToCodeBlockEdge::m_codeBlock[targetRegister], targetRegister
 end
 
 macro functionForConstructCodeBlockGetter(targetRegister)
     if JSVALUE64
-        loadv Callee[cfr], targetRegister
+        loadvmc Callee[cfr], targetRegister
     else
         loadp Callee + PayloadOffset[cfr], targetRegister
     end
-    loadv JSFunction::m_executable[targetRegister], targetRegister
-    loadv FunctionExecutable::m_codeBlockForConstruct[targetRegister], targetRegister
-    loadv ExecutableToCodeBlockEdge::m_codeBlock[targetRegister], targetRegister
+    loadvmc JSFunction::m_executable[targetRegister], targetRegister
+    loadvmc FunctionExecutable::m_codeBlockForConstruct[targetRegister], targetRegister
+    loadvmc ExecutableToCodeBlockEdge::m_codeBlock[targetRegister], targetRegister
 end
 
 macro notFunctionCodeBlockGetter(targetRegister)
-    loadv CodeBlock[cfr], targetRegister
+    loadvmc CodeBlock[cfr], targetRegister
 end
 
 macro functionCodeBlockSetter(sourceRegister)
@@ -1757,7 +1757,7 @@ end)
 
 
 llintOp(op_check_traps, OpCheckTraps, macro (unused, unused, dispatch)
-    loadv CodeBlock[cfr], t1
+    loadvmc CodeBlock[cfr], t1
     loadp CodeBlock::m_vm[t1], t1
     loadb VM::m_traps+VMTraps::m_needTrapHandling[t1], t0
     btpnz t0, .handleTraps
@@ -1773,7 +1773,7 @@ end)
 
 # Returns the packet pointer in t0.
 macro acquireShadowChickenPacket(slow)
-    loadv CodeBlock[cfr], t1
+    loadvmc CodeBlock[cfr], t1
     loadp CodeBlock::m_vm[t1], t1
     loadp VM::m_shadowChicken[t1], t2
     loadp ShadowChicken::m_logCursor[t2], t0
@@ -1812,7 +1812,7 @@ callOp(construct, OpConstruct, prepareForRegularCall, macro (getu, metadata) end
 
 macro doCallVarargs(opcodeName, size, opcodeStruct, dispatch, frameSlowPath, slowPath, prepareCall)
     callSlowPath(frameSlowPath)
-    loadv CodeBlock[cfr], t3
+    loadvmc CodeBlock[cfr], t3
     loadp CodeBlock::m_vm[t3], t3
     btpz VM::m_exception[t3], .noException
     jmp _llint_throw_from_slow_path_trampoline
@@ -1942,7 +1942,7 @@ end)
 
 
 llintOp(op_debug, OpDebug, macro (unused, unused, dispatch)
-    loadv CodeBlock[cfr], t0
+    loadvmc CodeBlock[cfr], t0
     loadi CodeBlock::m_debuggerRequests[t0], t0
     btiz t0, .opDebugDone
     callSlowPath(_llint_slow_path_debug)

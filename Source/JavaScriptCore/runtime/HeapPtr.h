@@ -27,12 +27,19 @@
 
 #pragma once
 
+#include "config.h"
+
+#include <wtf/CA64Ptr.h>
 #include <wtf/PlainPtr.h>
 
 namespace JSC {
 
 template<typename T>
+#if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    using HeapPtr = CA64Ptr<T>;
+#else /* __CHERI_PURE_CAPABILITY__ && !ENABLE(JSHEAP_CHERI_OFFSET_REFS) */
     using HeapPtr = PlainPtr<T>;
+#endif /* __CHERI_PURE_CAPABILITY__ && !ENABLE(JSHEAP_CHERI_OFFSET_REFS) */
 
 template<typename T>
 struct HeapPtrTraits {

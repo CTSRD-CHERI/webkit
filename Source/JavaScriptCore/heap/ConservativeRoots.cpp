@@ -72,7 +72,11 @@ inline void ConservativeRoots::genericAddPointer(const HeapPtr<char>& heapPtr, H
     char *p = nullptr;
 
 #if defined(__CHERI_PURE_CAPABILITY__)
+#if ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    p = heapPtr.tryGet();
+#else
     p = heapPtr.get();
+#endif
 
     // Check if this is a valid capability
     if (!__builtin_cheri_tag_get(p))

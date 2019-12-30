@@ -88,7 +88,7 @@ struct CallData;
 enum class ConstructType : unsigned;
 struct ConstructData;
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 typedef __intcap_t EncodedJSValue;
 #else
 typedef int64_t EncodedJSValue;
@@ -101,11 +101,11 @@ union EncodedValueDescriptor {
 #elif USE(JSVALUE64)
     HeapPtr<JSCell> ptr;
 #endif
-        
+
 #if CPU(BIG_ENDIAN)
     struct {
         int32_t tag;
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
         int32_t i32padding[(sizeof(__uintcap_t) / sizeof(int32_t))-2];
 #endif
         int32_t payload;
@@ -113,7 +113,7 @@ union EncodedValueDescriptor {
 #else
     struct {
         int32_t payload;
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
         int32_t i32padding[(sizeof(__uintcap_t) / sizeof(int32_t))-2];
 #endif
         int32_t tag;

@@ -198,7 +198,7 @@ public:
     ALWAYS_INLINE double bitsAsDouble() const {
         uint64_t value;
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
         value = __builtin_cheri_address_get(i8p());
 #else
         value = m_value;
@@ -209,7 +209,7 @@ public:
     ALWAYS_INLINE int64_t bitsAsInt64() const {
         uint64_t value;
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
         value = __builtin_cheri_address_get(i8p());
 #else
         value = m_value;

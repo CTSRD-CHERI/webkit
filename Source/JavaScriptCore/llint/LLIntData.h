@@ -54,7 +54,15 @@ public:
     static void performAssertions(VM&);
 
 #if USE(JSVALUE64)
+#if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+#if __UINTCAP_WIDTH__ == 128
+    static constexpr ptrdiff_t CallFrameHeaderSlots = 7;
+#else // __UINTCAP_WIDTH__ != 128
+    static constexpr ptrdiff_t CallFrameHeaderSlots = 11;
+#endif // __UINTCAP_WIDTH__ != 128
+#else // !__CHERI_PURE_CAPABILITY__ || !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
     static constexpr ptrdiff_t CallFrameHeaderSlots = 5;
+#endif // !__CHERI_PURE_CAPABILITY__ || !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 #else // !USE(JSVALUE64) // i.e. 32-bit version
     const ptrdiff_t CallFrameHeaderSlots = 4;
 #endif // !USE(JSVALUE64)

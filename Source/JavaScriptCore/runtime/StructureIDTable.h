@@ -32,7 +32,7 @@
 #include <wtf/Vector.h>
 #include <wtf/WeakRandom.h>
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 #define ENCODE_STRUCTURE_BITS 0
 #else
 #define ENCODE_STRUCTURE_BITS 1

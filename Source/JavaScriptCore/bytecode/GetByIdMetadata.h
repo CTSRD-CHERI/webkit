@@ -62,7 +62,7 @@ struct GetByIdModeMetadataProtoLoad {
     HeapPtr<JSObject> cachedSlot;
 };
 #if CPU(LITTLE_ENDIAN) && CPU(ADDRESS64)
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 static_assert(sizeof(GetByIdModeMetadataProtoLoad) == 32);
 #else
 static_assert(sizeof(GetByIdModeMetadataProtoLoad) == 16);
@@ -100,7 +100,7 @@ union GetByIdModeMetadata {
     GetByIdModeMetadataArrayLength arrayLengthMode;
     GetByIdModeMetadataProtoLoad protoLoadMode;
 };
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 static_assert(sizeof(GetByIdModeMetadata) == 32);
 #else
 static_assert(sizeof(GetByIdModeMetadata) == 16);

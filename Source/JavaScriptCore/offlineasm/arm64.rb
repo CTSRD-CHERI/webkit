@@ -1069,6 +1069,8 @@ class Instruction
             }
 	when "print", "printi", "printb", "printq", "printp", "printc"
             $asm.putStr("/* print instructions not supported in arm64 llint */")
+        when "makecap"
+            $asm.putStr("/* makecap instruction is NOP in arm64 llint */")
         else
             lowerDefault
         end

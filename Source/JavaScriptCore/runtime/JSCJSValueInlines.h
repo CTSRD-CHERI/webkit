@@ -487,12 +487,20 @@ inline JSValue::JSValue(JSFalseTag)
 inline bool JSValue::isUndefinedOrNull() const
 {
     // Undefined and null share the same value, bar the 'undefined' bit in the extended tag.
+#if !defined(__CHERI_PURE_CAPABILITY__) || ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    return (u.asEncodedJSValue & ~UndefinedTag) == ValueNull;
+#else
     return WTF::Pointer::clearLowBits<UndefinedTag>(u.asEncodedJSValue) == ValueNull;
+#endif
 }
 
 inline bool JSValue::isBoolean() const
 {
+#if !defined(__CHERI_PURE_CAPABILITY__) || ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    return (u.asEncodedJSValue & ~1) == ValueFalse;
+#else
     return WTF::Pointer::clearLowBits<1>(u.asEncodedJSValue) == ValueFalse;
+#endif
 }
 
 inline bool JSValue::isCell() const
