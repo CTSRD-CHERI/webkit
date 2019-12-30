@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2008 Cameron Zwarich <cwzwarich@uwaterloo.ca>
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -677,17 +678,17 @@ public:
     JS_EXPORT_PRIVATE unsigned reoptimizationRetryCounter() const;
     void countReoptimization();
 
+    // This should be matching LowLevelInterpreter.asm CalleeSaveSpaceAsVirtualRegisters
 #if !ENABLE(C_LOOP)
     const RegisterAtOffsetList* calleeSaveRegisters() const;
 
     static unsigned numberOfLLIntBaselineCalleeSaveRegisters() { return RegisterSet::llintBaselineCalleeSaveRegisters().numberOfSetRegisters(); }
-    static size_t llintBaselineCalleeSaveSpaceAsVirtualRegisters();
     size_t calleeSaveSpaceAsVirtualRegisters();
 #else
-    static unsigned numberOfLLIntBaselineCalleeSaveRegisters() { return 0; }
-    static size_t llintBaselineCalleeSaveSpaceAsVirtualRegisters() { return 1; };
+    static unsigned numberOfLLIntBaselineCalleeSaveRegisters() { return 1; }
     size_t calleeSaveSpaceAsVirtualRegisters() { return 0; }
 #endif
+    static size_t llintBaselineCalleeSaveSpaceAsVirtualRegisters();
 
 #if ENABLE(JIT)
     unsigned numberOfDFGCompiles();

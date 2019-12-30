@@ -125,7 +125,8 @@ void Data::performAssertions(VM& vm)
 #endif
 
 #if ENABLE(C_LOOP)
-    ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 1);
+    ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() * SlotSize
+           == WTF::roundUpToMultipleOf(MachineRegisterSize, SlotSize));
 #elif USE(JSVALUE32_64)
     ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 1);
 #elif (CPU(X86_64) && !OS(WINDOWS))  || CPU(ARM64)

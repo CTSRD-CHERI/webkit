@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2008 Cameron Zwarich <cwzwarich@uwaterloo.ca>
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -2263,6 +2264,11 @@ unsigned CodeBlock::reoptimizationRetryCounter() const
 #endif // ENABLE(JIT)
 }
 
+static size_t roundCalleeSaveSpaceAsVirtualRegisters(size_t calleeSaveRegisters)
+{
+    return (WTF::roundUpToMultipleOf(sizeof(Register), calleeSaveRegisters * sizeof(CPURegister)) / sizeof(Register));
+}
+
 #if !ENABLE(C_LOOP)
 const RegisterAtOffsetList* CodeBlock::calleeSaveRegisters() const
 {
@@ -2276,23 +2282,16 @@ const RegisterAtOffsetList* CodeBlock::calleeSaveRegisters() const
 }
 
     
-static size_t roundCalleeSaveSpaceAsVirtualRegisters(size_t calleeSaveRegisters)
-{
-
-    return (WTF::roundUpToMultipleOf(sizeof(Register), calleeSaveRegisters * sizeof(CPURegister)) / sizeof(Register));
-
-}
-
-size_t CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters()
-{
-    return roundCalleeSaveSpaceAsVirtualRegisters(numberOfLLIntBaselineCalleeSaveRegisters());
-}
-
 size_t CodeBlock::calleeSaveSpaceAsVirtualRegisters()
 {
     return roundCalleeSaveSpaceAsVirtualRegisters(calleeSaveRegisters()->size());
 }
 #endif
+
+size_t CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters()
+{
+    return roundCalleeSaveSpaceAsVirtualRegisters(numberOfLLIntBaselineCalleeSaveRegisters());
+}
 
 #if ENABLE(JIT)
 

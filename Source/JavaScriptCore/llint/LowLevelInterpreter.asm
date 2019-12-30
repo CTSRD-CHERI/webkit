@@ -222,10 +222,11 @@ const CallOpCodeSize = constexpr op_call_length
 
 const maxFrameExtentForSlowPathCall = constexpr maxFrameExtentForSlowPathCall
 
+# This should be matching JSC::CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters()
 if X86_64 or X86_64_WIN or ARM64 or ARM64E
     const CalleeSaveSpaceAsVirtualRegisters = 4
 elsif C_LOOP or C_LOOP_WIN
-    const CalleeSaveSpaceAsVirtualRegisters = 1
+    const CalleeSaveSpaceAsVirtualRegisters = (1 << (PtrSizeLog - SlotSizeLog))
 elsif ARMv7
     const CalleeSaveSpaceAsVirtualRegisters = 1
 elsif MIPS
