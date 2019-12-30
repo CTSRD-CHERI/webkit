@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "CustomGetterSetter.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
 
@@ -35,7 +37,7 @@ namespace JSC {
 
 const ClassInfo JSCustomGetterSetterFunction::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(JSCustomGetterSetterFunction) };
 
-EncodedJSValue JSC_HOST_CALL JSCustomGetterSetterFunction::customGetterSetterFunctionCall(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL JSCustomGetterSetterFunction::customGetterSetterFunctionCall(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

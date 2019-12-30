@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,14 +30,15 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSArrayBuffer.h"
 #include "JSCInlines.h"
 #include "JSWebAssemblyMemory.h"
 #include "JSWebAssemblyHelpers.h"
 
 namespace JSC {
-static EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncGrow(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncBuffer(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncGrow(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncBuffer(HeapPtr<JSGlobalObject>, CallFrame*);
 }
 
 #include "WebAssemblyMemoryPrototype.lut.h"
@@ -66,7 +68,7 @@ ALWAYS_INLINE JSWebAssemblyMemory* getMemory(JSGlobalObject* globalObject, VM& v
     return memory;
 }
 
-EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncGrow(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncGrow(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto throwScope = DECLARE_THROW_SCOPE(vm);
@@ -83,7 +85,7 @@ EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncGrow(JSGlobalObject* glob
     return JSValue::encode(jsNumber(result.pageCount()));
 }
 
-EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncBuffer(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL webAssemblyMemoryProtoFuncBuffer(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto throwScope = DECLARE_THROW_SCOPE(vm);

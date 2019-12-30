@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2015 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +32,7 @@
 
 #include "BuiltinNames.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlNumberFormat.h"
 #include "JSBoundFunction.h"
 #include "JSCInlines.h"
@@ -39,11 +41,11 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeGetterFormat(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeGetterFormat(HeapPtr<JSGlobalObject>, CallFrame*);
 #if HAVE(ICU_FORMAT_DOUBLE_FOR_FIELDS)
-static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncFormatToParts(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncFormatToParts(HeapPtr<JSGlobalObject>, CallFrame*);
 #endif
-static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncResolvedOptions(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -89,7 +91,7 @@ void IntlNumberFormatPrototype::finishCreation(VM& vm, JSGlobalObject* globalObj
     putDirectWithoutTransition(vm, vm.propertyNames->toStringTagSymbol, jsString(vm, "Object"), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL IntlNumberFormatFuncFormatNumber(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL IntlNumberFormatFuncFormatNumber(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -108,7 +110,7 @@ static EncodedJSValue JSC_HOST_CALL IntlNumberFormatFuncFormatNumber(JSGlobalObj
     RELEASE_AND_RETURN(scope, JSValue::encode(numberFormat->formatNumber(globalObject, number)));
 }
 
-EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeGetterFormat(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeGetterFormat(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -146,7 +148,7 @@ EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeGetterFormat(JSGlobalObjec
 }
 
 #if HAVE(ICU_FORMAT_DOUBLE_FOR_FIELDS)
-EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncFormatToParts(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncFormatToParts(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -165,7 +167,7 @@ EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncFormatToParts(JSGlobal
 }
 #endif
 
-EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncResolvedOptions(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlNumberFormatPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "Error.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
@@ -47,22 +49,22 @@ void MapConstructor::finishCreation(VM& vm, MapPrototype* mapPrototype, GetterSe
     putDirectNonIndexAccessorWithoutTransition(vm, vm.propertyNames->speciesSymbol, speciesSymbol, PropertyAttribute::Accessor | PropertyAttribute::ReadOnly | PropertyAttribute::DontEnum);
 }
 
-static EncodedJSValue JSC_HOST_CALL callMap(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructMap(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callMap(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructMap(HeapPtr<JSGlobalObject>, CallFrame*);
 
 MapConstructor::MapConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callMap, constructMap)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL callMap(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callMap(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "Map"));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructMap(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructMap(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -115,7 +117,7 @@ static EncodedJSValue JSC_HOST_CALL constructMap(JSGlobalObject* globalObject, C
     return JSValue::encode(map);
 }
 
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketHead(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketHead(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<JSMap*>(globalObject->vm(), callFrame->argument(0)));
     JSMap* map = jsCast<JSMap*>(callFrame->uncheckedArgument(0));
@@ -124,7 +126,7 @@ EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketHead(JSGlobalObject* globalO
     return JSValue::encode(head);
 }
 
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketNext(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketNext(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT(jsDynamicCast<JSMap::BucketType*>(globalObject->vm(), callFrame->argument(0)));
     auto* bucket = jsCast<JSMap::BucketType*>(callFrame->uncheckedArgument(0));
@@ -138,7 +140,7 @@ EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketNext(JSGlobalObject* globalO
     return JSValue::encode(globalObject->vm().sentinelMapBucket());
 }
 
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketKey(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketKey(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<JSMap::BucketType*>(globalObject->vm(), callFrame->argument(0)));
     auto* bucket = jsCast<JSMap::BucketType*>(callFrame->uncheckedArgument(0));
@@ -146,7 +148,7 @@ EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketKey(JSGlobalObject* globalOb
     return JSValue::encode(bucket->key());
 }
 
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketValue(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketValue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<JSMap::BucketType*>(globalObject->vm(), callFrame->argument(0)));
     auto* bucket = jsCast<JSMap::BucketType*>(callFrame->uncheckedArgument(0));

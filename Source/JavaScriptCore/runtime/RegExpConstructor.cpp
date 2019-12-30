@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All Rights Reserved.
  *  Copyright (C) 2009 Torch Mobile, Inc.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
 
 #include "Error.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "RegExpGlobalDataInlines.h"
 #include "RegExpPrototype.h"
@@ -78,8 +80,8 @@ const ClassInfo RegExpConstructor::s_info = { "Function", &InternalFunction::s_i
 */
 
 
-static EncodedJSValue JSC_HOST_CALL callRegExpConstructor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWithRegExpConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callRegExpConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWithRegExpConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 RegExpConstructor::RegExpConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callRegExpConstructor, constructWithRegExpConstructor)
@@ -270,26 +272,26 @@ JSObject* constructRegExp(JSGlobalObject* globalObject, const ArgList& args,  JS
     RELEASE_AND_RETURN(scope, regExpCreate(globalObject, newTarget, patternArg, flagsArg));
 }
 
-EncodedJSValue JSC_HOST_CALL esSpecRegExpCreate(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL esSpecRegExpCreate(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue patternArg = callFrame->argument(0);
     JSValue flagsArg = callFrame->argument(1);
     return JSValue::encode(regExpCreate(globalObject, jsUndefined(), patternArg, flagsArg));
 }
 
-EncodedJSValue JSC_HOST_CALL esSpecIsRegExp(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL esSpecIsRegExp(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     return JSValue::encode(jsBoolean(isRegExp(vm, globalObject, callFrame->argument(0))));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWithRegExpConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithRegExpConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructRegExp(globalObject, args, callFrame->jsCallee(), callFrame->newTarget()));
 }
 
-static EncodedJSValue JSC_HOST_CALL callRegExpConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callRegExpConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructRegExp(globalObject, args, callFrame->jsCallee()));

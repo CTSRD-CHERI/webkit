@@ -1,6 +1,8 @@
+#include "HeapPtr.h"
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2007-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -50,10 +52,10 @@ protected:
     void finishCreation(VM&, JSGlobalObject*);
 };
 
-EncodedJSValue JSC_HOST_CALL arrayProtoFuncSpeciesCreate(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL arrayProtoFuncToString(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL arrayProtoFuncValues(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL arrayProtoPrivateFuncConcatMemcpy(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL arrayProtoPrivateFuncAppendMemcpy(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL arrayProtoFuncSpeciesCreate(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL arrayProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL arrayProtoFuncValues(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL arrayProtoPrivateFuncConcatMemcpy(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL arrayProtoPrivateFuncAppendMemcpy(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

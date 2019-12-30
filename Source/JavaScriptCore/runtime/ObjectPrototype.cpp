@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
 #include "Error.h"
 #include "GetterSetter.h"
 #include "HasOwnPropertyCache.h"
+#include "HeapPtr.h"
 #include "JSFunction.h"
 #include "JSString.h"
 #include "JSCInlines.h"
@@ -33,15 +35,15 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncValueOf(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncHasOwnProperty(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncIsPrototypeOf(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineGetter(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineSetter(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupGetter(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupSetter(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncPropertyIsEnumerable(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL objectProtoFuncToLocaleString(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncValueOf(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncHasOwnProperty(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncIsPrototypeOf(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineGetter(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineSetter(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupGetter(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupSetter(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncPropertyIsEnumerable(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL objectProtoFuncToLocaleString(HeapPtr<JSGlobalObject>, CallFrame*);
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(ObjectPrototype);
 
@@ -78,7 +80,7 @@ ObjectPrototype* ObjectPrototype::create(VM& vm, JSGlobalObject* globalObject, S
 
 // ------------------------------ Functions --------------------------------
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncValueOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncValueOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue thisValue = callFrame->thisValue().toThis(globalObject, StrictMode);
     JSObject* valueObj = thisValue.toObject(globalObject);
@@ -87,7 +89,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncValueOf(JSGlobalObject* globalObject
     return JSValue::encode(valueObj);
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncHasOwnProperty(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncHasOwnProperty(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -116,7 +118,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncHasOwnProperty(JSGlobalObject* globa
     return JSValue::encode(jsBoolean(result));
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncIsPrototypeOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncIsPrototypeOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -143,7 +145,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncIsPrototypeOf(JSGlobalObject* global
     }
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineGetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineGetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -171,7 +173,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineGetter(JSGlobalObject* globalO
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineSetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineSetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -199,7 +201,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncDefineSetter(JSGlobalObject* globalO
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupGetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupGetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -229,7 +231,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupGetter(JSGlobalObject* globalO
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupSetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupSetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -259,7 +261,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncLookupSetter(JSGlobalObject* globalO
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncPropertyIsEnumerable(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncPropertyIsEnumerable(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -277,7 +279,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncPropertyIsEnumerable(JSGlobalObject*
 }
 
 // 15.2.4.3 Object.prototype.toLocaleString()
-EncodedJSValue JSC_HOST_CALL objectProtoFuncToLocaleString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncToLocaleString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -308,7 +310,7 @@ EncodedJSValue JSC_HOST_CALL objectProtoFuncToLocaleString(JSGlobalObject* globa
     RELEASE_AND_RETURN(scope, JSValue::encode(call(globalObject, toString, callType, callData, thisValue, *vm.emptyList)));
 }
 
-EncodedJSValue JSC_HOST_CALL objectProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

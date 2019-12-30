@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +32,7 @@
 #include "BooleanObject.h"
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "JSArray.h"
 #include "JSArrayInlines.h"
 #include "JSGlobalObject.h"
@@ -46,8 +48,8 @@ namespace JSC {
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(JSONObject);
 
-EncodedJSValue JSC_HOST_CALL JSONProtoFuncParse(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL JSONProtoFuncStringify(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL JSONProtoFuncParse(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL JSONProtoFuncStringify(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -805,7 +807,7 @@ NEVER_INLINE JSValue Walker::walk(JSValue unfiltered)
 }
 
 // ECMA-262 v5 15.12.2
-EncodedJSValue JSC_HOST_CALL JSONProtoFuncParse(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL JSONProtoFuncParse(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -846,7 +848,7 @@ EncodedJSValue JSC_HOST_CALL JSONProtoFuncParse(JSGlobalObject* globalObject, Ca
 }
 
 // ECMA-262 v5 15.12.3
-EncodedJSValue JSC_HOST_CALL JSONProtoFuncStringify(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL JSONProtoFuncStringify(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "ProxyConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IdentifierInlines.h"
 #include "JSCInlines.h"
 #include "ObjectConstructor.h"
@@ -48,15 +50,15 @@ ProxyConstructor* ProxyConstructor::create(VM& vm, Structure* structure)
     return constructor;
 }
 
-static EncodedJSValue JSC_HOST_CALL callProxy(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructProxyObject(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callProxy(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructProxyObject(HeapPtr<JSGlobalObject>, CallFrame*);
 
 ProxyConstructor::ProxyConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callProxy, constructProxyObject)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL makeRevocableProxy(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL makeRevocableProxy(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -79,7 +81,7 @@ static EncodedJSValue JSC_HOST_CALL makeRevocableProxy(JSGlobalObject* globalObj
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL proxyRevocableConstructorThrowError(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL proxyRevocableConstructorThrowError(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     return throwVMTypeError(globalObject, scope, "Proxy.revocable cannot be constructed. It can only be called"_s);
@@ -92,7 +94,7 @@ void ProxyConstructor::finishCreation(VM& vm, const char* name, JSGlobalObject* 
     putDirect(vm, makeIdentifier(vm, "revocable"), JSFunction::create(vm, globalObject, 2, "revocable"_s, makeRevocableProxy, NoIntrinsic, proxyRevocableConstructorThrowError));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructProxyObject(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructProxyObject(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     if (callFrame->newTarget().isUndefined())
@@ -104,7 +106,7 @@ static EncodedJSValue JSC_HOST_CALL constructProxyObject(JSGlobalObject* globalO
     RELEASE_AND_RETURN(scope, JSValue::encode(ProxyObject::create(globalObject, target, handler)));
 }
 
-static EncodedJSValue JSC_HOST_CALL callProxy(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callProxy(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "Proxy"));

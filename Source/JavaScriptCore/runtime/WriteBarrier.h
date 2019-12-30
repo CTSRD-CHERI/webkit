@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,8 +28,8 @@
 
 #include "GCAssertions.h"
 #include "HandleTypes.h"
+#include "HeapPtr.h"
 #include <type_traits>
-#include <wtf/DumbPtrTraits.h>
 #include <wtf/DumbValueTraits.h>
 
 namespace JSC {
@@ -43,7 +44,7 @@ class JSGlobalObject;
 
 template<class T>
 using WriteBarrierTraitsSelect = typename std::conditional<std::is_same<T, Unknown>::value,
-    DumbValueTraits<T>, DumbPtrTraits<T>
+    DumbValueTraits<T>, HeapPtrTraits<T>
 >::type;
 
 template<class T, typename Traits = WriteBarrierTraitsSelect<T>> class WriteBarrierBase;
@@ -121,10 +122,12 @@ public:
         return unwrapped;
     }
 
-    void clear() { Traits::exchange(m_cell, nullptr); }
+    void clear() {
+	    Traits::exchange(m_cell, nullptr);
+	}
 
     // Slot cannot be used when pointers aren't stored as-is.
-    template<typename BarrierT, typename BarrierTraits, std::enable_if_t<std::is_same<BarrierTraits, DumbPtrTraits<BarrierT>>::value, void*> = nullptr>
+    template<typename BarrierT, typename BarrierTraits, std::enable_if_t<std::is_same<BarrierTraits, HeapPtrTraits<BarrierT>>::value, void*> = nullptr>
     struct SlotHelper {
         static BarrierT** reinterpret(typename BarrierTraits::StorageType* cell) { return reinterpret_cast<T**>(cell); }
     };

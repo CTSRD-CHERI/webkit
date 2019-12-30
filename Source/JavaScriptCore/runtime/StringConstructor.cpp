@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2004-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
 #include "StringConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JITCode.h"
 #include "JSFunction.h"
 #include "JSGlobalObject.h"
@@ -31,8 +33,8 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL stringFromCharCode(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL stringFromCodePoint(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL stringFromCharCode(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL stringFromCodePoint(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -53,8 +55,8 @@ const ClassInfo StringConstructor::s_info = { "Function", &InternalFunction::s_i
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(StringConstructor);
 
 
-static EncodedJSValue JSC_HOST_CALL callStringConstructor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWithStringConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callStringConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWithStringConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 StringConstructor::StringConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callStringConstructor, constructWithStringConstructor)
@@ -70,7 +72,7 @@ void StringConstructor::finishCreation(VM& vm, StringPrototype* stringPrototype)
 
 // ------------------------------ Functions --------------------------------
 
-static EncodedJSValue JSC_HOST_CALL stringFromCharCode(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL stringFromCharCode(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -105,12 +107,12 @@ static EncodedJSValue JSC_HOST_CALL stringFromCharCode(JSGlobalObject* globalObj
     RELEASE_AND_RETURN(scope, JSValue::encode(jsString(vm, WTFMove(impl8Bit))));
 }
 
-JSString* JSC_HOST_CALL stringFromCharCode(JSGlobalObject* globalObject, int32_t arg)
+JSString* JSC_HOST_CALL stringFromCharCode(HeapPtr<JSGlobalObject> globalObject, int32_t arg)
 {
     return jsSingleCharacterString(globalObject->vm(), arg);
 }
 
-static EncodedJSValue JSC_HOST_CALL stringFromCodePoint(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL stringFromCodePoint(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -139,7 +141,7 @@ static EncodedJSValue JSC_HOST_CALL stringFromCodePoint(JSGlobalObject* globalOb
     RELEASE_AND_RETURN(scope, JSValue::encode(jsString(vm, builder.toString())));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWithStringConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithStringConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -162,7 +164,7 @@ JSString* stringConstructor(JSGlobalObject* globalObject, JSValue argument)
     return argument.toString(globalObject);
 }
 
-static EncodedJSValue JSC_HOST_CALL callStringConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callStringConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     if (!callFrame->argumentCount())

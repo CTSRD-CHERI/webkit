@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include "BuiltinNames.h"
 #include "CallFrame.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSFunction.h"
 #include "JSGenericTypedArrayViewPrototypeFunctions.h"
@@ -65,13 +67,13 @@ namespace JSC {
     RELEASE_ASSERT_NOT_REACHED();                                                               \
 } while (false)
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncIsTypedArrayView(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncIsTypedArrayView(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue value = callFrame->uncheckedArgument(0);
     return JSValue::encode(jsBoolean(value.isCell() && isTypedView(value.asCell()->classInfo(globalObject->vm())->typedArrayStorageType)));
 }
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -87,7 +89,7 @@ EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncLength(JSGlobalObject* glo
     return JSValue::encode(jsNumber(thisObject->length()));
 }
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncGetOriginalConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncGetOriginalConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     TypedArrayType type = callFrame->uncheckedArgument(0).getObject()->classInfo(vm)->typedArrayStorageType;
@@ -95,7 +97,7 @@ EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncGetOriginalConstructor(JSG
     return JSValue::encode(globalObject->typedArrayConstructor(type));
 }
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSort(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSort(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -104,7 +106,7 @@ EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSort(JSGlobalObject* globa
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewPrivateFuncSort);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -115,7 +117,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSet(JSGlobalObject* g
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncSet);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncCopyWithin(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncCopyWithin(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -126,7 +128,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncCopyWithin(JSGlobalOb
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncCopyWithin);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIncludes(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIncludes(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -137,7 +139,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIncludes(JSGlobalObje
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncIncludes);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncLastIndexOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncLastIndexOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -148,7 +150,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncLastIndexOf(JSGlobalO
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncLastIndexOf);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIndexOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIndexOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -159,7 +161,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncIndexOf(JSGlobalObjec
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncIndexOf);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncJoin(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncJoin(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -170,7 +172,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncJoin(JSGlobalObject* 
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncJoin);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncBuffer(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncBuffer(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -181,7 +183,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncBuffer(JSGlobal
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoGetterFuncBuffer);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -192,7 +194,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncLength(JSGlobal
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoGetterFuncLength);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -203,7 +205,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteLength(JSGl
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoGetterFuncByteLength);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteOffset(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteOffset(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -214,7 +216,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncByteOffset(JSGl
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoGetterFuncByteOffset);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncReverse(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncReverse(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -225,7 +227,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncReverse(JSGlobalObjec
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncReverse);
 }
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSubarrayCreate(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSubarrayCreate(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -236,7 +238,7 @@ EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSubarrayCreate(JSGlobalObj
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewPrivateFuncSubarrayCreate);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSlice(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSlice(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -247,7 +249,7 @@ static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoFuncSlice(JSGlobalObject*
     CALL_GENERIC_TYPEDARRAY_PROTOTYPE_FUNCTION(genericTypedArrayViewProtoFuncSlice);
 }
 
-static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncToStringTag(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL typedArrayViewProtoGetterFuncToStringTag(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue thisValue = callFrame->thisValue();
     if (!thisValue.isObject())

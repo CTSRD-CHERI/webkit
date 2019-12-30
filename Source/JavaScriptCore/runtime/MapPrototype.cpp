@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include "BuiltinNames.h"
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSMap.h"
@@ -48,13 +50,13 @@ const ClassInfo MapPrototype::s_info = { "Map", &Base::s_info, &mapPrototypeTabl
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncClear(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncDelete(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncGet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncHas(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncSet(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncClear(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncDelete(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncGet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncHas(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncSet(HeapPtr<JSGlobalObject>, CallFrame*);
 
-static EncodedJSValue JSC_HOST_CALL mapProtoFuncSize(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL mapProtoFuncSize(HeapPtr<JSGlobalObject>, CallFrame*);
     
 void MapPrototype::finishCreation(VM& vm, JSGlobalObject* globalObject)
 {
@@ -95,7 +97,7 @@ ALWAYS_INLINE static JSMap* getMap(JSGlobalObject* globalObject, JSValue thisVal
     return nullptr;
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncClear(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncClear(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSMap* map = getMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -104,7 +106,7 @@ EncodedJSValue JSC_HOST_CALL mapProtoFuncClear(JSGlobalObject* globalObject, Cal
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncDelete(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncDelete(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSMap* map = getMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -112,7 +114,7 @@ EncodedJSValue JSC_HOST_CALL mapProtoFuncDelete(JSGlobalObject* globalObject, Ca
     return JSValue::encode(jsBoolean(map->remove(globalObject, callFrame->argument(0))));
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncGet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncGet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSMap* map = getMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -120,7 +122,7 @@ EncodedJSValue JSC_HOST_CALL mapProtoFuncGet(JSGlobalObject* globalObject, CallF
     return JSValue::encode(map->get(globalObject, callFrame->argument(0)));
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncHas(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncHas(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSMap* map = getMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -128,7 +130,7 @@ EncodedJSValue JSC_HOST_CALL mapProtoFuncHas(JSGlobalObject* globalObject, CallF
     return JSValue::encode(jsBoolean(map->has(globalObject, callFrame->argument(0))));
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue thisValue = callFrame->thisValue();
     JSMap* map = getMap(globalObject, thisValue);
@@ -138,7 +140,7 @@ EncodedJSValue JSC_HOST_CALL mapProtoFuncSet(JSGlobalObject* globalObject, CallF
     return JSValue::encode(thisValue);
 }
 
-EncodedJSValue JSC_HOST_CALL mapProtoFuncSize(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL mapProtoFuncSize(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSMap* map = getMap(globalObject, callFrame->thisValue());
     if (!map)

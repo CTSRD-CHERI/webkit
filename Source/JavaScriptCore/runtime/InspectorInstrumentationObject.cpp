@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2015-2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +34,7 @@
 
 namespace JSC {
 
-EncodedJSValue JSC_HOST_CALL inspectorInstrumentationObjectLog(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL inspectorInstrumentationObjectLog(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -81,7 +83,7 @@ void InspectorInstrumentationObject::disable(VM& vm)
 
 // ------------------------------ Functions --------------------------------
 
-EncodedJSValue JSC_HOST_CALL inspectorInstrumentationObjectLog(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL inspectorInstrumentationObjectLog(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

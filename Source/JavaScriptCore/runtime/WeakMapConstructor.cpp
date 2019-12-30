@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2017 Apple, Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "WeakMapConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
@@ -45,22 +47,22 @@ void WeakMapConstructor::finishCreation(VM& vm, WeakMapPrototype* prototype)
     putDirectWithoutTransition(vm, vm.propertyNames->length, jsNumber(0), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakMap(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWeakMap(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callWeakMap(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWeakMap(HeapPtr<JSGlobalObject>, CallFrame*);
 
 WeakMapConstructor::WeakMapConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callWeakMap, constructWeakMap)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakMap(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callWeakMap(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "WeakMap"));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWeakMap(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWeakMap(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

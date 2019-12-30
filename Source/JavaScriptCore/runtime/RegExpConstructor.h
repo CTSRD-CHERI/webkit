@@ -1,6 +1,8 @@
+#include "HeapPtr.h"
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All Rights Reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -75,7 +77,7 @@ ALWAYS_INLINE bool isRegExp(VM& vm, JSGlobalObject* globalObject, JSValue value)
     return object->inherits<RegExpObject>(vm);
 }
 
-EncodedJSValue JSC_HOST_CALL esSpecRegExpCreate(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL esSpecIsRegExp(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL esSpecRegExpCreate(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL esSpecIsRegExp(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

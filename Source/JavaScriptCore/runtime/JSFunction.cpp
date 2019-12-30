@@ -5,6 +5,7 @@
  *  Copyright (C) 2007 Cameron Zwarich (cwzwarich@uwaterloo.ca)
  *  Copyright (C) 2007 Maks Orlovich
  *  Copyright (C) 2015 Canon Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -37,6 +38,7 @@
 #include "FunctionPrototype.h"
 #include "GeneratorPrototype.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSArray.h"
 #include "JSBoundFunction.h"
 #include "JSCInlines.h"
@@ -52,7 +54,7 @@
 
 namespace JSC {
 
-EncodedJSValue JSC_HOST_CALL callHostFunctionAsConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL callHostFunctionAsConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

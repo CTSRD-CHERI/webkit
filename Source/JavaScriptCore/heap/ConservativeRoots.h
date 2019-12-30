@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #pragma once
 
 #include "Heap.h"
+#include "HeapPtr.h"
 
 namespace JSC {
 
@@ -49,7 +51,7 @@ private:
     static constexpr size_t nonInlineCapacity = 8192 / sizeof(HeapCell*);
     
     template<typename MarkHook>
-    void genericAddPointer(void*, HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, TinyBloomFilter, MarkHook&);
+    void genericAddPointer(const HeapPtr<char>&, HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, TinyBloomFilter, MarkHook&);
 
     template<typename MarkHook>
     void genericAddSpan(void*, void* end, MarkHook&);

@@ -168,6 +168,7 @@ set(WTF_PUBLIC_HEADERS
     ParallelJobsOpenMP.h
     ParallelVectorIterator.h
     ParkingLot.h
+    PlainPtr.h
     Platform.h
     PlatformRegisters.h
     PointerComparison.h

@@ -3,6 +3,7 @@
  *  Copyright (C) 2003, 2007-2008, 2011, 2016 Apple Inc. All rights reserved.
  *  Copyright (C) 2003 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2006 Alexey Proskuryakov (ap@nypop.com)
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -29,6 +30,7 @@
 #include "Error.h"
 #include "ExceptionHelpers.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSArray.h"
 #include "JSFunction.h"
 #include "Lookup.h"
@@ -50,8 +52,8 @@ const ClassInfo ArrayConstructor::s_info = { "Function", &InternalFunction::s_in
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL callArrayConstructor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWithArrayConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callArrayConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWithArrayConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 ArrayConstructor::ArrayConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callArrayConstructor, constructWithArrayConstructor)
@@ -94,13 +96,13 @@ static inline JSArray* constructArrayWithSizeQuirk(JSGlobalObject* globalObject,
     return constructArray(globalObject, static_cast<ArrayAllocationProfile*>(nullptr), args, newTarget);
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWithArrayConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithArrayConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructArrayWithSizeQuirk(globalObject, args, callFrame->newTarget()));
 }
 
-static EncodedJSValue JSC_HOST_CALL callArrayConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callArrayConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructArrayWithSizeQuirk(globalObject, args, JSValue()));
@@ -137,7 +139,7 @@ bool isArraySlow(JSGlobalObject* globalObject, ProxyObject* argument)
 
 // ES6 7.2.2
 // https://tc39.github.io/ecma262/#sec-isarray
-EncodedJSValue JSC_HOST_CALL arrayConstructorPrivateFuncIsArraySlow(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL arrayConstructorPrivateFuncIsArraySlow(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<ProxyObject*>(globalObject->vm(), callFrame->argument(0)));
     return JSValue::encode(jsBoolean(isArraySlowInline(globalObject, jsCast<ProxyObject*>(callFrame->uncheckedArgument(0)))));

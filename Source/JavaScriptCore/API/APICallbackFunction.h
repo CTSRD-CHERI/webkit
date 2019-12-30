@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "APICast.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCallbackConstructor.h"
 #include "JSLock.h"
 #include <wtf/Vector.h>
@@ -36,13 +38,13 @@ namespace JSC {
 
 struct APICallbackFunction {
 
-template <typename T> static EncodedJSValue JSC_HOST_CALL call(JSGlobalObject*, CallFrame*);
-template <typename T> static EncodedJSValue JSC_HOST_CALL construct(JSGlobalObject*, CallFrame*);
+template <typename T> static EncodedJSValue JSC_HOST_CALL call(HeapPtr<JSGlobalObject>, CallFrame*);
+template <typename T> static EncodedJSValue JSC_HOST_CALL construct(HeapPtr<JSGlobalObject>, CallFrame*);
 
 };
 
 template <typename T>
-EncodedJSValue JSC_HOST_CALL APICallbackFunction::call(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL APICallbackFunction::call(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = getVM(globalObject);
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -73,7 +75,7 @@ EncodedJSValue JSC_HOST_CALL APICallbackFunction::call(JSGlobalObject* globalObj
 }
 
 template <typename T>
-EncodedJSValue JSC_HOST_CALL APICallbackFunction::construct(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL APICallbackFunction::construct(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = getVM(globalObject);
     auto scope = DECLARE_THROW_SCOPE(vm);

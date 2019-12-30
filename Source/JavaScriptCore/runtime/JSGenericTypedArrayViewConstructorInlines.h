@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include "BuiltinNames.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSArrayBuffer.h"
 #include "JSCJSValueInlines.h"
@@ -38,10 +40,10 @@
 namespace JSC {
 
 template<typename ViewClass>
-static EncodedJSValue JSC_HOST_CALL callGenericTypedArrayView(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callGenericTypedArrayView(HeapPtr<JSGlobalObject>, CallFrame*);
 
 template<typename ViewClass>
-EncodedJSValue JSC_HOST_CALL constructGenericTypedArrayView(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL constructGenericTypedArrayView(HeapPtr<JSGlobalObject>, CallFrame*);
 
 template<typename ViewClass>
 JSGenericTypedArrayViewConstructor<ViewClass>::JSGenericTypedArrayViewConstructor(VM& vm, Structure* structure)
@@ -206,7 +208,7 @@ inline JSObject* constructGenericTypedArrayViewWithArguments(JSGlobalObject* glo
 }
 
 template<typename ViewClass>
-EncodedJSValue JSC_HOST_CALL constructGenericTypedArrayView(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL constructGenericTypedArrayView(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -251,7 +253,7 @@ EncodedJSValue JSC_HOST_CALL constructGenericTypedArrayView(JSGlobalObject* glob
 }
 
 template<typename ViewClass>
-static EncodedJSValue JSC_HOST_CALL callGenericTypedArrayView(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callGenericTypedArrayView(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

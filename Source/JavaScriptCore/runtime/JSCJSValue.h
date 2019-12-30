@@ -24,6 +24,7 @@
 #pragma once
 
 #include "JSExportMacros.h"
+#include "HeapPtr.h"
 #include "PureNaN.h"
 #include <functional>
 #include <math.h>
@@ -76,7 +77,7 @@ enum class Unknown { };
 template <class T, typename Traits> class WriteBarrierBase;
 template<class T>
 using WriteBarrierTraitsSelect = typename std::conditional<std::is_same<T, Unknown>::value,
-    DumbValueTraits<T>, DumbPtrTraits<T>
+    DumbValueTraits<T>, HeapPtrTraits<T>
 >::type;
 
 enum PreferredPrimitiveType { NoPreference, PreferNumber, PreferString };
@@ -98,7 +99,7 @@ union EncodedValueDescriptor {
 #if USE(JSVALUE32_64)
     double asDouble;
 #elif USE(JSVALUE64)
-    JSCell* ptr;
+    HeapPtr<JSCell> ptr;
 #endif
         
 #if CPU(BIG_ENDIAN)

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "Error.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
@@ -47,22 +49,22 @@ void SetConstructor::finishCreation(VM& vm, SetPrototype* setPrototype, GetterSe
     putDirectNonIndexAccessorWithoutTransition(vm, vm.propertyNames->speciesSymbol, speciesSymbol, PropertyAttribute::Accessor | PropertyAttribute::ReadOnly | PropertyAttribute::DontEnum);
 }
 
-static EncodedJSValue JSC_HOST_CALL callSet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructSet(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callSet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructSet(HeapPtr<JSGlobalObject>, CallFrame*);
 
 SetConstructor::SetConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callSet, constructSet)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL callSet(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callSet(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "Set"));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -101,7 +103,7 @@ static EncodedJSValue JSC_HOST_CALL constructSet(JSGlobalObject* globalObject, C
     return JSValue::encode(set);
 }
 
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketHead(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketHead(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<JSSet*>(globalObject->vm(), callFrame->argument(0)));
     JSSet* set = jsCast<JSSet*>(callFrame->uncheckedArgument(0));
@@ -110,7 +112,7 @@ EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketHead(JSGlobalObject* globalO
     return JSValue::encode(head);
 }
 
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketNext(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketNext(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT(jsDynamicCast<JSSet::BucketType*>(globalObject->vm(), callFrame->argument(0)));
     auto* bucket = jsCast<JSSet::BucketType*>(callFrame->uncheckedArgument(0));
@@ -124,7 +126,7 @@ EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketNext(JSGlobalObject* globalO
     return JSValue::encode(globalObject->vm().sentinelSetBucket());
 }
 
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketKey(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketKey(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ASSERT_UNUSED(globalObject, jsDynamicCast<JSSet::BucketType*>(globalObject->vm(), callFrame->argument(0)));
     auto* bucket = jsCast<JSSet::BucketType*>(callFrame->uncheckedArgument(0));

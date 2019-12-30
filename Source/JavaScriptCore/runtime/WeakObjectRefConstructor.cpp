@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple, Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "WeakObjectRefConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
@@ -45,22 +47,22 @@ void WeakObjectRefConstructor::finishCreation(VM& vm, WeakObjectRefPrototype* pr
     putDirectWithoutTransition(vm, vm.propertyNames->length, jsNumber(1), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakRef(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWeakRef(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callWeakRef(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWeakRef(HeapPtr<JSGlobalObject>, CallFrame*);
 
 WeakObjectRefConstructor::WeakObjectRefConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callWeakRef, constructWeakRef)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakRef(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callWeakRef(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "WeakRef"));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWeakRef(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWeakRef(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

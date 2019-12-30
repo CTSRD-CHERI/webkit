@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
 #include "Completion.h"
 #include "ExceptionHelpers.h"
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSAsyncFunction.h"
 #include "JSAsyncGeneratorFunction.h"
 #include "JSFunction.h"
@@ -38,14 +40,14 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(FunctionConstructor);
 
 const ClassInfo FunctionConstructor::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(FunctionConstructor) };
 
-static EncodedJSValue JSC_HOST_CALL constructWithFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::Function, callFrame->newTarget()));
 }
 
 // ECMA 15.3.1 The Function Constructor Called as a Function
-static EncodedJSValue JSC_HOST_CALL callFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args));

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "JSArrayBuffer.h"
 #include "JSFunction.h"
 #include "JSCInlines.h"
@@ -35,7 +37,7 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL arrayBufferProtoFuncSlice(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL arrayBufferProtoFuncSlice(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -66,7 +68,7 @@ static EncodedJSValue JSC_HOST_CALL arrayBufferProtoFuncSlice(JSGlobalObject* gl
 }
 
 // http://tc39.github.io/ecmascript_sharedmem/shmem.html#sec-get-arraybuffer.prototype.bytelength
-static EncodedJSValue JSC_HOST_CALL arrayBufferProtoGetterFuncByteLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL arrayBufferProtoGetterFuncByteLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -84,7 +86,7 @@ static EncodedJSValue JSC_HOST_CALL arrayBufferProtoGetterFuncByteLength(JSGloba
 }
 
 // http://tc39.github.io/ecmascript_sharedmem/shmem.html#StructuredData.SharedArrayBuffer.prototype.get_byteLength
-static EncodedJSValue JSC_HOST_CALL sharedArrayBufferProtoGetterFuncByteLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL sharedArrayBufferProtoGetterFuncByteLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

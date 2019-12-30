@@ -161,11 +161,10 @@ const PtrSize = (1 << PtrSizeLog)
 const MachineRegisterSize = (1 << MachineRegisterSizeLog)
 const SlotSize = (1 << SlotSizeLog)
 
-if JSVALUE64
-    const CallFrameHeaderSlots = 5
-else
-    const CallFrameHeaderSlots = 4
-    const CallFrameAlignSlots = 1
+const CallFrameHeaderSlots = constexpr (LLInt::Data::CallFrameHeaderSlots)
+
+if not JSVALUE64
+const CallFrameAlignSlots = 1
 end
 
 const JSLexicalEnvironment_variables = (sizeof JSLexicalEnvironment + SlotSize - 1) & ~(SlotSize - 1)

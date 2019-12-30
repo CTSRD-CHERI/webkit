@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include "CallFrame.h"
 #include "Error.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSCBuiltins.h"
 #include "JSCInlines.h"
 #include "JSGenericTypedArrayViewConstructorInlines.h"
@@ -37,7 +39,7 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL constructTypedArrayView(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructTypedArrayView(HeapPtr<JSGlobalObject>, CallFrame*);
 
 JSTypedArrayViewConstructor::JSTypedArrayViewConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, constructTypedArrayView, constructTypedArrayView)
@@ -65,7 +67,7 @@ Structure* JSTypedArrayViewConstructor::createStructure(
 
 
 
-static EncodedJSValue JSC_HOST_CALL constructTypedArrayView(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL constructTypedArrayView(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

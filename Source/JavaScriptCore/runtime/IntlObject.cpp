@@ -2,6 +2,7 @@
  * Copyright (C) 2015 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2015 Sukolsak Sakshuwong (sukolsak@gmail.com)
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +33,7 @@
 
 #include "Error.h"
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "IntlCanonicalizeLanguage.h"
 #include "IntlCollatorConstructor.h"
 #include "IntlCollatorPrototype.h"
@@ -57,7 +59,7 @@ namespace JSC {
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(IntlObject);
 
-static EncodedJSValue JSC_HOST_CALL intlObjectFuncGetCanonicalLocales(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL intlObjectFuncGetCanonicalLocales(HeapPtr<JSGlobalObject>, CallFrame*);
 
 static JSValue createCollatorConstructor(VM& vm, JSObject* object)
 {
@@ -914,7 +916,7 @@ Vector<String> numberingSystemsForLocale(const String& locale)
     return numberingSystems;
 }
 
-EncodedJSValue JSC_HOST_CALL intlObjectFuncGetCanonicalLocales(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL intlObjectFuncGetCanonicalLocales(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     // Intl.getCanonicalLocales(locales)
     // https://tc39.github.io/ecma402/#sec-intl.getcanonicallocales

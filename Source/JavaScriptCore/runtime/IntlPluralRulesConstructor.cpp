@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Andy VanWagoner (andy@vanwagoner.family)
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #if ENABLE(INTL)
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlObject.h"
 #include "IntlPluralRules.h"
 #include "IntlPluralRulesPrototype.h"
@@ -39,7 +41,7 @@ namespace JSC {
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(IntlPluralRulesConstructor);
 
-static EncodedJSValue JSC_HOST_CALL IntlPluralRulesConstructorFuncSupportedLocalesOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlPluralRulesConstructorFuncSupportedLocalesOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -67,8 +69,8 @@ Structure* IntlPluralRulesConstructor::createStructure(VM& vm, JSGlobalObject* g
     return Structure::create(vm, globalObject, prototype, TypeInfo(InternalFunctionType, StructureFlags), info());
 }
 
-static EncodedJSValue JSC_HOST_CALL callIntlPluralRules(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructIntlPluralRules(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callIntlPluralRules(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructIntlPluralRules(HeapPtr<JSGlobalObject>, CallFrame*);
 
 IntlPluralRulesConstructor::IntlPluralRulesConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callIntlPluralRules, constructIntlPluralRules)
@@ -83,7 +85,7 @@ void IntlPluralRulesConstructor::finishCreation(VM& vm, IntlPluralRulesPrototype
     pluralRulesPrototype->putDirectWithoutTransition(vm, vm.propertyNames->constructor, this, static_cast<unsigned>(PropertyAttribute::DontEnum));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructIntlPluralRules(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructIntlPluralRules(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -100,7 +102,7 @@ static EncodedJSValue JSC_HOST_CALL constructIntlPluralRules(JSGlobalObject* glo
     return JSValue::encode(pluralRules);
 }
 
-static EncodedJSValue JSC_HOST_CALL callIntlPluralRules(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callIntlPluralRules(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -110,7 +112,7 @@ static EncodedJSValue JSC_HOST_CALL callIntlPluralRules(JSGlobalObject* globalOb
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "PluralRules"));
 }
 
-EncodedJSValue JSC_HOST_CALL IntlPluralRulesConstructorFuncSupportedLocalesOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlPluralRulesConstructorFuncSupportedLocalesOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

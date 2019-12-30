@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2015 Yusuke Suzuki <utatane.tea@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,15 +29,16 @@
 #include "SymbolPrototype.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSString.h"
 #include "SymbolObject.h"
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL symbolProtoGetterDescription(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL symbolProtoFuncToString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL symbolProtoFuncValueOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL symbolProtoGetterDescription(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL symbolProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL symbolProtoFuncValueOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -88,7 +90,7 @@ inline Symbol* tryExtractSymbol(VM& vm, JSValue thisValue)
     return asSymbol(jsCast<SymbolObject*>(thisObject)->internalValue());
 }
 
-EncodedJSValue JSC_HOST_CALL symbolProtoGetterDescription(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL symbolProtoGetterDescription(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -101,7 +103,7 @@ EncodedJSValue JSC_HOST_CALL symbolProtoGetterDescription(JSGlobalObject* global
     return JSValue::encode(description.isNull() ? jsUndefined() : jsString(vm, description));
 }
 
-EncodedJSValue JSC_HOST_CALL symbolProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL symbolProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -112,7 +114,7 @@ EncodedJSValue JSC_HOST_CALL symbolProtoFuncToString(JSGlobalObject* globalObjec
     RELEASE_AND_RETURN(scope, JSValue::encode(jsNontrivialString(vm, symbol->descriptiveString())));
 }
 
-EncodedJSValue JSC_HOST_CALL symbolProtoFuncValueOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL symbolProtoFuncValueOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

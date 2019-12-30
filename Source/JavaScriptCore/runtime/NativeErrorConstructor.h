@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2008-2018 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
 #pragma once
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "InternalFunction.h"
 #include "NativeErrorPrototype.h"
 
@@ -62,8 +64,8 @@ public:
 
     Structure* errorStructure(VM&) { return globalObject()->errorStructure(errorType); }
 private:
-    static EncodedJSValue JSC_HOST_CALL callNativeErrorConstructor(JSGlobalObject*, CallFrame*);
-    static EncodedJSValue JSC_HOST_CALL constructNativeErrorConstructor(JSGlobalObject*, CallFrame*);
+    static EncodedJSValue JSC_HOST_CALL callNativeErrorConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+    static EncodedJSValue JSC_HOST_CALL constructNativeErrorConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
     NativeErrorConstructor(VM&, Structure*);
 };

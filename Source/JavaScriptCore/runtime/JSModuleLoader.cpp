@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All Rights Reserved.
  * Copyright (C) 2016 Yusuke Suzuki <utatane.tea@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +33,7 @@
 #include "CodeProfiling.h"
 #include "Error.h"
 #include "Exception.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSGlobalObjectFunctions.h"
 #include "JSInternalPromise.h"
@@ -49,14 +51,14 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL moduleLoaderParseModule(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderRequestedModules(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderEvaluate(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderModuleDeclarationInstantiation(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderResolve(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderResolveSync(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderFetch(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL moduleLoaderGetModuleNamespaceObject(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderParseModule(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderRequestedModules(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderEvaluate(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderModuleDeclarationInstantiation(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderResolve(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderResolveSync(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderFetch(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL moduleLoaderGetModuleNamespaceObject(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -377,7 +379,7 @@ JSModuleNamespaceObject* JSModuleLoader::getModuleNamespaceObject(JSGlobalObject
 
 // ------------------------------ Functions --------------------------------
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderParseModule(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderParseModule(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
 
@@ -423,7 +425,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderParseModule(JSGlobalObject* globalObjec
     return JSValue::encode(promise);
 }
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderRequestedModules(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderRequestedModules(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -441,7 +443,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderRequestedModules(JSGlobalObject* global
     return JSValue::encode(result);
 }
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderModuleDeclarationInstantiation(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderModuleDeclarationInstantiation(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -460,7 +462,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderModuleDeclarationInstantiation(JSGlobal
 
 // ------------------------------ Hook Functions ---------------------------
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderResolve(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderResolve(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     // Hook point, Loader.resolve.
@@ -473,7 +475,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderResolve(JSGlobalObject* globalObject, C
     return JSValue::encode(loader->resolve(globalObject, callFrame->argument(0), callFrame->argument(1), callFrame->argument(2)));
 }
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderResolveSync(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderResolveSync(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -486,7 +488,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderResolveSync(JSGlobalObject* globalObjec
     return JSValue::encode(identifierToJSValue(vm, result));
 }
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderFetch(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderFetch(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     // Hook point, Loader.fetch
@@ -500,7 +502,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderFetch(JSGlobalObject* globalObject, Cal
     return JSValue::encode(loader->fetch(globalObject, callFrame->argument(0), callFrame->argument(1), callFrame->argument(2)));
 }
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderGetModuleNamespaceObject(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderGetModuleNamespaceObject(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -515,7 +517,7 @@ EncodedJSValue JSC_HOST_CALL moduleLoaderGetModuleNamespaceObject(JSGlobalObject
 
 // ------------------- Additional Hook Functions ---------------------------
 
-EncodedJSValue JSC_HOST_CALL moduleLoaderEvaluate(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL moduleLoaderEvaluate(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     // To instrument and retrieve the errors raised from the module execution,
     // we inserted the hook point here.

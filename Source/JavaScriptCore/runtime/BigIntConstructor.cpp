@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2017 Caio Lima <ticaiolima@gmail.com>
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 #include "BigIntConstructor.h"
 
 #include "BigIntPrototype.h"
+#include "HeapPtr.h"
 #include "JSBigInt.h"
 #include "JSCInlines.h"
 #include "JSGlobalObjectFunctions.h"
@@ -37,8 +39,8 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsUintN(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsIntN(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsUintN(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsIntN(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC
 
@@ -57,7 +59,7 @@ const ClassInfo BigIntConstructor::s_info = { "Function", &Base::s_info, &bigInt
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL callBigIntConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callBigIntConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 BigIntConstructor::BigIntConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callBigIntConstructor, nullptr)
@@ -110,7 +112,7 @@ static EncodedJSValue toBigInt(JSGlobalObject* globalObject, JSValue argument)
     }));
 }
 
-static EncodedJSValue JSC_HOST_CALL callBigIntConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callBigIntConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -138,7 +140,7 @@ static EncodedJSValue JSC_HOST_CALL callBigIntConstructor(JSGlobalObject* global
     return result;
 }
 
-EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsUintN(JSGlobalObject*, CallFrame*)
+EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsUintN(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     // FIXME: [ESNext][BigInt] Implement BigInt.asIntN and BigInt.asUintN
     // https://bugs.webkit.org/show_bug.cgi?id=181144
@@ -146,7 +148,7 @@ EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsUintN(JSGlobalObject*, CallF
     return JSValue::encode(JSValue());
 }
 
-EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsIntN(JSGlobalObject*, CallFrame*)
+EncodedJSValue JSC_HOST_CALL bigIntConstructorFuncAsIntN(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     // FIXME: [ESNext][BigInt] Implement BigInt.asIntN and BigInt.asUintN
     // https://bugs.webkit.org/show_bug.cgi?id=181144

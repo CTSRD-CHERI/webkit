@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Yusuke Suzuki <utatane.tea@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "FunctionConstructor.h"
 #include "GeneratorFunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 
 namespace JSC {
@@ -36,13 +38,13 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(GeneratorFunctionConstructor);
 
 const ClassInfo GeneratorFunctionConstructor::s_info = { "GeneratorFunction", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(GeneratorFunctionConstructor) };
 
-static EncodedJSValue JSC_HOST_CALL callGeneratorFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callGeneratorFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::Generator));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructGeneratorFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructGeneratorFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::Generator, callFrame->newTarget()));

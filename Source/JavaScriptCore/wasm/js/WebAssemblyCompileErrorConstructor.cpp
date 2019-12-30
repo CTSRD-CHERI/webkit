@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSWebAssemblyCompileError.h"
 #include "WebAssemblyCompileErrorPrototype.h"
@@ -44,7 +46,7 @@ const ClassInfo WebAssemblyCompileErrorConstructor::s_info = { "Function", &Base
  @end
  */
 
-static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyCompileError(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyCompileError(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -54,7 +56,7 @@ static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyCompileError(JSGlobalO
     RELEASE_AND_RETURN(scope, JSValue::encode(JSWebAssemblyCompileError::create(globalObject, vm, structure, message)));
 }
 
-static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyCompileError(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyCompileError(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue message = callFrame->argument(0);
     Structure* errorStructure = globalObject->webAssemblyCompileErrorStructure();

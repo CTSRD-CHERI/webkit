@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2017 Apple, Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "WeakSetConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
@@ -45,22 +47,22 @@ void WeakSetConstructor::finishCreation(VM& vm, WeakSetPrototype* prototype)
     putDirectWithoutTransition(vm, vm.propertyNames->length, jsNumber(0), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakSet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWeakSet(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callWeakSet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWeakSet(HeapPtr<JSGlobalObject>, CallFrame*);
 
 WeakSetConstructor::WeakSetConstructor(VM& vm, Structure* structure)
     : Base(vm, structure, callWeakSet, constructWeakSet)
 {
 }
 
-static EncodedJSValue JSC_HOST_CALL callWeakSet(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callWeakSet(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
     return JSValue::encode(throwConstructorCannotBeCalledAsFunctionTypeError(globalObject, scope, "WeakSet"));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructWeakSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWeakSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

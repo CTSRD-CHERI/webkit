@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -32,11 +33,12 @@ namespace JSC {
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(ErrorPrototype);
 
-static EncodedJSValue JSC_HOST_CALL errorProtoFuncToString(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL errorProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
 #include "ErrorPrototype.lut.h"
+#include "HeapPtr.h"
 
 namespace JSC {
 
@@ -71,7 +73,7 @@ void ErrorPrototype::finishCreation(VM& vm, const String& name)
 // ------------------------------ Functions ---------------------------
 
 // ECMA-262 5.1, 15.11.4.4
-EncodedJSValue JSC_HOST_CALL errorProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL errorProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

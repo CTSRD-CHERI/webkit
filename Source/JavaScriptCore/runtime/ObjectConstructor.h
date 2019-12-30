@@ -1,6 +1,8 @@
+#include "HeapPtr.h"
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -26,11 +28,11 @@
 
 namespace JSC {
 
-EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyDescriptor(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyDescriptors(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertySymbols(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyNames(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL objectConstructorKeys(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyDescriptor(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyDescriptors(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertySymbols(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL objectConstructorGetOwnPropertyNames(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL objectConstructorKeys(HeapPtr<JSGlobalObject>, CallFrame*);
 
 class ObjectPrototype;
 

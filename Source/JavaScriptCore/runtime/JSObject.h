@@ -33,6 +33,7 @@
 #include "CustomGetterSetter.h"
 #include "DOMAttributeGetterSetter.h"
 #include "Heap.h"
+#include "HeapPtr.h"
 #include "IndexingHeaderInlines.h"
 #include "JSCast.h"
 #include "ObjectInitializationScope.h"
@@ -1143,21 +1144,13 @@ public:
     static inline const TypeInfo typeInfo() { return TypeInfo(FinalObjectType, StructureFlags); }
     static constexpr IndexingType defaultIndexingType = NonArray;
         
-#ifdef __CHERI_PURE_CAPABILITY__
-    static const unsigned defaultSize = 6 * sizeof(__uintcap_t); //XXXKG: 6 pointers
-#else
-    static const unsigned defaultSize = 64; //XXXKG: 6 pointers/elements
-#endif
+    static const unsigned defaultSize = 6 * sizeof(HeapPtr<JSCell>);
     static inline unsigned defaultInlineCapacity()
     {
         return (defaultSize - allocationSize(0)) / sizeof(WriteBarrier<Unknown>);
     }
 
-#ifdef __CHERI_PURE_CAPABILITY__
-    static const unsigned maxSize = 64 * sizeof(__uintcap_t); ///XXXKG: 64 pointers/elements
-#else
-    static const unsigned maxSize = 512; ///XXXKG: 64 pointers/elements
-#endif
+    static const unsigned maxSize = 64 * sizeof(HeapPtr<JSCell>);
     static inline unsigned maxInlineCapacity()
     {
         return (maxSize - allocationSize(0)) / sizeof(WriteBarrier<Unknown>);
@@ -1193,7 +1186,7 @@ private:
     }
 };
 
-JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL objectPrivateFuncInstanceOf(JSGlobalObject*, CallFrame*);
+JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL objectPrivateFuncInstanceOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 inline JSObject* JSObject::createRawObject(VM& vm, Structure* structure, Butterfly* butterfly)
 {

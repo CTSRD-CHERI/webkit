@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,6 +52,12 @@ class Data {
 
 public:
     static void performAssertions(VM&);
+
+#if USE(JSVALUE64)
+    static constexpr ptrdiff_t CallFrameHeaderSlots = 5;
+#else // !USE(JSVALUE64) // i.e. 32-bit version
+    const ptrdiff_t CallFrameHeaderSlots = 4;
+#endif // !USE(JSVALUE64)
 
 private:
     static uint8_t s_exceptionInstructions[maxOpcodeLength + 1];

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 
 #include "Error.h"
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSWebAssemblyInstance.h"
 #include "WasmSignatureInlines.h"
@@ -38,7 +40,7 @@ namespace JSC {
 
 const ClassInfo WebAssemblyWrapperFunction::s_info = { "WebAssemblyWrapperFunction", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(WebAssemblyWrapperFunction) };
 
-static EncodedJSValue JSC_HOST_CALL callWebAssemblyWrapperFunction(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callWebAssemblyWrapperFunction(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

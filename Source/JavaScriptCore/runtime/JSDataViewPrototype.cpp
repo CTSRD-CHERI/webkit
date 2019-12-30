@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "JSDataViewPrototype.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSArrayBuffer.h"
 #include "JSDataView.h"
 #include "Lookup.h"
@@ -61,25 +63,25 @@ namespace JSC {
 @end
 */
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt8(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt16(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint8(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint16(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat64(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt8(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt16(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint8(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint16(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat32(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat64(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterBuffer(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteLength(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteOffset(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt8(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt16(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint8(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint16(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat64(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt8(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt16(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint8(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint16(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat32(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat64(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterBuffer(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteLength(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteOffset(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -210,7 +212,7 @@ EncodedJSValue setData(JSGlobalObject* globalObject, CallFrame* callFrame)
 
 IGNORE_CLANG_WARNINGS_BEGIN("missing-prototypes")
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterBuffer(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterBuffer(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -222,7 +224,7 @@ EncodedJSValue JSC_HOST_CALL dataViewProtoGetterBuffer(JSGlobalObject* globalObj
     return JSValue::encode(view->possiblySharedJSBuffer(globalObject));
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteLength(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteLength(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -234,7 +236,7 @@ EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteLength(JSGlobalObject* globa
     return JSValue::encode(jsNumber(view->length()));
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteOffset(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteOffset(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -246,82 +248,82 @@ EncodedJSValue JSC_HOST_CALL dataViewProtoGetterByteOffset(JSGlobalObject* globa
     return JSValue::encode(jsNumber(view->byteOffset()));
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt8(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt8(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Int8Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt16(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt16(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Int16Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetInt32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Int32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint8(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint8(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Uint8Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint16(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint16(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Uint16Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetUint32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Uint32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Float32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat64(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncGetFloat64(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return getData<Float64Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt8(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt8(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Int8Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt16(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt16(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Int16Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetInt32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Int32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint8(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint8(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Uint8Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint16(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint16(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Uint16Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetUint32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Uint32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat32(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat32(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Float32Adaptor>(globalObject, callFrame);
 }
 
-EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat64(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dataViewProtoFuncSetFloat64(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return setData<Float64Adaptor>(globalObject, callFrame);
 }

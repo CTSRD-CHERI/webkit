@@ -831,6 +831,7 @@ set(JavaScriptCore_PRIVATE_FRAMEWORK_HEADERS
     runtime/GetVM.h
     runtime/GlobalExecutable.h
     runtime/HashMapImpl.h
+    runtime/HeapPtr.h
     runtime/Identifier.h
     runtime/IdentifierInlines.h
     runtime/IndexingHeader.h

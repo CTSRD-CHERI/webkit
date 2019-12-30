@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #pragma once
 
 #include "CommonSlowPaths.h"
+#include "HeapPtr.h"
 #include <wtf/StdLibExtras.h>
 
 namespace JSC {
@@ -38,7 +40,7 @@ namespace LLInt {
 
 extern "C" SlowPathReturnType llint_trace_operand(CallFrame*, const Instruction*, int fromWhere, int operand);
 extern "C" SlowPathReturnType llint_trace_value(CallFrame*, const Instruction*, int fromWhere, VirtualRegister operand);
-extern "C" void llint_write_barrier_slow(CallFrame*, JSCell*) WTF_INTERNAL;
+extern "C" void llint_write_barrier_slow(CallFrame*, HeapPtr<JSCell>) WTF_INTERNAL;
 extern "C" void llint_log_slow_path_call(CallFrame* exec, const Instruction* pc) WTF_INTERNAL;
 extern "C" uint64_t llint_get_num_slow_path_calls();
 

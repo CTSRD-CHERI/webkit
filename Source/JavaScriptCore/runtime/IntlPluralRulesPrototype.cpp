@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2018 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,14 +31,15 @@
 #if ENABLE(INTL)
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlPluralRules.h"
 #include "JSCInlines.h"
 #include "JSObjectInlines.h"
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncSelect(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncResolvedOptions(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncSelect(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -78,7 +80,7 @@ void IntlPluralRulesPrototype::finishCreation(VM& vm, Structure*)
     putDirectWithoutTransition(vm, vm.propertyNames->toStringTagSymbol, jsString(vm, "Object"), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncSelect(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncSelect(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -96,7 +98,7 @@ EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncSelect(JSGlobalObject* 
     RELEASE_AND_RETURN(scope, JSValue::encode(pluralRules->select(globalObject, value)));
 }
 
-EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncResolvedOptions(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlPluralRulesPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

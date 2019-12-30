@@ -1,6 +1,5 @@
-#include "HeapPtr.h"
 /*
- * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2015 Apple Inc. All rights reserved.
  * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,38 +26,54 @@
 
 #pragma once
 
-#include "InternalFunction.h"
+namespace WTF {
 
-namespace JSC {
-
-class SetPrototype;
-class GetterSetter;
-
-class SetConstructor final : public InternalFunction {
+template <typename T> class PlainPtr {
+    WTF_MAKE_FAST_ALLOCATED;
 public:
-    typedef InternalFunction Base;
-
-    static SetConstructor* create(VM& vm, Structure* structure, SetPrototype* setPrototype, GetterSetter* speciesSymbol)
-    {
-        SetConstructor* constructor = new (NotNull, allocateCell<SetConstructor>(vm.heap)) SetConstructor(vm, structure);
-        constructor->finishCreation(vm, setPrototype, speciesSymbol);
-        return constructor;
+    PlainPtr() =default;
+    ALWAYS_INLINE PlainPtr(T* ptr) {
+        *this = ptr;
     }
 
-    DECLARE_INFO;
+    T* get() const { return m_ptr; }
+    T* tryGet() const { return get(); }
 
-    static Structure* createStructure(VM& vm, JSGlobalObject* globalObject, JSValue prototype)
-    {
-        return Structure::create(vm, globalObject, prototype, TypeInfo(InternalFunctionType, StructureFlags), info());
-    }
+    void clear() { m_ptr = nullptr; }
+
+    T& operator*() const { ASSERT(m_ptr); return *get(); }
+    ALWAYS_INLINE T* operator->() const { return get(); }
+
+    operator T*() const { return get(); }
+
+    bool operator!() const { return !m_ptr; }
+
+    explicit operator bool() const { return !!m_ptr; }
+
+    PlainPtr& operator=(T*);
+
+    void swap(PlainPtr&);
 
 private:
-    SetConstructor(VM&, Structure*);
-    void finishCreation(VM&, SetPrototype*, GetterSetter* speciesSymbol);
+    T *m_ptr;
 };
 
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketHead(HeapPtr<JSGlobalObject>, CallFrame*);
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketNext(HeapPtr<JSGlobalObject>, CallFrame*);
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketKey(HeapPtr<JSGlobalObject>, CallFrame*);
+template<typename T> inline PlainPtr<T>& PlainPtr<T>::operator=(T* optr)
+{
+    m_ptr = optr;
+    return *this;
+}
 
-} // namespace JSC
+template<class T> inline void PlainPtr<T>::swap(PlainPtr& o)
+{
+    std::swap(m_ptr, o.m_ptr);
+}
+
+template<class T> inline void swap(PlainPtr<T>& a, PlainPtr<T>& b)
+{
+    a.swap(b);
+}
+
+} // namespace WTF
+
+using WTF::PlainPtr;

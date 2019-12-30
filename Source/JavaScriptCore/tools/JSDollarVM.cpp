@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +35,7 @@
 #include "FrameTracers.h"
 #include "FunctionCodeBlock.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSArray.h"
 #include "JSArrayBuffer.h"
 #include "JSCInlines.h"
@@ -890,7 +892,7 @@ public:
 private:
     void finishCreation(VM&, JSGlobalObject*);
 
-    static EncodedJSValue JSC_HOST_CALL functionEnableException(JSGlobalObject* globalObject, CallFrame* callFrame)
+    static EncodedJSValue JSC_HOST_CALL functionEnableException(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
     {
         DollarVMAssertScope assertScope;
         VM& vm = globalObject->vm();
@@ -954,7 +956,7 @@ public:
         return object;
     }
 
-    static EncodedJSValue JSC_HOST_CALL functionWithTypeCheck(JSGlobalObject* globalObject, CallFrame* callFrame)
+    static EncodedJSValue JSC_HOST_CALL functionWithTypeCheck(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
     {
         DollarVMAssertScope assertScope;
         VM& vm = globalObject->vm();
@@ -1033,7 +1035,7 @@ public:
         return object;
     }
 
-    static EncodedJSValue JSC_HOST_CALL functionWithTypeCheck(JSGlobalObject* globalObject, CallFrame* callFrame)
+    static EncodedJSValue JSC_HOST_CALL functionWithTypeCheck(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
     {
         DollarVMAssertScope assertScope;
         VM& vm = globalObject->vm();
@@ -1302,8 +1304,8 @@ void Element::finishCreation(VM& vm, Root* root)
 
 #if ENABLE(WEBASSEMBLY)
 
-static EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserAddBytes(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserFinalize(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserAddBytes(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserFinalize(HeapPtr<JSGlobalObject>, CallFrame*);
 
 class WasmStreamingParser : public JSDestructibleObject {
 public:
@@ -1368,7 +1370,7 @@ public:
 
 const ClassInfo WasmStreamingParser::s_info = { "WasmStreamingParser", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(WasmStreamingParser) };
 
-EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserAddBytes(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserAddBytes(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1383,7 +1385,7 @@ EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserAddBytes(JSGlobalObject*
     RELEASE_AND_RETURN(scope, JSValue::encode(jsNumber(static_cast<int32_t>(thisObject->streamingParser().addBytes(bitwise_cast<const uint8_t*>(data.first), data.second)))));
 }
 
-EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserFinalize(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL functionWasmStreamingParserFinalize(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1403,7 +1405,7 @@ const ClassInfo JSDollarVM::s_info = { "DollarVM", &Base::s_info, nullptr, nullp
 
 // Triggers a crash immediately.
 // Usage: $vm.crash()
-static NO_RETURN_DUE_TO_CRASH EncodedJSValue JSC_HOST_CALL functionCrash(JSGlobalObject*, CallFrame*)
+static NO_RETURN_DUE_TO_CRASH EncodedJSValue JSC_HOST_CALL functionCrash(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     CRASH();
@@ -1411,7 +1413,7 @@ static NO_RETURN_DUE_TO_CRASH EncodedJSValue JSC_HOST_CALL functionCrash(JSGloba
 
 // Executes a breakpoint instruction if the first argument is truthy or is unset.
 // Usage: $vm.breakpoint(<condition>)
-static EncodedJSValue JSC_HOST_CALL functionBreakpoint(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionBreakpoint(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     // Nothing should throw here but we might as well double check...
@@ -1426,7 +1428,7 @@ static EncodedJSValue JSC_HOST_CALL functionBreakpoint(JSGlobalObject* globalObj
 
 // Returns true if the current frame is a DFG frame.
 // Usage: isDFG = $vm.dfgTrue()
-static EncodedJSValue JSC_HOST_CALL functionDFGTrue(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionDFGTrue(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return JSValue::encode(jsBoolean(false));
@@ -1434,13 +1436,13 @@ static EncodedJSValue JSC_HOST_CALL functionDFGTrue(JSGlobalObject*, CallFrame*)
 
 // Returns true if the current frame is a FTL frame.
 // Usage: isFTL = $vm.ftlTrue()
-static EncodedJSValue JSC_HOST_CALL functionFTLTrue(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionFTLTrue(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return JSValue::encode(jsBoolean(false));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCpuMfence(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCpuMfence(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
 #if CPU(X86_64) && !OS(WINDOWS)
@@ -1449,7 +1451,7 @@ static EncodedJSValue JSC_HOST_CALL functionCpuMfence(JSGlobalObject*, CallFrame
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCpuRdtsc(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCpuRdtsc(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
 #if CPU(X86_64) && !OS(WINDOWS)
@@ -1462,7 +1464,7 @@ static EncodedJSValue JSC_HOST_CALL functionCpuRdtsc(JSGlobalObject*, CallFrame*
 #endif
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCpuCpuid(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCpuCpuid(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
 #if CPU(X86_64) && !OS(WINDOWS)
@@ -1471,7 +1473,7 @@ static EncodedJSValue JSC_HOST_CALL functionCpuCpuid(JSGlobalObject*, CallFrame*
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCpuPause(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCpuPause(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
 #if CPU(X86_64) && !OS(WINDOWS)
@@ -1489,7 +1491,7 @@ static EncodedJSValue JSC_HOST_CALL functionCpuPause(JSGlobalObject*, CallFrame*
 //
 // If the first argument is not a JSArrayBuffer, we load the butterfly
 // and clflush at the address of the butterfly.
-static EncodedJSValue JSC_HOST_CALL functionCpuClflush(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCpuClflush(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
 #if CPU(X86_64) && !OS(WINDOWS)
@@ -1577,7 +1579,7 @@ static FunctionExecutable* getExecutableForFunction(JSValue theFunctionValue)
 
 // Returns true if the current frame is a LLInt frame.
 // Usage: isLLInt = $vm.llintTrue()
-static EncodedJSValue JSC_HOST_CALL functionLLintTrue(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionLLintTrue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1590,7 +1592,7 @@ static EncodedJSValue JSC_HOST_CALL functionLLintTrue(JSGlobalObject* globalObje
 
 // Returns true if the current frame is a baseline JIT frame.
 // Usage: isBaselineJIT = $vm.jitTrue()
-static EncodedJSValue JSC_HOST_CALL functionJITTrue(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionJITTrue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1605,7 +1607,7 @@ static EncodedJSValue JSC_HOST_CALL functionJITTrue(JSGlobalObject* globalObject
 // Usage:
 // function f() { };
 // $vm.noInline(f);
-static EncodedJSValue JSC_HOST_CALL functionNoInline(JSGlobalObject*, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionNoInline(HeapPtr<JSGlobalObject>, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     if (callFrame->argumentCount() < 1)
@@ -1621,7 +1623,7 @@ static EncodedJSValue JSC_HOST_CALL functionNoInline(JSGlobalObject*, CallFrame*
 
 // Runs a full GC synchronously.
 // Usage: $vm.gc()
-static EncodedJSValue JSC_HOST_CALL functionGC(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionGC(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VMInspector::gc(globalObject);
@@ -1630,7 +1632,7 @@ static EncodedJSValue JSC_HOST_CALL functionGC(JSGlobalObject* globalObject, Cal
 
 // Runs the edenGC synchronously.
 // Usage: $vm.edenGC()
-static EncodedJSValue JSC_HOST_CALL functionEdenGC(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionEdenGC(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VMInspector::edenGC(globalObject);
@@ -1639,7 +1641,7 @@ static EncodedJSValue JSC_HOST_CALL functionEdenGC(JSGlobalObject* globalObject,
 
 // Dumps the hashes of all subspaces currently registered with the VM.
 // Usage: $vm.dumpSubspaceHashes()
-static EncodedJSValue JSC_HOST_CALL functionDumpSubspaceHashes(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionDumpSubspaceHashes(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1661,7 +1663,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpSubspaceHashes(JSGlobalObject* g
 // Note: you cannot toString() a codeBlock, unlinkedCodeBlock, or executable because
 // there are internal objects and not a JS object. Hence, you cannot do string
 // concatenation with them.
-static EncodedJSValue JSC_HOST_CALL functionCallFrame(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCallFrame(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     unsigned frameNumber = 1;
@@ -1682,7 +1684,7 @@ static EncodedJSValue JSC_HOST_CALL functionCallFrame(JSGlobalObject* globalObje
 // Gets a token for the CodeBlock for a specified frame index.
 // Usage: codeBlockToken = $vm.codeBlockForFrame(0) // frame 0 is the top frame.
 // Usage: codeBlockToken = $vm.codeBlockForFrame() // implies frame 0 i.e. current frame.
-static EncodedJSValue JSC_HOST_CALL functionCodeBlockForFrame(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCodeBlockForFrame(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     unsigned frameNumber = 1;
@@ -1737,7 +1739,7 @@ static CodeBlock* codeBlockFromArg(JSGlobalObject* globalObject, CallFrame* call
 // Usage: $vm.print("codeblock = ", $vm.codeBlockFor(codeBlockToken))
 // Note: you cannot toString() a codeBlock because it's an internal object and not
 // a JS object. Hence, you cannot do string concatenation with it.
-static EncodedJSValue JSC_HOST_CALL functionCodeBlockFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCodeBlockFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     CodeBlock* codeBlock = codeBlockFromArg(globalObject, callFrame);
@@ -1751,7 +1753,7 @@ static EncodedJSValue JSC_HOST_CALL functionCodeBlockFor(JSGlobalObject* globalO
 
 // Usage: $vm.dumpSourceFor(functionObj)
 // Usage: $vm.dumpSourceFor(codeBlockToken)
-static EncodedJSValue JSC_HOST_CALL functionDumpSourceFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpSourceFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     CodeBlock* codeBlock = codeBlockFromArg(globalObject, callFrame);
@@ -1762,7 +1764,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpSourceFor(JSGlobalObject* global
 
 // Usage: $vm.dumpBytecodeFor(functionObj)
 // Usage: $vm.dumpBytecodeFor(codeBlock)
-static EncodedJSValue JSC_HOST_CALL functionDumpBytecodeFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpBytecodeFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     CodeBlock* codeBlock = codeBlockFromArg(globalObject, callFrame);
@@ -1795,7 +1797,7 @@ static EncodedJSValue doPrint(JSGlobalObject* globalObject, CallFrame* callFrame
 
 // Prints a series of comma separate strings without appending a newline.
 // Usage: $vm.dataLog(str1, str2, str3)
-static EncodedJSValue JSC_HOST_CALL functionDataLog(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDataLog(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     const bool addLineFeed = false;
@@ -1804,7 +1806,7 @@ static EncodedJSValue JSC_HOST_CALL functionDataLog(JSGlobalObject* globalObject
 
 // Prints a series of comma separate strings and appends a newline.
 // Usage: $vm.print(str1, str2, str3)
-static EncodedJSValue JSC_HOST_CALL functionPrint(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionPrint(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     const bool addLineFeed = true;
@@ -1813,7 +1815,7 @@ static EncodedJSValue JSC_HOST_CALL functionPrint(JSGlobalObject* globalObject, 
 
 // Dumps the current CallFrame.
 // Usage: $vm.dumpCallFrame()
-static EncodedJSValue JSC_HOST_CALL functionDumpCallFrame(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpCallFrame(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     // When the callers call this function, they are expecting to dump their
@@ -1824,7 +1826,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpCallFrame(JSGlobalObject* global
 
 // Dumps the JS stack.
 // Usage: $vm.printStack()
-static EncodedJSValue JSC_HOST_CALL functionDumpStack(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpStack(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     // When the callers call this function, they are expecting to dump the
@@ -1838,7 +1840,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpStack(JSGlobalObject* globalObje
 // Usage: $vm.dumpRegisters() // dump the registers of the current CallFrame.
 // FIXME: Currently, this function dumps the physical frame. We should make
 // it dump the logical frame (i.e. be able to dump inlined frames as well).
-static EncodedJSValue JSC_HOST_CALL functionDumpRegisters(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpRegisters(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1868,7 +1870,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpRegisters(JSGlobalObject* global
 
 // Dumps the internal memory layout of a JSCell.
 // Usage: $vm.dumpCell(cell)
-static EncodedJSValue JSC_HOST_CALL functionDumpCell(JSGlobalObject*, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDumpCell(HeapPtr<JSGlobalObject>, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     JSValue value = callFrame->argument(0);
@@ -1881,7 +1883,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpCell(JSGlobalObject*, CallFrame*
 
 // Gets the dataLog dump of the indexingMode of the passed value.
 // Usage: $vm.print("indexingMode = " + $vm.indexingMode(jsValue))
-static EncodedJSValue JSC_HOST_CALL functionIndexingMode(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionIndexingMode(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     if (!callFrame->argument(0).isObject())
@@ -1892,7 +1894,7 @@ static EncodedJSValue JSC_HOST_CALL functionIndexingMode(JSGlobalObject* globalO
     return JSValue::encode(jsString(globalObject->vm(), stream.toString()));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionInlineCapacity(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionInlineCapacity(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1904,7 +1906,7 @@ static EncodedJSValue JSC_HOST_CALL functionInlineCapacity(JSGlobalObject* globa
 
 // Gets the dataLog dump of a given JS value as a string.
 // Usage: $vm.print("value = " + $vm.value(jsValue))
-static EncodedJSValue JSC_HOST_CALL functionValue(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionValue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     WTF::StringPrintStream stream;
@@ -1919,7 +1921,7 @@ static EncodedJSValue JSC_HOST_CALL functionValue(JSGlobalObject* globalObject, 
 
 // Gets the pid of the current process.
 // Usage: $vm.print("pid = " + $vm.getpid())
-static EncodedJSValue JSC_HOST_CALL functionGetPID(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionGetPID(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return JSValue::encode(jsNumber(getCurrentProcessID()));
@@ -1927,7 +1929,7 @@ static EncodedJSValue JSC_HOST_CALL functionGetPID(JSGlobalObject*, CallFrame*)
 
 // Make the globalObject have a bad time. Does nothing if the object is not a JSGlobalObject.
 // Usage: $vm.haveABadTime(globalObject)
-static EncodedJSValue JSC_HOST_CALL functionHaveABadTime(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionHaveABadTime(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1947,7 +1949,7 @@ static EncodedJSValue JSC_HOST_CALL functionHaveABadTime(JSGlobalObject* globalO
 
 // Checks if the object (or its global if the object is not a global) is having a bad time.
 // Usage: $vm.isHavingABadTime(obj)
-static EncodedJSValue JSC_HOST_CALL functionIsHavingABadTime(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionIsHavingABadTime(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1970,7 +1972,7 @@ static EncodedJSValue JSC_HOST_CALL functionIsHavingABadTime(JSGlobalObject* glo
 
 // Creates a new global object.
 // Usage: $vm.createGlobalObject()
-static EncodedJSValue JSC_HOST_CALL functionCreateGlobalObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateGlobalObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1978,7 +1980,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateGlobalObject(JSGlobalObject* g
     return JSValue::encode(JSGlobalObject::create(vm, JSGlobalObject::createStructure(vm, jsNull())));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateProxy(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCreateProxy(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -1992,7 +1994,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateProxy(JSGlobalObject* globalOb
     return JSValue::encode(proxy);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateRuntimeArray(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCreateRuntimeArray(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     JSLockHolder lock(globalObject);
@@ -2000,7 +2002,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateRuntimeArray(JSGlobalObject* g
     return JSValue::encode(array);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateNullRopeString(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateNullRopeString(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2008,7 +2010,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateNullRopeString(JSGlobalObject*
     return JSValue::encode(JSRopeString::createNullForTesting(vm));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateImpureGetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCreateImpureGetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2022,7 +2024,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateImpureGetter(JSGlobalObject* g
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateCustomGetterObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateCustomGetterObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2032,7 +2034,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateCustomGetterObject(JSGlobalObj
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITNodeObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITNodeObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2042,7 +2044,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITNodeObject(JSGlobalObjec
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2052,7 +2054,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterObject(JSGlobalObj
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterComplexObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterComplexObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2062,7 +2064,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterComplexObject(JSGl
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITFunctionObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITFunctionObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2072,7 +2074,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITFunctionObject(JSGlobalO
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITCheckSubClassObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITCheckSubClassObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2082,7 +2084,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITCheckSubClassObject(JSGl
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterBaseJSObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterBaseJSObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2093,7 +2095,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateDOMJITGetterBaseJSObject(JSGlo
 }
 
 #if ENABLE(WEBASSEMBLY)
-static EncodedJSValue JSC_HOST_CALL functionCreateWasmStreamingParser(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateWasmStreamingParser(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2102,7 +2104,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateWasmStreamingParser(JSGlobalOb
 }
 #endif
 
-static EncodedJSValue JSC_HOST_CALL functionCreateStaticCustomAccessor(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateStaticCustomAccessor(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2112,7 +2114,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateStaticCustomAccessor(JSGlobalO
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionSetImpureGetterDelegate(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionSetImpureGetterDelegate(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2134,7 +2136,7 @@ static EncodedJSValue JSC_HOST_CALL functionSetImpureGetterDelegate(JSGlobalObje
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateBuiltin(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCreateBuiltin(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2152,7 +2154,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateBuiltin(JSGlobalObject* global
     return JSValue::encode(func);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGetPrivateProperty(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionGetPrivateProperty(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2170,7 +2172,7 @@ static EncodedJSValue JSC_HOST_CALL functionGetPrivateProperty(JSGlobalObject* g
     RELEASE_AND_RETURN(scope, JSValue::encode(callFrame->argument(0).get(globalObject, symbol)));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateRoot(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateRoot(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2178,7 +2180,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateRoot(JSGlobalObject* globalObj
     return JSValue::encode(Root::create(vm, globalObject));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateElement(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionCreateElement(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2191,7 +2193,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateElement(JSGlobalObject* global
     return JSValue::encode(Element::create(vm, globalObject, root));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGetElement(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionGetElement(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2203,7 +2205,7 @@ static EncodedJSValue JSC_HOST_CALL functionGetElement(JSGlobalObject* globalObj
     return JSValue::encode(result ? result : jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateSimpleObject(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateSimpleObject(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2211,7 +2213,7 @@ static EncodedJSValue JSC_HOST_CALL functionCreateSimpleObject(JSGlobalObject* g
     return JSValue::encode(SimpleObject::create(vm, globalObject));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGetHiddenValue(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionGetHiddenValue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2226,7 +2228,7 @@ static EncodedJSValue JSC_HOST_CALL functionGetHiddenValue(JSGlobalObject* globa
     return JSValue::encode(simpleObject->hiddenValue());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionSetHiddenValue(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionSetHiddenValue(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2243,7 +2245,7 @@ static EncodedJSValue JSC_HOST_CALL functionSetHiddenValue(JSGlobalObject* globa
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionShadowChickenFunctionsOnStack(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionShadowChickenFunctionsOnStack(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2269,7 +2271,7 @@ static EncodedJSValue JSC_HOST_CALL functionShadowChickenFunctionsOnStack(JSGlob
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionSetGlobalConstRedeclarationShouldNotThrow(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionSetGlobalConstRedeclarationShouldNotThrow(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2277,7 +2279,7 @@ static EncodedJSValue JSC_HOST_CALL functionSetGlobalConstRedeclarationShouldNot
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionFindTypeForExpression(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionFindTypeForExpression(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2297,7 +2299,7 @@ static EncodedJSValue JSC_HOST_CALL functionFindTypeForExpression(JSGlobalObject
     return JSValue::encode(JSONParse(globalObject, jsonString));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionReturnTypeFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionReturnTypeFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2313,7 +2315,7 @@ static EncodedJSValue JSC_HOST_CALL functionReturnTypeFor(JSGlobalObject* global
     return JSValue::encode(JSONParse(globalObject, jsonString));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionFlattenDictionaryObject(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionFlattenDictionaryObject(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2323,7 +2325,7 @@ static EncodedJSValue JSC_HOST_CALL functionFlattenDictionaryObject(JSGlobalObje
     return encodedJSUndefined();
 }
 
-static EncodedJSValue JSC_HOST_CALL functionDumpBasicBlockExecutionRanges(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionDumpBasicBlockExecutionRanges(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2332,7 +2334,7 @@ static EncodedJSValue JSC_HOST_CALL functionDumpBasicBlockExecutionRanges(JSGlob
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionHasBasicBlockExecuted(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionHasBasicBlockExecuted(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2352,7 +2354,7 @@ static EncodedJSValue JSC_HOST_CALL functionHasBasicBlockExecuted(JSGlobalObject
     return JSValue::encode(jsBoolean(hasExecuted));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionBasicBlockExecutionCount(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionBasicBlockExecutionCount(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2372,7 +2374,7 @@ static EncodedJSValue JSC_HOST_CALL functionBasicBlockExecutionCount(JSGlobalObj
     return JSValue::encode(JSValue(executionCount));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionEnableExceptionFuzz(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionEnableExceptionFuzz(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     Options::useExceptionFuzz() = true;
@@ -2422,19 +2424,19 @@ static EncodedJSValue changeDebuggerModeWhenIdle(JSGlobalObject* globalObject, O
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionEnableDebuggerModeWhenIdle(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionEnableDebuggerModeWhenIdle(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return changeDebuggerModeWhenIdle(globalObject, { CodeGenerationMode::Debugger });
 }
 
-static EncodedJSValue JSC_HOST_CALL functionDisableDebuggerModeWhenIdle(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionDisableDebuggerModeWhenIdle(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return changeDebuggerModeWhenIdle(globalObject, { });
 }
 
-static EncodedJSValue JSC_HOST_CALL functionDeleteAllCodeWhenIdle(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionDeleteAllCodeWhenIdle(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM* vm = &globalObject->vm();
@@ -2445,13 +2447,13 @@ static EncodedJSValue JSC_HOST_CALL functionDeleteAllCodeWhenIdle(JSGlobalObject
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGlobalObjectCount(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionGlobalObjectCount(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return JSValue::encode(jsNumber(globalObject->vm().heap.globalObjectCount()));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGlobalObjectForObject(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionGlobalObjectForObject(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     JSValue value = callFrame->argument(0);
@@ -2461,7 +2463,7 @@ static EncodedJSValue JSC_HOST_CALL functionGlobalObjectForObject(JSGlobalObject
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionGetGetterSetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionGetGetterSetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2491,7 +2493,7 @@ static EncodedJSValue JSC_HOST_CALL functionGetGetterSetter(JSGlobalObject* glob
     return JSValue::encode(result);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionLoadGetterFromGetterSetter(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionLoadGetterFromGetterSetter(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2508,14 +2510,14 @@ static EncodedJSValue JSC_HOST_CALL functionLoadGetterFromGetterSetter(JSGlobalO
     return JSValue::encode(getter);
 }
 
-static EncodedJSValue JSC_HOST_CALL functionCreateCustomTestGetterSetter(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionCreateCustomTestGetterSetter(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
     return JSValue::encode(JSTestCustomGetterSetter::create(vm, globalObject, JSTestCustomGetterSetter::createStructure(vm, globalObject)));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionDeltaBetweenButterflies(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL functionDeltaBetweenButterflies(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
@@ -2532,20 +2534,20 @@ static EncodedJSValue JSC_HOST_CALL functionDeltaBetweenButterflies(JSGlobalObje
     return JSValue::encode(jsNumber(static_cast<int32_t>(delta)));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionTotalGCTime(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionTotalGCTime(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     VM& vm = globalObject->vm();
     return JSValue::encode(jsNumber(vm.heap.totalGCTime().seconds()));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionParseCount(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionParseCount(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
     return JSValue::encode(jsNumber(globalParseCount.load()));
 }
 
-static EncodedJSValue JSC_HOST_CALL functionIsWasmSupported(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL functionIsWasmSupported(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     DollarVMAssertScope assertScope;
 #if ENABLE(WEBASSEMBLY)

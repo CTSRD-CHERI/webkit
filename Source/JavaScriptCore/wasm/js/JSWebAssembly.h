@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,8 +55,8 @@ private:
     JSWebAssembly(VM&, Structure*);
 };
 
-EncodedJSValue JSC_HOST_CALL webAssemblyCompileStreamingInternal(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateStreamingInternal(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL webAssemblyCompileStreamingInternal(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateStreamingInternal(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014-2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "ConsoleClient.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "ScriptArguments.h"
 #include "ScriptCallStackFactory.h"
@@ -48,32 +50,32 @@ static String valueOrDefaultLabelString(JSGlobalObject* globalObject, CallFrame*
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(ConsoleObject);
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDebug(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncError(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncLog(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncInfo(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncWarn(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncClear(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDir(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDirXML(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTable(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTrace(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncAssert(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCount(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCountReset(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfile(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfileEnd(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTakeHeapSnapshot(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTime(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeLog(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeEnd(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeStamp(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroup(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupCollapsed(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupEnd(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecord(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecordEnd(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncScreenshot(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDebug(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncError(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncLog(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncInfo(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncWarn(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncClear(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDir(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDirXML(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTable(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTrace(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncAssert(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCount(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCountReset(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfile(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfileEnd(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTakeHeapSnapshot(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTime(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeLog(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeEnd(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeStamp(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroup(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupCollapsed(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupEnd(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecord(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecordEnd(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncScreenshot(HeapPtr<JSGlobalObject>, CallFrame*);
 
 const ClassInfo ConsoleObject::s_info = { "Console", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(ConsoleObject) };
 
@@ -136,32 +138,32 @@ static EncodedJSValue consoleLogWithLevel(JSGlobalObject* globalObject, CallFram
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDebug(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDebug(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return consoleLogWithLevel(globalObject, callFrame, MessageLevel::Debug);
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncError(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncError(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return consoleLogWithLevel(globalObject, callFrame, MessageLevel::Error);
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncLog(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncLog(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return consoleLogWithLevel(globalObject, callFrame, MessageLevel::Log);
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncInfo(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncInfo(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return consoleLogWithLevel(globalObject, callFrame, MessageLevel::Info);
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncWarn(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncWarn(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return consoleLogWithLevel(globalObject, callFrame, MessageLevel::Warning);
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncClear(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncClear(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -171,7 +173,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncClear(JSGlobalObject* global
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDir(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDir(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -181,7 +183,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDir(JSGlobalObject* globalOb
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDirXML(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDirXML(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -191,7 +193,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDirXML(JSGlobalObject* globa
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTable(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTable(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -201,7 +203,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTable(JSGlobalObject* global
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTrace(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTrace(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -211,7 +213,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTrace(JSGlobalObject* global
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncAssert(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncAssert(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -229,7 +231,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncAssert(JSGlobalObject* globa
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCount(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCount(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     auto* client = globalObject->consoleClient();
@@ -243,7 +245,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCount(JSGlobalObject* global
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCountReset(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCountReset(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     auto* client = globalObject->consoleClient();
@@ -257,7 +259,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncCountReset(JSGlobalObject* g
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfile(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfile(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -278,7 +280,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfile(JSGlobalObject* glob
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfileEnd(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfileEnd(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -299,7 +301,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncProfileEnd(JSGlobalObject* g
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTakeHeapSnapshot(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTakeHeapSnapshot(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -320,7 +322,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTakeHeapSnapshot(JSGlobalObj
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTime(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTime(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     auto* client = globalObject->consoleClient();
@@ -334,7 +336,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTime(JSGlobalObject* globalO
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeLog(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeLog(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     auto* client = globalObject->consoleClient();
@@ -348,7 +350,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeLog(JSGlobalObject* glob
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeEnd(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeEnd(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto scope = DECLARE_THROW_SCOPE(globalObject->vm());
     auto* client = globalObject->consoleClient();
@@ -362,7 +364,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeEnd(JSGlobalObject* glob
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeStamp(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeStamp(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -372,7 +374,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncTimeStamp(JSGlobalObject* gl
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroup(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroup(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -382,7 +384,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroup(JSGlobalObject* global
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupCollapsed(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupCollapsed(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -392,7 +394,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupCollapsed(JSGlobalObjec
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupEnd(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupEnd(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -402,7 +404,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncGroupEnd(JSGlobalObject* glo
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecord(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecord(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -412,7 +414,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecord(JSGlobalObject* globa
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecordEnd(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecordEnd(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)
@@ -422,7 +424,7 @@ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncRecordEnd(JSGlobalObject* gl
     return JSValue::encode(jsUndefined());
 }
 
-static EncodedJSValue JSC_HOST_CALL consoleProtoFuncScreenshot(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL consoleProtoFuncScreenshot(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ConsoleClient* client = globalObject->consoleClient();
     if (!client)

@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003, 2008, 2016 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
 #include "NativeErrorConstructor.h"
 
 #include "ErrorInstance.h"
+#include "HeapPtr.h"
 #include "Interpreter.h"
 #include "JSFunction.h"
 #include "JSString.h"
@@ -50,7 +52,7 @@ void NativeErrorConstructorBase::finishCreation(VM& vm, NativeErrorPrototype* pr
 }
 
 template<ErrorType errorType>
-EncodedJSValue JSC_HOST_CALL NativeErrorConstructor<errorType>::constructNativeErrorConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL NativeErrorConstructor<errorType>::constructNativeErrorConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -62,7 +64,7 @@ EncodedJSValue JSC_HOST_CALL NativeErrorConstructor<errorType>::constructNativeE
 }
 
 template<ErrorType errorType>
-EncodedJSValue JSC_HOST_CALL NativeErrorConstructor<errorType>::callNativeErrorConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL NativeErrorConstructor<errorType>::callNativeErrorConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     JSValue message = callFrame->argument(0);

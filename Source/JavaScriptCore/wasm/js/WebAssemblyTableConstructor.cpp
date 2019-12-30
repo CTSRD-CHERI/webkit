@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSWebAssemblyHelpers.h"
 #include "JSWebAssemblyTable.h"
@@ -45,7 +47,7 @@ const ClassInfo WebAssemblyTableConstructor::s_info = { "Function", &Base::s_inf
  @end
  */
 
-static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyTable(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyTable(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto throwScope = DECLARE_THROW_SCOPE(vm);
@@ -104,7 +106,7 @@ static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyTable(JSGlobalObject* 
     RELEASE_AND_RETURN(throwScope, JSValue::encode(JSWebAssemblyTable::create(globalObject, vm, globalObject->webAssemblyTableStructure(), wasmTable.releaseNonNull())));
 }
 
-static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyTable(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyTable(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

@@ -86,11 +86,6 @@ void Data::performAssertions(VM& vm)
     // Assertions to match LowLevelInterpreter.asm.  If you change any of this code, be
     // prepared to change LowLevelInterpreter.asm as well!!
 
-#if USE(JSVALUE64)
-    const ptrdiff_t CallFrameHeaderSlots = 5;
-#else // USE(JSVALUE64) // i.e. 32-bit version
-    const ptrdiff_t CallFrameHeaderSlots = 4;
-#endif
     const ptrdiff_t MachineRegisterSize = sizeof(CPURegister);
     const ptrdiff_t SlotSize = sizeof(Register);
 
@@ -110,17 +105,9 @@ void Data::performAssertions(VM& vm)
 
 #if CPU(BIG_ENDIAN)
     STATIC_ASSERT(TagOffset == 0);
-#ifdef __CHERI_PURE_CAPABILITY__
-    ASSERT(PayloadOffset == (sizeof(__uintcap_t)-4));
+    ASSERT(PayloadOffset == (sizeof(EncodedJSValue)-4));
 #else
-    ASSERT(PayloadOffset == 4);
-#endif
-#else
-#ifdef __CHERI_PURE_CAPABILITY__
-    ASSERT(TagOffset == (sizeof(__uintcap_t)-4));
-#else
-    ASSERT(TagOffset == 4);
-#endif
+    ASSERT(TagOffset == (sizeof(EncodedJSValue)-4));
     STATIC_ASSERT(PayloadOffset == 0);
 #endif
 

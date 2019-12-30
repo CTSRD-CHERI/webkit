@@ -1,6 +1,6 @@
-#include "HeapPtr.h"
 /*
- * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2015 Apple Inc. All rights reserved.
+ * Copyright (C) 2017-2018 Apple Inc. All rights reserved.
  * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,38 +27,27 @@
 
 #pragma once
 
-#include "InternalFunction.h"
+#include <wtf/PlainPtr.h>
 
 namespace JSC {
 
-class SetPrototype;
-class GetterSetter;
+template<typename T>
+    using HeapPtr = PlainPtr<T>;
 
-class SetConstructor final : public InternalFunction {
-public:
-    typedef InternalFunction Base;
+template<typename T>
+struct HeapPtrTraits {
+    template<typename U> using RebindTraits = HeapPtrTraits<U>;
 
-    static SetConstructor* create(VM& vm, Structure* structure, SetPrototype* setPrototype, GetterSetter* speciesSymbol)
-    {
-        SetConstructor* constructor = new (NotNull, allocateCell<SetConstructor>(vm.heap)) SetConstructor(vm, structure);
-        constructor->finishCreation(vm, setPrototype, speciesSymbol);
-        return constructor;
+    using StorageType = HeapPtr<T>;
+
+    template<typename U>
+    static ALWAYS_INLINE StorageType exchange(StorageType& ptr, U&& newValue) {
+        StorageType newValueAsStorageType = std::move(newValue);
+        return std::exchange(ptr, newValueAsStorageType);
     }
 
-    DECLARE_INFO;
-
-    static Structure* createStructure(VM& vm, JSGlobalObject* globalObject, JSValue prototype)
-    {
-        return Structure::create(vm, globalObject, prototype, TypeInfo(InternalFunctionType, StructureFlags), info());
-    }
-
-private:
-    SetConstructor(VM&, Structure*);
-    void finishCreation(VM&, SetPrototype*, GetterSetter* speciesSymbol);
+    static ALWAYS_INLINE void swap(StorageType& a, StorageType& b) { std::swap(a, b); }
+    static ALWAYS_INLINE T* unwrap(const StorageType& ptr) { return ptr; }
 };
-
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketHead(HeapPtr<JSGlobalObject>, CallFrame*);
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketNext(HeapPtr<JSGlobalObject>, CallFrame*);
-EncodedJSValue JSC_HOST_CALL setPrivateFuncSetBucketKey(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

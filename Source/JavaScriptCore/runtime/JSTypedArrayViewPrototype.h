@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2015 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,10 +47,10 @@ public:
     static Structure* createStructure(VM&, JSGlobalObject*, JSValue prototype);
 };
 
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncIsTypedArrayView(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSort(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncLength(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncGetOriginalConstructor(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSubarrayCreate(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncIsTypedArrayView(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSort(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncLength(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncGetOriginalConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL typedArrayViewPrivateFuncSubarrayCreate(HeapPtr<JSGlobalObject>, CallFrame*);
     
 } // namespace JSC

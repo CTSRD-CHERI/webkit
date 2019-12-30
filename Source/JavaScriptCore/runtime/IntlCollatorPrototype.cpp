@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2015 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,14 +31,15 @@
 #if ENABLE(INTL)
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlCollator.h"
 #include "JSBoundFunction.h"
 #include "JSCInlines.h"
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeGetterCompare(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeFuncResolvedOptions(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeGetterCompare(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -78,7 +80,7 @@ void IntlCollatorPrototype::finishCreation(VM& vm)
     putDirectWithoutTransition(vm, vm.propertyNames->toStringTagSymbol, jsString(vm, "Object"), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL IntlCollatorFuncCompare(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL IntlCollatorFuncCompare(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -107,7 +109,7 @@ static EncodedJSValue JSC_HOST_CALL IntlCollatorFuncCompare(JSGlobalObject* glob
     RELEASE_AND_RETURN(scope, JSValue::encode(collator->compareStrings(globalObject, xViewWithString.view, yViewWithString.view)));
 }
 
-EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeGetterCompare(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeGetterCompare(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -136,7 +138,7 @@ EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeGetterCompare(JSGlobalObject* 
     return JSValue::encode(boundCompare);
 }
 
-EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeFuncResolvedOptions(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlCollatorPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

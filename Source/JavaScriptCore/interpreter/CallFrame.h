@@ -2,6 +2,7 @@
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2001 Peter Kelly (pmk@post.com)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -109,7 +110,7 @@ namespace JSC  {
         CalleeBits callee() const { return CalleeBits(this[CallFrameSlot::callee].pointer()); }
         SUPPRESS_ASAN CalleeBits unsafeCallee() const { return CalleeBits(this[CallFrameSlot::callee].asanUnsafePointer()); }
         CodeBlock* codeBlock() const;
-        CodeBlock** addressOfCodeBlock() const { return bitwise_cast<CodeBlock**>(this + CallFrameSlot::codeBlock); }
+        HeapPtr<CodeBlock>* addressOfCodeBlock() const { return bitwise_cast<HeapPtr<CodeBlock>*>(this + CallFrameSlot::codeBlock); }
         inline SUPPRESS_ASAN CodeBlock* unsafeCodeBlock() const;
         inline JSScope* scope(int scopeRegisterOffset) const;
 

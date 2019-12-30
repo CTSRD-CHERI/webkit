@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,6 +26,7 @@
 
 #include "config.h"
 #include "ECMAScriptSpecInternalFunctions.h"
+#include "HeapPtr.h"
 
 #include "CallFrame.h"
 #include "ConstructData.h"
@@ -33,7 +35,7 @@
 
 namespace JSC {
 
-EncodedJSValue JSC_HOST_CALL esSpecIsConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL esSpecIsConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     bool isConstructor = callFrame->uncheckedArgument(0).isConstructor(globalObject->vm());
     return JSValue::encode(jsBoolean(isConstructor));

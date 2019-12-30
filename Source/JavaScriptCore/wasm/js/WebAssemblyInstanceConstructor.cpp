@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSModuleEnvironment.h"
 #include "JSModuleNamespaceObject.h"
@@ -59,7 +61,7 @@ const ClassInfo WebAssemblyInstanceConstructor::s_info = { "Function", &Base::s_
 
 using Wasm::Plan;
 
-static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyInstance(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyInstance(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -86,7 +88,7 @@ static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyInstance(JSGlobalObjec
     return JSValue::encode(instance);
 }
 
-static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyInstance(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyInstance(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

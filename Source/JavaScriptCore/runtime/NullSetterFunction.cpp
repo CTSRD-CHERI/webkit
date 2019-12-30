@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "CodeBlock.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSCJSValueInlines.h"
 #include "StackVisitor.h"
@@ -71,7 +73,7 @@ static bool callerIsStrict(VM& vm, CallFrame* callFrame)
 }
 
 namespace NullSetterFunctionInternal {
-static EncodedJSValue JSC_HOST_CALL callReturnUndefined(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callReturnUndefined(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

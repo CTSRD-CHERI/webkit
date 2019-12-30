@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,13 +67,20 @@ void ConservativeRoots::grow()
 }
 
 template<typename MarkHook>
-inline void ConservativeRoots::genericAddPointer(void* p, HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, TinyBloomFilter filter, MarkHook& markHook)
+inline void ConservativeRoots::genericAddPointer(const HeapPtr<char>& heapPtr, HeapVersion markingVersion, HeapVersion newlyAllocatedVersion, TinyBloomFilter filter, MarkHook& markHook)
 {
-#ifdef __CHERI_PURE_CAPABILITY__
+    char *p = nullptr;
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+    p = heapPtr.get();
+
     // Check if this is a valid capability
     if (!__builtin_cheri_tag_get(p))
         return;
+#else
+    p = heapPtr.get();
 #endif
+
     p = removeArrayPtrTag(p);
     markHook.mark(p);
 
@@ -109,11 +117,11 @@ void ConservativeRoots::genericAddSpan(void* begin, void* end, MarkHook& markHoo
     TinyBloomFilter filter = m_heap.objectSpace().blocks().filter(); // Make a local copy of filter to show the compiler it won't alias, and can be register-allocated.
     HeapVersion markingVersion = m_heap.objectSpace().markingVersion();
     HeapVersion newlyAllocatedVersion = m_heap.objectSpace().newlyAllocatedVersion();
-    for (char** it = static_cast<char**>(begin);
+    for (HeapPtr<char>* it = static_cast<HeapPtr<char>*>(begin);
 #ifdef __CHERI_PURE_CAPABILITY__
-        (vaddr_t)it != (vaddr_t)static_cast<char**>(end);
+        (vaddr_t)it != (vaddr_t)static_cast<HeapPtr<char>*>(end);
 #else
-        it != static_cast<char**>(end);
+        it != static_cast<HeapPtr<char>*>(end);
 #endif
         ++it) {
         genericAddPointer(*it, markingVersion, newlyAllocatedVersion, filter, markHook);

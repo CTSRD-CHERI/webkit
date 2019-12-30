@@ -2,6 +2,7 @@
  * Copyright (C) 2015 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2015 Sukolsak Sakshuwong (sukolsak@gmail.com)
  * Copyright (C) 2016 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +32,7 @@
 #if ENABLE(INTL)
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlCollator.h"
 #include "IntlCollatorPrototype.h"
 #include "IntlObject.h"
@@ -41,7 +43,7 @@ namespace JSC {
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(IntlCollatorConstructor);
 
-static EncodedJSValue JSC_HOST_CALL IntlCollatorConstructorFuncSupportedLocalesOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlCollatorConstructorFuncSupportedLocalesOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -49,8 +51,8 @@ static EncodedJSValue JSC_HOST_CALL IntlCollatorConstructorFuncSupportedLocalesO
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL callIntlCollator(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructIntlCollator(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callIntlCollator(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructIntlCollator(HeapPtr<JSGlobalObject>, CallFrame*);
 
 const ClassInfo IntlCollatorConstructor::s_info = { "Function", &InternalFunction::s_info, &collatorConstructorTable, nullptr, CREATE_METHOD_TABLE(IntlCollatorConstructor) };
 
@@ -85,7 +87,7 @@ void IntlCollatorConstructor::finishCreation(VM& vm, IntlCollatorPrototype* coll
     collatorPrototype->putDirectWithoutTransition(vm, vm.propertyNames->constructor, this, static_cast<unsigned>(PropertyAttribute::DontEnum));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructIntlCollator(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructIntlCollator(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -104,7 +106,7 @@ static EncodedJSValue JSC_HOST_CALL constructIntlCollator(JSGlobalObject* global
     return JSValue::encode(collator);
 }
 
-static EncodedJSValue JSC_HOST_CALL callIntlCollator(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callIntlCollator(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     // 10.1.2 Intl.Collator ([locales [, options]]) (ECMA-402 2.0)
     // 1. If NewTarget is undefined, let newTarget be the active function object, else let newTarget be NewTarget.
@@ -126,7 +128,7 @@ static EncodedJSValue JSC_HOST_CALL callIntlCollator(JSGlobalObject* globalObjec
     return JSValue::encode(collator);
 }
 
-EncodedJSValue JSC_HOST_CALL IntlCollatorConstructorFuncSupportedLocalesOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlCollatorConstructorFuncSupportedLocalesOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

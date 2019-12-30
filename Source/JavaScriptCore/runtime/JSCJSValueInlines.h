@@ -393,13 +393,13 @@ inline JSValue::JSValue(HashTableDeletedValueTag)
 inline JSValue::JSValue(JSCell* ptr)
 {
     //LOG_CHERI("Creating JSValue from ptr: %p\n", ptr);
-    u.asEncodedJSValue = reinterpret_cast<uintptr_t>(ptr);
+    u.ptr = ptr;
 }
 
 inline JSValue::JSValue(const JSCell* ptr)
 {
     //LOG_CHERI("Creating JSValue from const ptr: %p\n", ptr);
-    u.asEncodedJSValue = reinterpret_cast<uintptr_t>(const_cast<JSCell*>(ptr));
+    u.ptr = const_cast<JSCell*>(ptr);
 }
 
 inline JSValue::operator bool() const
@@ -497,21 +497,12 @@ inline bool JSValue::isBoolean() const
 
 inline bool JSValue::isCell() const
 {
-#ifdef __CHERI_PURE_CAPABILITY__ //XXXKG: need to do bitwise-and with the virtual address
-    //LOG_CHERI("JSValue::isCell(), u.asEncodedJSValue: %p, cheri_addr_get: %ld, TagMask: %lx\n, bitwise-and (direct): %p, bitwise-and (w/ addr): %ld\n", u.asEncodedJSValue, __builtin_cheri_address_get(u.ptr), TagMask, u.asEncodedJSValue & TagMask, __builtin_cheri_address_get(u.ptr) & TagMask);
-    return !(__builtin_cheri_address_get(u.ptr) & NotCellMask);
-#else
-    return !(u.asEncodedJSValue & NotCellMask);
-#endif
+    return !((uint64_t) u.asEncodedJSValue & NotCellMask);
 }
 
 inline bool JSValue::isInt32() const
 {
-#ifdef __CHERI_PURE_CAPABILITY__
-    return (__builtin_cheri_address_get(u.ptr) & NumberTag) == NumberTag;
-#else
-    return (u.asEncodedJSValue & NumberTag) == NumberTag;
-#endif
+    return ((uint64_t) u.asEncodedJSValue & NumberTag) == NumberTag;
 }
 
 inline int64_t reinterpretDoubleToInt64(double value)
@@ -542,20 +533,12 @@ inline JSValue::JSValue(int i)
 inline double JSValue::asDouble() const
 {
     ASSERT(isDouble());
-#ifdef __CHERI_PURE_CAPABILITY__
-    return reinterpretInt64ToDouble(__builtin_cheri_address_get(u.ptr) - JSValue::DoubleEncodeOffset);
-#else
-    return reinterpretInt64ToDouble(u.asEncodedJSValue - JSValue::DoubleEncodeOffset);
-#endif
+    return reinterpretInt64ToDouble((int64_t) u.asEncodedJSValue - JSValue::DoubleEncodeOffset);
 }
 
 inline bool JSValue::isNumber() const
 {
-#ifdef __CHERI_PURE_CAPABILITY__
-    return __builtin_cheri_address_get(u.ptr) & JSValue::NumberTag;
-#else
-    return u.asEncodedJSValue & JSValue::NumberTag;
-#endif
+    return (uint64_t) u.asEncodedJSValue & JSValue::NumberTag;
 }
 
 ALWAYS_INLINE JSCell* JSValue::asCell() const

@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
 #pragma once
 
 #include "DateInstance.h"
+#include "HeapPtr.h"
 
 namespace JSC {
 
@@ -52,6 +54,6 @@ protected:
     void finishCreation(VM&, JSGlobalObject*);
 };
 
-EncodedJSValue JSC_HOST_CALL dateProtoFuncGetTime(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dateProtoFuncGetTime(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

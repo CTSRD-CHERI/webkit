@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2006-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2007 Eric Seidel <eric@webkit.org>
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "APICast.h"
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "JSCallbackFunction.h"
 #include "JSClassRef.h"
 #include "JSFunction.h"
@@ -441,7 +443,7 @@ ConstructType JSCallbackObject<Parent>::getConstructData(JSCell* cell, Construct
 }
 
 template <class Parent>
-EncodedJSValue JSCallbackObject<Parent>::construct(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSCallbackObject<Parent>::construct(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = getVM(globalObject);
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -514,7 +516,7 @@ CallType JSCallbackObject<Parent>::getCallData(JSCell* cell, CallData& callData)
 }
 
 template <class Parent>
-EncodedJSValue JSCallbackObject<Parent>::call(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSCallbackObject<Parent>::call(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = getVM(globalObject);
     auto scope = DECLARE_THROW_SCOPE(vm);

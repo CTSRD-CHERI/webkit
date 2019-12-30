@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Oleksandr Skachkov <gskachkov@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "AsyncGeneratorFunctionPrototype.h"
 #include "FunctionConstructor.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 
 namespace JSC {
@@ -36,13 +38,13 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(AsyncGeneratorFunctionConstructor);
 
 const ClassInfo AsyncGeneratorFunctionConstructor::s_info = { "AsyncGeneratorFunction", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(AsyncGeneratorFunctionConstructor) };
 
-static EncodedJSValue JSC_HOST_CALL callAsyncGeneratorFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callAsyncGeneratorFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::AsyncGenerator));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructAsyncGeneratorFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructAsyncGeneratorFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::AsyncGenerator));

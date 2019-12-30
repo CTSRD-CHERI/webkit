@@ -1,6 +1,8 @@
+#include "HeapPtr.h"
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -45,6 +47,6 @@ private:
     ObjectPrototype(VM&, Structure*);
 };
 
-JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL objectProtoFuncToString(JSGlobalObject*, CallFrame*);
+JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL objectProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

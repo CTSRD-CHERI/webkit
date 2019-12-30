@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003, 2008, 2016 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
 #include "BooleanConstructor.h"
 
 #include "BooleanPrototype.h"
+#include "HeapPtr.h"
 #include "JSGlobalObject.h"
 #include "JSCInlines.h"
 
@@ -32,13 +34,13 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(BooleanConstructor);
 const ClassInfo BooleanConstructor::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(BooleanConstructor) };
 
 // ECMA 15.6.1
-static EncodedJSValue JSC_HOST_CALL callBooleanConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callBooleanConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return JSValue::encode(jsBoolean(callFrame->argument(0).toBoolean(globalObject)));
 }
 
 // ECMA 15.6.2
-static EncodedJSValue JSC_HOST_CALL constructWithBooleanConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithBooleanConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

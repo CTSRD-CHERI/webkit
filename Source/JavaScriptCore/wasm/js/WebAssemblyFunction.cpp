@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 
 #include "B3Compilation.h"
 #include "FrameTracers.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSFunctionInlines.h"
 #include "JSObject.h"
@@ -58,7 +60,7 @@ namespace JSC {
 
 const ClassInfo WebAssemblyFunction::s_info = { "WebAssemblyFunction", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(WebAssemblyFunction) };
 
-static EncodedJSValue JSC_HOST_CALL callWebAssemblyFunction(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callWebAssemblyFunction(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

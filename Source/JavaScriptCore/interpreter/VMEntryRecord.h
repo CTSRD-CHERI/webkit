@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,7 +44,7 @@ struct VMEntryRecord {
     VM* m_vm;
     CallFrame* m_prevTopCallFrame;
     EntryFrame* m_prevTopEntryFrame;
-    JSObject* m_callee;
+    HeapPtr<JSObject> m_callee;
 
     JSObject* callee() const { return m_callee; }
 

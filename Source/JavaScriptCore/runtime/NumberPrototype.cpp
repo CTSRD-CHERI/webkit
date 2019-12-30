@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000,2003 Harri Porten (porten@kde.org)
  *  Copyright (C) 2007-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
 
 #include "BigInteger.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlNumberFormat.h"
 #include "IntlObject.h"
 #include "JSCInlines.h"
@@ -44,11 +46,11 @@ typedef WTF::double_conversion::StringBuilder DoubleConversionStringBuilder;
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL numberProtoFuncToString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL numberProtoFuncToLocaleString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL numberProtoFuncToExponential(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL numberProtoFuncToPrecision(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberProtoFuncToLocaleString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberProtoFuncToExponential(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberProtoFuncToPrecision(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -386,7 +388,7 @@ String toStringWithRadix(double doubleValue, int32_t radix)
 // This method takes an optional argument specifying a number of *decimal places*
 // to round the significand to (or, put another way, this method optionally rounds
 // to argument-plus-one significant figures).
-EncodedJSValue JSC_HOST_CALL numberProtoFuncToExponential(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncToExponential(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -423,7 +425,7 @@ EncodedJSValue JSC_HOST_CALL numberProtoFuncToExponential(JSGlobalObject* global
 // This method takes an argument specifying a number of decimal places to round the
 // significand to. However when converting large values (1e+21 and above) this
 // method will instead fallback to calling ToString. 
-EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -457,7 +459,7 @@ EncodedJSValue JSC_HOST_CALL numberProtoFuncToFixed(JSGlobalObject* globalObject
 // decimal, whilst 1000 is converted to the exponential representation 1.00e+3.
 // For negative exponents values >= 1e-6 are formated as decimal fractions,
 // with smaller values converted to exponential representation.
-EncodedJSValue JSC_HOST_CALL numberProtoFuncToPrecision(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncToPrecision(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -553,7 +555,7 @@ JSString* numberToString(VM& vm, double doubleValue, int32_t radix)
     return numberToStringInternal(vm, doubleValue, radix);
 }
 
-EncodedJSValue JSC_HOST_CALL numberProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -568,7 +570,7 @@ EncodedJSValue JSC_HOST_CALL numberProtoFuncToString(JSGlobalObject* globalObjec
     return JSValue::encode(numberToStringInternal(vm, doubleValue, radix));
 }
 
-EncodedJSValue JSC_HOST_CALL numberProtoFuncToLocaleString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncToLocaleString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -587,7 +589,7 @@ EncodedJSValue JSC_HOST_CALL numberProtoFuncToLocaleString(JSGlobalObject* globa
 #endif
 }
 
-EncodedJSValue JSC_HOST_CALL numberProtoFuncValueOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL numberProtoFuncValueOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

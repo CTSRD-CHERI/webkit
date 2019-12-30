@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,12 +30,13 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSModuleNamespaceObject.h"
 #include "JSWebAssemblyInstance.h"
 
 namespace JSC {
-static EncodedJSValue JSC_HOST_CALL webAssemblyInstanceProtoFuncExports(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyInstanceProtoFuncExports(HeapPtr<JSGlobalObject>, CallFrame*);
 }
 
 #include "WebAssemblyInstancePrototype.lut.h"
@@ -61,7 +63,7 @@ static ALWAYS_INLINE JSWebAssemblyInstance* getInstance(JSGlobalObject* globalOb
     return result;
 }
 
-static EncodedJSValue JSC_HOST_CALL webAssemblyInstanceProtoFuncExports(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL webAssemblyInstanceProtoFuncExports(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto throwScope = DECLARE_THROW_SCOPE(vm);

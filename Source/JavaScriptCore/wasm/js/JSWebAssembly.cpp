@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +32,7 @@
 #include "CatchScope.h"
 #include "Exception.h"
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCBuiltins.h"
 #include "JSCInlines.h"
 #include "JSModuleNamespaceObject.h"
@@ -70,9 +72,9 @@ FOR_EACH_WEBASSEMBLY_CONSTRUCTOR_TYPE(DEFINE_CALLBACK_FOR_CONSTRUCTOR)
 
 #undef DEFINE_CALLBACK_FOR_CONSTRUCTOR
 
-static EncodedJSValue JSC_HOST_CALL webAssemblyCompileFunc(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateFunc(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL webAssemblyValidateFunc(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyCompileFunc(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateFunc(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL webAssemblyValidateFunc(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -157,7 +159,7 @@ static void webAssemblyModuleValidateAsyncInternal(JSGlobalObject* globalObject,
     }));
 }
 
-static EncodedJSValue JSC_HOST_CALL webAssemblyCompileFunc(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL webAssemblyCompileFunc(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto throwScope = DECLARE_THROW_SCOPE(vm);
@@ -297,7 +299,7 @@ void JSWebAssembly::webAssemblyModuleInstantinateAsync(JSGlobalObject* globalObj
     CLEAR_AND_RETURN_IF_EXCEPTION(catchScope, void());
 }
 
-static EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateFunc(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateFunc(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
 
@@ -323,7 +325,7 @@ static EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateFunc(JSGlobalObject* g
     }
 }
 
-static EncodedJSValue JSC_HOST_CALL webAssemblyValidateFunc(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL webAssemblyValidateFunc(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -336,7 +338,7 @@ static EncodedJSValue JSC_HOST_CALL webAssemblyValidateFunc(JSGlobalObject* glob
     return JSValue::encode(jsBoolean(plan.parseAndValidateModule(base, byteSize)));
 }
 
-EncodedJSValue JSC_HOST_CALL webAssemblyCompileStreamingInternal(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL webAssemblyCompileStreamingInternal(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto catchScope = DECLARE_CATCH_SCOPE(vm);
@@ -359,7 +361,7 @@ EncodedJSValue JSC_HOST_CALL webAssemblyCompileStreamingInternal(JSGlobalObject*
     return JSValue::encode(promise);
 }
 
-EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateStreamingInternal(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL webAssemblyInstantiateStreamingInternal(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
 

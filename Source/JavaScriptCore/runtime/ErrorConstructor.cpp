@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2017 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,7 @@
 #include "ErrorConstructor.h"
 
 #include "ErrorPrototype.h"
+#include "HeapPtr.h"
 #include "Interpreter.h"
 #include "JSGlobalObject.h"
 #include "JSString.h"
@@ -33,8 +35,8 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(ErrorConstructor);
 
 const ClassInfo ErrorConstructor::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(ErrorConstructor) };
 
-static EncodedJSValue JSC_HOST_CALL callErrorConstructor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructErrorConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callErrorConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructErrorConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 ErrorConstructor::ErrorConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callErrorConstructor, constructErrorConstructor)
@@ -52,7 +54,7 @@ void ErrorConstructor::finishCreation(VM& vm, ErrorPrototype* errorPrototype)
 
 // ECMA 15.9.3
 
-EncodedJSValue JSC_HOST_CALL constructErrorConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL constructErrorConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -62,7 +64,7 @@ EncodedJSValue JSC_HOST_CALL constructErrorConstructor(JSGlobalObject* globalObj
     RELEASE_AND_RETURN(scope, JSValue::encode(ErrorInstance::create(globalObject, errorStructure, message, nullptr, TypeNothing, false)));
 }
 
-EncodedJSValue JSC_HOST_CALL callErrorConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL callErrorConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue message = callFrame->argument(0);
     Structure* errorStructure = globalObject->errorStructure();

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2015 Yusuke Suzuki <utatane.tea@gmail.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 #include "SymbolConstructor.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSGlobalObject.h"
 #include "Symbol.h"
@@ -36,8 +38,8 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL symbolConstructorFor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL symbolConstructorKeyFor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL symbolConstructorFor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL symbolConstructorKeyFor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -56,7 +58,7 @@ const ClassInfo SymbolConstructor::s_info = { "Function", &Base::s_info, &symbol
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL callSymbol(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callSymbol(HeapPtr<JSGlobalObject>, CallFrame*);
 
 SymbolConstructor::SymbolConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callSymbol, nullptr)
@@ -77,7 +79,7 @@ void SymbolConstructor::finishCreation(VM& vm, SymbolPrototype* prototype)
 
 // ------------------------------ Functions ---------------------------
 
-static EncodedJSValue JSC_HOST_CALL callSymbol(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callSymbol(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -91,7 +93,7 @@ static EncodedJSValue JSC_HOST_CALL callSymbol(JSGlobalObject* globalObject, Cal
     return JSValue::encode(Symbol::createWithDescription(vm, string));
 }
 
-EncodedJSValue JSC_HOST_CALL symbolConstructorFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL symbolConstructorFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -106,7 +108,7 @@ EncodedJSValue JSC_HOST_CALL symbolConstructorFor(JSGlobalObject* globalObject, 
 
 const ASCIILiteral SymbolKeyForTypeError { "Symbol.keyFor requires that the first argument be a symbol"_s };
 
-EncodedJSValue JSC_HOST_CALL symbolConstructorKeyFor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL symbolConstructorKeyFor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

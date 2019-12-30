@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2015 Andy VanWagoner (andy@vanwagoner.family)
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +33,7 @@
 #include "BuiltinNames.h"
 #include "DateConstructor.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IntlDateTimeFormat.h"
 #include "IntlObject.h"
 #include "JSBoundFunction.h"
@@ -41,11 +43,11 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeGetterFormat(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeGetterFormat(HeapPtr<JSGlobalObject>, CallFrame*);
 #if JSC_ICU_HAS_UFIELDPOSITER
-static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncFormatToParts(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncFormatToParts(HeapPtr<JSGlobalObject>, CallFrame*);
 #endif
-static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncResolvedOptions(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -92,7 +94,7 @@ void IntlDateTimeFormatPrototype::finishCreation(VM& vm, JSGlobalObject* globalO
     putDirectWithoutTransition(vm, vm.propertyNames->toStringTagSymbol, jsString(vm, "Object"), PropertyAttribute::DontEnum | PropertyAttribute::ReadOnly);
 }
 
-static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatFuncFormatDateTime(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatFuncFormatDateTime(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -114,7 +116,7 @@ static EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatFuncFormatDateTime(JSGloba
     RELEASE_AND_RETURN(scope, JSValue::encode(format->format(globalObject, value)));
 }
 
-EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeGetterFormat(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeGetterFormat(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -153,7 +155,7 @@ EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeGetterFormat(JSGlobalObj
 }
 
 #if JSC_ICU_HAS_UFIELDPOSITER
-EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncFormatToParts(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncFormatToParts(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -179,7 +181,7 @@ EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncFormatToParts(JSGlob
 }
 #endif
 
-EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncResolvedOptions(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL IntlDateTimeFormatPrototypeFuncResolvedOptions(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

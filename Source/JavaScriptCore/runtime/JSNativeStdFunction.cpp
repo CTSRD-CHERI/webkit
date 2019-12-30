@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2015-2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,7 +59,7 @@ void JSNativeStdFunction::finishCreation(VM& vm, NativeExecutable* executable, i
     m_functionCell.set(vm, this, functionCell);
 }
 
-static EncodedJSValue JSC_HOST_CALL runStdFunction(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL runStdFunction(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSNativeStdFunction* function = jsCast<JSNativeStdFunction*>(callFrame->jsCallee());
     ASSERT(function);

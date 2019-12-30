@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Caitlin Potter <caitp@igalia.com>.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "AsyncFunctionPrototype.h"
 #include "FunctionConstructor.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 
 namespace JSC {
@@ -36,13 +38,13 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(AsyncFunctionConstructor);
 
 const ClassInfo AsyncFunctionConstructor::s_info = { "AsyncFunction", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(AsyncFunctionConstructor) };
 
-static EncodedJSValue JSC_HOST_CALL callAsyncFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callAsyncFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::Async));
 }
 
-static EncodedJSValue JSC_HOST_CALL constructAsyncFunctionConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructAsyncFunctionConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructFunction(globalObject, callFrame, args, FunctionConstructionMode::Async));

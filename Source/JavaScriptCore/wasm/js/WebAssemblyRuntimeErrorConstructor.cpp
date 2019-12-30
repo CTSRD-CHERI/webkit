@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #if ENABLE(WEBASSEMBLY)
 
 #include "FunctionPrototype.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSWebAssemblyRuntimeError.h"
 #include "WebAssemblyRuntimeErrorPrototype.h"
@@ -44,7 +46,7 @@ const ClassInfo WebAssemblyRuntimeErrorConstructor::s_info = { "Function", &Base
  @end
  */
 
-static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyRuntimeError(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyRuntimeError(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -56,7 +58,7 @@ static EncodedJSValue JSC_HOST_CALL constructJSWebAssemblyRuntimeError(JSGlobalO
     return JSValue::encode(JSWebAssemblyRuntimeError::create(globalObject, vm, structure, WTFMove(messageString)));
 }
 
-static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyRuntimeError(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callJSWebAssemblyRuntimeError(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue message = callFrame->argument(0);
     Structure* errorStructure = globalObject->webAssemblyRuntimeErrorStructure();

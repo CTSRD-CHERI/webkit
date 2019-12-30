@@ -1,6 +1,8 @@
+#include "HeapPtr.h"
 /*
  *  Copyright (C) 1999-2000,2003 Harri Porten (porten@kde.org)
  *  Copyright (C) 2007-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -31,8 +33,8 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsInteger(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsSafeInteger(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsInteger(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsSafeInteger(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC
 
@@ -52,8 +54,8 @@ const ClassInfo NumberConstructor::s_info = { "Function", &InternalFunction::s_i
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL callNumberConstructor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructNumberConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callNumberConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructNumberConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 NumberConstructor::NumberConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callNumberConstructor, constructNumberConstructor)
@@ -86,7 +88,7 @@ void NumberConstructor::finishCreation(VM& vm, NumberPrototype* numberPrototype)
 }
 
 // ECMA 15.7.1
-static EncodedJSValue JSC_HOST_CALL constructNumberConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructNumberConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -101,19 +103,19 @@ static EncodedJSValue JSC_HOST_CALL constructNumberConstructor(JSGlobalObject* g
 }
 
 // ECMA 15.7.2
-static EncodedJSValue JSC_HOST_CALL callNumberConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL callNumberConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return JSValue::encode(jsNumber(!callFrame->argumentCount() ? 0 : callFrame->uncheckedArgument(0).toNumber(globalObject)));
 }
 
 // ECMA-262 20.1.2.3
-static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsInteger(JSGlobalObject*, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsInteger(HeapPtr<JSGlobalObject>, CallFrame* callFrame)
 {
     return JSValue::encode(jsBoolean(NumberConstructor::isIntegerImpl(callFrame->argument(0))));
 }
 
 // ECMA-262 20.1.2.5
-static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsSafeInteger(JSGlobalObject*, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL numberConstructorFuncIsSafeInteger(HeapPtr<JSGlobalObject>, CallFrame* callFrame)
 {
     JSValue argument = callFrame->argument(0);
     bool isInteger;

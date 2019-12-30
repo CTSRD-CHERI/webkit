@@ -24,6 +24,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "HeapPtr.h"
+
 #pragma once
 
 namespace JSC {
@@ -57,7 +59,7 @@ static_assert(sizeof(GetByIdModeMetadataArrayLength) == 12);
 struct GetByIdModeMetadataProtoLoad {
     StructureID structureID;
     PropertyOffset cachedOffset;
-    JSObject* cachedSlot;
+    HeapPtr<JSObject> cachedSlot;
 };
 #if CPU(LITTLE_ENDIAN) && CPU(ADDRESS64)
 #ifdef __CHERI_PURE_CAPABILITY__

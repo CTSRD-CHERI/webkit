@@ -34,6 +34,7 @@
 #include "GCDeferralContextInlines.h"
 #include "GetterSetter.h"
 #include "HeapAnalyzer.h"
+#include "HeapPtr.h"
 #include "IndexingHeaderInlines.h"
 #include "JSCInlines.h"
 #include "JSCustomGetterSetterFunction.h"
@@ -102,7 +103,9 @@ ALWAYS_INLINE void JSObject::markAuxiliaryAndVisitOutOfLineProperties(SlotVisito
         return;
 
     if (isCopyOnWrite(structure->indexingMode())) {
-        visitor.append(bitwise_cast<WriteBarrier<JSCell>>(JSImmutableButterfly::fromButterfly(butterfly)));
+        WriteBarrier<JSCell> writeBarrier;
+        writeBarrier.setWithoutWriteBarrier(JSImmutableButterfly::fromButterfly(butterfly));
+        visitor.append(writeBarrier);
         return;
     }
 
@@ -2303,7 +2306,7 @@ bool JSObject::defaultHasInstance(JSGlobalObject* globalObject, JSValue value, J
     ASSERT_NOT_REACHED();
 }
 
-EncodedJSValue JSC_HOST_CALL objectPrivateFuncInstanceOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL objectPrivateFuncInstanceOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue value = callFrame->uncheckedArgument(0);
     JSValue proto = callFrame->uncheckedArgument(1);

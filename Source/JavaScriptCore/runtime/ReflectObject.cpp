@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2017 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "ReflectObject.h"
 
 #include "BuiltinNames.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSGlobalObjectFunctions.h"
 #include "Lookup.h"
@@ -34,16 +36,16 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL reflectObjectConstruct(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectDefineProperty(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectGet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectGetOwnPropertyDescriptor(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectGetPrototypeOf(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectIsExtensible(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectOwnKeys(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectPreventExtensions(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectSet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL reflectObjectSetPrototypeOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectConstruct(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectDefineProperty(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectGet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectGetOwnPropertyDescriptor(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectGetPrototypeOf(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectIsExtensible(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectOwnKeys(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectPreventExtensions(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectSet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL reflectObjectSetPrototypeOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -87,7 +89,7 @@ void ReflectObject::finishCreation(VM& vm, JSGlobalObject*)
 // ------------------------------ Functions --------------------------------
 
 // https://tc39.github.io/ecma262/#sec-reflect.construct
-EncodedJSValue JSC_HOST_CALL reflectObjectConstruct(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectConstruct(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -127,7 +129,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectConstruct(JSGlobalObject* globalObject
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.defineproperty
-EncodedJSValue JSC_HOST_CALL reflectObjectDefineProperty(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectDefineProperty(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -153,7 +155,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectDefineProperty(JSGlobalObject* globalO
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.get
-EncodedJSValue JSC_HOST_CALL reflectObjectGet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectGet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -174,7 +176,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectGet(JSGlobalObject* globalObject, Call
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.getownpropertydescriptor
-EncodedJSValue JSC_HOST_CALL reflectObjectGetOwnPropertyDescriptor(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectGetOwnPropertyDescriptor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -190,7 +192,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectGetOwnPropertyDescriptor(JSGlobalObjec
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.getprototypeof
-EncodedJSValue JSC_HOST_CALL reflectObjectGetPrototypeOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectGetPrototypeOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -202,7 +204,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectGetPrototypeOf(JSGlobalObject* globalO
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.isextensible
-EncodedJSValue JSC_HOST_CALL reflectObjectIsExtensible(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectIsExtensible(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -217,7 +219,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectIsExtensible(JSGlobalObject* globalObj
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.ownkeys
-EncodedJSValue JSC_HOST_CALL reflectObjectOwnKeys(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectOwnKeys(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -229,7 +231,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectOwnKeys(JSGlobalObject* globalObject, 
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.preventextensions
-EncodedJSValue JSC_HOST_CALL reflectObjectPreventExtensions(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectPreventExtensions(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -244,7 +246,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectPreventExtensions(JSGlobalObject* glob
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.set
-EncodedJSValue JSC_HOST_CALL reflectObjectSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -268,7 +270,7 @@ EncodedJSValue JSC_HOST_CALL reflectObjectSet(JSGlobalObject* globalObject, Call
 }
 
 // https://tc39.github.io/ecma262/#sec-reflect.setprototypeof
-EncodedJSValue JSC_HOST_CALL reflectObjectSetPrototypeOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL reflectObjectSetPrototypeOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,8 +51,8 @@ inline void WriteBarrierBase<T, Traits>::setMayBeNull(VM& vm, const JSCell* owne
 template <typename T, typename Traits>
 inline void WriteBarrierBase<T, Traits>::setEarlyValue(VM& vm, const JSCell* owner, T* value)
 {
-    Traits::exchange(this->m_cell, value);
-    vm.heap.writeBarrier(owner, static_cast<JSCell*>(value));
+    this->m_cell = reinterpret_cast<T *>(value);
+    vm.heap.writeBarrier(owner, this->m_cell);
 }
 
 inline void WriteBarrierBase<Unknown, DumbValueTraits<Unknown>>::set(VM& vm, const JSCell* owner, JSValue value)

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -406,7 +407,7 @@ static void setupJIT(VM& vm, CodeBlock* codeBlock)
 }
 
 Exception* ScriptExecutable::prepareForExecutionImpl(
-    VM& vm, JSFunction* function, JSScope* scope, CodeSpecializationKind kind, CodeBlock*& resultCodeBlock)
+    VM& vm, JSFunction* function, JSScope* scope, CodeSpecializationKind kind, HeapPtr<CodeBlock>& resultCodeBlock)
 {
     auto throwScope = DECLARE_THROW_SCOPE(vm);
     DeferGCForAWhile deferGC(vm.heap);

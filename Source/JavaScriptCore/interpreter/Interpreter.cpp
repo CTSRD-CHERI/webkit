@@ -827,12 +827,12 @@ failedJSONP:
 
     ProgramCodeBlock* codeBlock;
     {
-        CodeBlock* tempCodeBlock;
+        HeapPtr<CodeBlock> tempCodeBlock;
         Exception* error = program->prepareForExecution<ProgramExecutable>(vm, nullptr, scope, CodeForCall, tempCodeBlock);
         EXCEPTION_ASSERT(throwScope.exception() == error);
         if (UNLIKELY(error))
             return checkedReturn(error);
-        codeBlock = jsCast<ProgramCodeBlock*>(tempCodeBlock);
+        codeBlock = jsCast<ProgramCodeBlock*>(tempCodeBlock.get());
     }
 
     VMTraps::Mask mask(VMTraps::NeedTermination, VMTraps::NeedWatchdogCheck);
@@ -867,7 +867,7 @@ JSValue Interpreter::executeCall(JSGlobalObject* lexicalGlobalObject, JSObject* 
 
     bool isJSCall = (callType == CallType::JS);
     JSScope* scope = nullptr;
-    CodeBlock* newCodeBlock;
+    HeapPtr<CodeBlock> newCodeBlock;
     size_t argsCount = 1 + args.size(); // implicit "this" parameter
 
     JSGlobalObject* globalObject;
@@ -936,7 +936,7 @@ JSObject* Interpreter::executeConstruct(JSGlobalObject* lexicalGlobalObject, JSO
 
     bool isJSConstruct = (constructType == ConstructType::JS);
     JSScope* scope = nullptr;
-    CodeBlock* newCodeBlock;
+    HeapPtr<CodeBlock> newCodeBlock;
     size_t argsCount = 1 + args.size(); // implicit "this" parameter
 
     JSGlobalObject* globalObject;
@@ -1004,7 +1004,7 @@ CallFrameClosure Interpreter::prepareForRepeatCall(FunctionExecutable* functionE
         return CallFrameClosure();
 
     // Compile the callee:
-    CodeBlock* newCodeBlock;
+    HeapPtr<CodeBlock> newCodeBlock;
     Exception* error = functionExecutable->prepareForExecution<FunctionExecutable>(vm, function, scope, CodeForCall, newCodeBlock);
     EXCEPTION_ASSERT(throwScope.exception() == error);
     if (UNLIKELY(error))
@@ -1063,12 +1063,12 @@ JSValue Interpreter::execute(EvalExecutable* eval, JSGlobalObject* lexicalGlobal
 
     EvalCodeBlock* codeBlock;
     {
-        CodeBlock* tempCodeBlock;
+        HeapPtr<CodeBlock> tempCodeBlock;
         Exception* compileError = eval->prepareForExecution<EvalExecutable>(vm, nullptr, scope, CodeForCall, tempCodeBlock);
         EXCEPTION_ASSERT(throwScope.exception() == compileError);
         if (UNLIKELY(!!compileError))
             return checkedReturn(compileError);
-        codeBlock = jsCast<EvalCodeBlock*>(tempCodeBlock);
+        codeBlock = jsCast<EvalCodeBlock*>(tempCodeBlock.get());
     }
     UnlinkedEvalCodeBlock* unlinkedCodeBlock = codeBlock->unlinkedEvalCodeBlock();
 
@@ -1188,12 +1188,12 @@ JSValue Interpreter::executeModuleProgram(ModuleProgramExecutable* executable, J
 
     ModuleProgramCodeBlock* codeBlock;
     {
-        CodeBlock* tempCodeBlock;
+        HeapPtr<CodeBlock> tempCodeBlock;
         Exception* compileError = executable->prepareForExecution<ModuleProgramExecutable>(vm, nullptr, scope, CodeForCall, tempCodeBlock);
         EXCEPTION_ASSERT(throwScope.exception() == compileError);
         if (UNLIKELY(!!compileError))
             return checkedReturn(compileError);
-        codeBlock = jsCast<ModuleProgramCodeBlock*>(tempCodeBlock);
+        codeBlock = jsCast<ModuleProgramCodeBlock*>(tempCodeBlock.get());
     }
 
     VMTraps::Mask mask(VMTraps::NeedTermination, VMTraps::NeedWatchdogCheck);

@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,9 +58,9 @@ private:
     void finishCreation(VM&, MapPrototype*, GetterSetter* speciesSymbol);
 };
 
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketHead(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketNext(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketKey(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketValue(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketHead(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketNext(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketKey(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL mapPrivateFuncMapBucketValue(HeapPtr<JSGlobalObject>, CallFrame*);
 
 } // namespace JSC

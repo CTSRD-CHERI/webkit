@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2016 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +44,7 @@ ProxyRevoke* ProxyRevoke::create(VM& vm, Structure* structure, ProxyObject* prox
     return revoke;
 }
 
-static EncodedJSValue JSC_HOST_CALL performProxyRevoke(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL performProxyRevoke(HeapPtr<JSGlobalObject>, CallFrame*);
 
 ProxyRevoke::ProxyRevoke(VM& vm, Structure* structure)
     : Base(vm, structure, performProxyRevoke, nullptr)
@@ -57,7 +59,7 @@ void ProxyRevoke::finishCreation(VM& vm, const char* name, ProxyObject* proxy)
     putDirect(vm, vm.propertyNames->length, jsNumber(0), PropertyAttribute::ReadOnly | PropertyAttribute::DontEnum);
 }
 
-static EncodedJSValue JSC_HOST_CALL performProxyRevoke(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL performProxyRevoke(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ProxyRevoke* proxyRevoke = jsCast<ProxyRevoke*>(callFrame->jsCallee());
     JSValue proxyValue = proxyRevoke->proxy();

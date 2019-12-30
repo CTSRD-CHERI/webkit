@@ -157,13 +157,25 @@ public:
 #if USE(JSVALUE64)
     ALWAYS_INLINE int64_t i64() const { return m_value; }
     ALWAYS_INLINE uint64_t u64() const { return m_value; }
-    ALWAYS_INLINE EncodedJSValue encodedJSValue() const { return bitwise_cast<EncodedJSValue>(m_value); }
+    ALWAYS_INLINE EncodedJSValue encodedJSValue() const {
+#if defined(__CHERI_PURE_CAPABILITY__)
+        if (__builtin_cheri_tag_get((void *) m_value)) {
+            HeapPtr<JSCell> ptr = cell();
+            return bitwise_cast<EncodedJSValue>(ptr);
+        } else {
+            return u64();
+        }
+#else
+        return bitwise_cast<EncodedJSValue>(m_value);
+#endif
+    }
 #endif
     ALWAYS_INLINE Opcode opcode() const { return bitwise_cast<Opcode>(m_value); }
 
     operator CallFrame*() { return bitwise_cast<CallFrame*>(m_value); }
     operator const Instruction*() { return bitwise_cast<const Instruction*>(m_value); }
     operator JSCell*() { return bitwise_cast<JSCell*>(m_value); }
+    operator HeapPtr<JSCell>() { return cell(); }
     operator ProtoCallFrame*() { return bitwise_cast<ProtoCallFrame*>(m_value); }
     operator Register*() { return bitwise_cast<Register*>(m_value); }
     operator VM*() { return bitwise_cast<VM*>(m_value); }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1125,7 +1126,7 @@ SlowPathReturnType JIT_OPERATION operationLinkCall(CallFrame* calleeFrame, JSGlo
             return handleThrowException();
         }
 
-        CodeBlock** codeBlockSlot = calleeFrame->addressOfCodeBlock();
+        HeapPtr<CodeBlock>* codeBlockSlot = calleeFrame->addressOfCodeBlock();
         Exception* error = functionExecutable->prepareForExecution<FunctionExecutable>(vm, callee, scope, kind, *codeBlockSlot);
         EXCEPTION_ASSERT(throwScope.exception() == error);
         if (UNLIKELY(error))
@@ -1180,7 +1181,7 @@ inline SlowPathReturnType virtualForWithFunction(JSGlobalObject* globalObject, C
                 reinterpret_cast<void*>(KeepTheFrame));
         }
 
-        CodeBlock** codeBlockSlot = calleeFrame->addressOfCodeBlock();
+        HeapPtr<CodeBlock>* codeBlockSlot = calleeFrame->addressOfCodeBlock();
         Exception* error = functionExecutable->prepareForExecution<FunctionExecutable>(vm, function, scope, kind, *codeBlockSlot);
         EXCEPTION_ASSERT(throwScope.exception() == error);
         if (UNLIKELY(error)) {

@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2004-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -25,6 +26,7 @@
 #include "DateConversion.h"
 #include "DateInstance.h"
 #include "DatePrototype.h"
+#include "HeapPtr.h"
 #include "JSDateMath.h"
 #include "JSFunction.h"
 #include "JSGlobalObject.h"
@@ -45,9 +47,9 @@
 
 namespace JSC {
 
-EncodedJSValue JSC_HOST_CALL dateParse(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dateUTC(JSGlobalObject*, CallFrame*);
-EncodedJSValue JSC_HOST_CALL dateNow(JSGlobalObject*, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dateParse(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dateUTC(HeapPtr<JSGlobalObject>, CallFrame*);
+EncodedJSValue JSC_HOST_CALL dateNow(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -69,8 +71,8 @@ const ClassInfo DateConstructor::s_info = { "Function", &InternalFunction::s_inf
 
 STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(DateConstructor);
 
-static EncodedJSValue JSC_HOST_CALL callDate(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL constructWithDateConstructor(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL callDate(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL constructWithDateConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 DateConstructor::DateConstructor(VM& vm, Structure* structure)
     : InternalFunction(vm, structure, callDate, constructWithDateConstructor)
@@ -151,14 +153,14 @@ JSObject* constructDate(JSGlobalObject* globalObject, JSValue newTarget, const A
     return DateInstance::create(vm, dateStructure, value);
 }
     
-static EncodedJSValue JSC_HOST_CALL constructWithDateConstructor(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL constructWithDateConstructor(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     ArgList args(callFrame);
     return JSValue::encode(constructDate(globalObject, callFrame->newTarget(), args));
 }
 
 // ECMA 15.9.2
-static EncodedJSValue JSC_HOST_CALL callDate(JSGlobalObject* globalObject, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callDate(HeapPtr<JSGlobalObject> globalObject, CallFrame*)
 {
     VM& vm = globalObject->vm();
     GregorianDateTime ts;
@@ -166,7 +168,7 @@ static EncodedJSValue JSC_HOST_CALL callDate(JSGlobalObject* globalObject, CallF
     return JSValue::encode(jsNontrivialString(vm, formatDateTime(ts, DateTimeFormatDateAndTime, false)));
 }
 
-EncodedJSValue JSC_HOST_CALL dateParse(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dateParse(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -180,12 +182,12 @@ JSValue dateNowImpl()
     return jsNumber(jsCurrentTime());
 }
 
-EncodedJSValue JSC_HOST_CALL dateNow(JSGlobalObject*, CallFrame*)
+EncodedJSValue JSC_HOST_CALL dateNow(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     return JSValue::encode(jsNumber(jsCurrentTime()));
 }
 
-EncodedJSValue JSC_HOST_CALL dateUTC(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL dateUTC(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     double ms = millisecondsFromComponents(globalObject, ArgList(callFrame), WTF::UTCTime);
     return JSValue::encode(jsNumber(timeClip(ms)));

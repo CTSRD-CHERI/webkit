@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2001 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -25,6 +26,7 @@
 #include "BuiltinNames.h"
 #include "Error.h"
 #include "GetterSetter.h"
+#include "HeapPtr.h"
 #include "JSAsyncFunction.h"
 #include "JSCInlines.h"
 #include "JSFunction.h"
@@ -37,10 +39,10 @@ STATIC_ASSERT_IS_TRIVIALLY_DESTRUCTIBLE(FunctionPrototype);
 
 const ClassInfo FunctionPrototype::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(FunctionPrototype) };
 
-static EncodedJSValue JSC_HOST_CALL functionProtoFuncToString(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL functionProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
 
 // ECMA 15.3.4
-static EncodedJSValue JSC_HOST_CALL callFunctionPrototype(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callFunctionPrototype(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     return JSValue::encode(jsUndefined());
 }
@@ -76,7 +78,7 @@ void FunctionPrototype::initRestrictedProperties(VM& vm, JSGlobalObject* globalO
     putDirectNonIndexAccessorWithoutTransition(vm, vm.propertyNames->arguments, errorGetterSetter, PropertyAttribute::DontEnum | PropertyAttribute::Accessor);
 }
 
-EncodedJSValue JSC_HOST_CALL functionProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL functionProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

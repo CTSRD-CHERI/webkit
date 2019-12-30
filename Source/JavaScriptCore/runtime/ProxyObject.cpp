@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +29,7 @@
 
 #include "ArrayConstructor.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "IdentifierInlines.h"
 #include "JSCInlines.h"
 #include "JSObjectInlines.h"
@@ -515,7 +517,7 @@ bool ProxyObject::putByIndex(JSCell* cell, JSGlobalObject* globalObject, unsigne
     return thisObject->putByIndexCommon(globalObject, thisObject, propertyName, value, shouldThrow);
 }
 
-static EncodedJSValue JSC_HOST_CALL performProxyCall(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL performProxyCall(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     NO_TAIL_CALLS();
 
@@ -566,7 +568,7 @@ CallType ProxyObject::getCallData(JSCell* cell, CallData& callData)
     return CallType::Host;
 }
 
-static EncodedJSValue JSC_HOST_CALL performProxyConstruct(JSGlobalObject* globalObject, CallFrame* callFrame)
+static EncodedJSValue JSC_HOST_CALL performProxyConstruct(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     NO_TAIL_CALLS();
 

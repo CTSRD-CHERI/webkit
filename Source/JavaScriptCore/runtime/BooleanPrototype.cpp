@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2003, 2008, 2011, 2016 Apple Inc. All rights reserved.
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -23,6 +24,7 @@
 
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "JSFunction.h"
 #include "JSString.h"
 #include "ObjectPrototype.h"
@@ -30,8 +32,8 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL booleanProtoFuncToString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL booleanProtoFuncValueOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL booleanProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL booleanProtoFuncValueOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -65,7 +67,7 @@ void BooleanPrototype::finishCreation(VM& vm, JSGlobalObject*)
 
 // ------------------------------ Functions ---------------------------
 
-EncodedJSValue JSC_HOST_CALL booleanProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL booleanProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
@@ -87,7 +89,7 @@ EncodedJSValue JSC_HOST_CALL booleanProtoFuncToString(JSGlobalObject* globalObje
     return JSValue::encode(vm.smallStrings.trueString());
 }
 
-EncodedJSValue JSC_HOST_CALL booleanProtoFuncValueOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL booleanProtoFuncValueOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

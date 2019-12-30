@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #pragma once
 
 #include "JSCJSValue.h"
+#include "HeapPtr.h"
 #include <wtf/Assertions.h>
 #include <wtf/VectorTraits.h>
 
@@ -92,8 +94,8 @@ namespace JSC {
     private:
         union {
             EncodedJSValue value;
-            CallFrame* callFrame;
-            CodeBlock* codeBlock;
+            HeapPtr<CallFrame> callFrame;
+            HeapPtr<CodeBlock> codeBlock;
             EncodedValueDescriptor encodedValue;
             double number;
             int64_t integer;
@@ -206,11 +208,7 @@ namespace JSC {
 
     ALWAYS_INLINE void* Register::pointer() const
     {
-#if USE(JSVALUE64)
-        return u.encodedValue.ptr;
-#else
-        return bitwise_cast<void*>(payload());
-#endif
+        return (void *) unboxedCell();
     }
 
     SUPPRESS_ASAN ALWAYS_INLINE void* Register::asanUnsafePointer() const

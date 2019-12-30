@@ -3,6 +3,7 @@
  *  Copyright (C) 2003-2019 Apple Inc. All rights reserved.
  *  Copyright (C) 2007 Cameron Zwarich (cwzwarich@uwaterloo.ca)
  *  Copyright (C) 2007 Maks Orlovich
+ *  Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -24,6 +25,7 @@
 #pragma once
 
 #include "FunctionRareData.h"
+#include "HeapPtr.h"
 #include "InternalFunction.h"
 #include "JSCallee.h"
 #include "JSScope.h"
@@ -49,7 +51,7 @@ class Signature;
 }
 
 
-JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL callHostFunctionAsConstructor(JSGlobalObject*, CallFrame*);
+JS_EXPORT_PRIVATE EncodedJSValue JSC_HOST_CALL callHostFunctionAsConstructor(HeapPtr<JSGlobalObject>, CallFrame*);
 
 JS_EXPORT_PRIVATE String getCalculatedDisplayName(VM&, JSObject*);
 

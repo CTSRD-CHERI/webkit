@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #pragma once
 
 #include "CodeBlock.h"
+#include "HeapPtr.h"
 #include "Register.h"
 #include "StackAlignment.h"
 #include <wtf/ForbidHeapAllocation.h>
@@ -45,7 +47,7 @@ public:
     uint32_t paddedArgCount;
     bool hasArityMismatch;
     JSValue *args;
-    JSGlobalObject* globalObject;
+    HeapPtr<JSGlobalObject> globalObject;
 
     inline void init(CodeBlock*, JSGlobalObject*, JSObject*, JSValue, int, JSValue* otherArgs = 0);
 

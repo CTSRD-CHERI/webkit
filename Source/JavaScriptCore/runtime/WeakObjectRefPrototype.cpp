@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple, Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 #include "WeakObjectRefPrototype.h"
 
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSCInlines.h"
 #include "JSWeakObjectRef.h"
 
@@ -34,7 +36,7 @@ namespace JSC {
 
 const ClassInfo WeakObjectRefPrototype::s_info = { "WeakRef", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(WeakObjectRefPrototype) };
 
-static EncodedJSValue JSC_HOST_CALL protoFuncWeakRefDeref(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL protoFuncWeakRefDeref(HeapPtr<JSGlobalObject>, CallFrame*);
 
 void WeakObjectRefPrototype::finishCreation(VM& vm, JSGlobalObject* globalObject)
 {
@@ -65,7 +67,7 @@ ALWAYS_INLINE static JSWeakObjectRef* getWeakRef(JSGlobalObject* globalObject, J
     return nullptr;
 }
 
-EncodedJSValue JSC_HOST_CALL protoFuncWeakRefDeref(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL protoFuncWeakRefDeref(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto* ref = getWeakRef(globalObject, callFrame->thisValue());

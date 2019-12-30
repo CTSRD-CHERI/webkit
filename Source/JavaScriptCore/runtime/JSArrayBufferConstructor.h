@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +27,7 @@
 #pragma once
 
 #include "ArrayBuffer.h"
+#include "HeapPtr.h"
 #include "InternalFunction.h"
 
 namespace JSC {
@@ -42,7 +44,7 @@ protected:
     JSGenericArrayBufferConstructor(VM&, Structure*);
     void finishCreation(VM&, JSArrayBufferPrototype*, GetterSetter* speciesSymbol);
 
-    static EncodedJSValue JSC_HOST_CALL constructArrayBuffer(JSGlobalObject*, CallFrame*);
+    static EncodedJSValue JSC_HOST_CALL constructArrayBuffer(HeapPtr<JSGlobalObject>, CallFrame*);
 
 public:
     static JSGenericArrayBufferConstructor* create(VM& vm, Structure* structure, JSArrayBufferPrototype* prototype, GetterSetter* speciesSymbol)

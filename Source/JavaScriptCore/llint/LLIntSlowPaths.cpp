@@ -1516,7 +1516,7 @@ inline SlowPathReturnType setUpCall(CallFrame* calleeFrame, CodeSpecializationKi
         if (!isCall(kind) && functionExecutable->constructAbility() == ConstructAbility::CannotConstruct)
             LLINT_CALL_THROW(globalObject, createNotAConstructorError(globalObject, callee));
 
-        CodeBlock** codeBlockSlot = calleeFrame->addressOfCodeBlock();
+        HeapPtr<CodeBlock>* codeBlockSlot = calleeFrame->addressOfCodeBlock();
         Exception* error = functionExecutable->prepareForExecution<FunctionExecutable>(vm, callee, scope, kind, *codeBlockSlot);
         EXCEPTION_ASSERT(throwScope.exception() == error);
         if (UNLIKELY(error))
@@ -1970,7 +1970,7 @@ extern "C" SlowPathReturnType llint_stack_check_at_vm_entry(VM* vm, Register* ne
 }
 #endif
 
-extern "C" void llint_write_barrier_slow(CallFrame* callFrame, JSCell* cell)
+extern "C" void llint_write_barrier_slow(CallFrame* callFrame, HeapPtr<JSCell> cell)
 {
     VM& vm = callFrame->codeBlock()->vm();
     vm.heap.writeBarrier(cell);

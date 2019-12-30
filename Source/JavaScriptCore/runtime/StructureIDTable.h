@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "HeapPtr.h"
 #include "UnusedPointer.h"
 #include <wtf/UniqueArray.h>
 #include <wtf/Vector.h>
@@ -177,12 +178,12 @@ public:
 #if ENCODE_STRUCTURE_BITS
 ALWAYS_INLINE Structure* StructureIDTable::decode(EncodedStructureBits bits, StructureID structureID)
 {
-    return bitwise_cast<Structure*>(bits ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer));
+    return bitwise_cast< HeapPtr<Structure> >(bits ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer));
 }
 
 ALWAYS_INLINE EncodedStructureBits StructureIDTable::encode(Structure* structure, StructureID structureID)
 {
-    return bitwise_cast<EncodedStructureBits>(structure) ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer);
+    return bitwise_cast<EncodedStructureBits>(HeapPtr<Structure>(structure)) ^ (static_cast<EncodedStructureBits>(structureID) << s_entropyBitsShiftForStructurePointer);
 }
 #endif
 

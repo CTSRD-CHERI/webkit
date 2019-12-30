@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2014 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +36,7 @@ namespace JSC {
 const ClassInfo NullGetterFunction::s_info = { "Function", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(NullGetterFunction) };
 
 namespace NullGetterFunctionInternal {
-static EncodedJSValue JSC_HOST_CALL callReturnUndefined(JSGlobalObject*, CallFrame*)
+static EncodedJSValue JSC_HOST_CALL callReturnUndefined(HeapPtr<JSGlobalObject>, CallFrame*)
 {
     return JSValue::encode(jsUndefined());
 }

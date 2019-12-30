@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006-2019 Apple Inc.  All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,7 +80,8 @@ inline JSC::JSValue toJS(JSC::JSGlobalObject* globalObject, JSValueRef v)
     else
         result = jsCell;
 #else
-    JSC::JSValue result = bitwise_cast<JSC::JSValue>(v);
+    JSC::EncodedJSValue encodedValue = static_cast<JSC::EncodedJSValue>(bitwise_cast<uintptr_t>(v));
+    JSC::JSValue result = JSC::JSValue::decode(encodedValue);
 #endif
     if (!result)
         return JSC::jsNull();
@@ -97,7 +99,8 @@ inline JSC::JSValue toJSForGC(JSC::JSGlobalObject* globalObject, JSValueRef v)
         return JSC::JSValue();
     JSC::JSValue result = jsCell;
 #else
-    JSC::JSValue result = bitwise_cast<JSC::JSValue>(v);
+    JSC::EncodedJSValue encodedValue = static_cast<JSC::EncodedJSValue>(bitwise_cast<uintptr_t>(v));
+    JSC::JSValue result = JSC::JSValue::decode(encodedValue);
 #endif
     if (result && result.isCell())
         RELEASE_ASSERT(result.asCell()->methodTable(getVM(globalObject)));
@@ -139,7 +142,8 @@ inline JSValueRef toRef(JSC::VM& vm, JSC::JSValue v)
     return reinterpret_cast<JSValueRef>(v.asCell());
 #else
     UNUSED_PARAM(vm);
-    return bitwise_cast<JSValueRef>(v);
+    JSC::EncodedJSValue encodedValue = JSC::JSValue::encode(v);
+    return bitwise_cast<JSValueRef>(static_cast<uintptr_t>(encodedValue));
 #endif
 }
 

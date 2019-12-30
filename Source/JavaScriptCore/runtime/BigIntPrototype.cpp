@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2017 Caio Lima <ticaiolima@gmail.com>.
  * Copyright (C) 2017-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 
 #include "BigIntObject.h"
 #include "Error.h"
+#include "HeapPtr.h"
 #include "JSBigInt.h"
 #include "JSCBuiltins.h"
 #include "JSCInlines.h"
@@ -41,9 +43,9 @@
 
 namespace JSC {
 
-static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToLocaleString(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncValueOf(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToLocaleString(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL bigIntProtoFuncValueOf(HeapPtr<JSGlobalObject>, CallFrame*);
 
 }
 
@@ -113,17 +115,17 @@ static JSValue bigIntProtoFuncToStringImpl(JSGlobalObject* globalObject, CallFra
     return jsNontrivialString(vm, resultString);
 }
 
-EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return JSValue::encode(bigIntProtoFuncToStringImpl(globalObject, callFrame));
 }
 
-EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToLocaleString(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL bigIntProtoFuncToLocaleString(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     return JSValue::encode(bigIntProtoFuncToStringImpl(globalObject, callFrame));
 }
 
-EncodedJSValue JSC_HOST_CALL bigIntProtoFuncValueOf(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL bigIntProtoFuncValueOf(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     if (JSBigInt* value = toThisBigIntValue(vm, callFrame->thisValue()))

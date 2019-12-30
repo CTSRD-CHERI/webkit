@@ -1,5 +1,7 @@
+#include "HeapPtr.h"
 /*
  * Copyright (C) 2013-2019 Apple, Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,10 +35,10 @@ namespace JSC {
 
 const ClassInfo WeakMapPrototype::s_info = { "WeakMap", &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(WeakMapPrototype) };
 
-static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapDelete(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapGet(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapHas(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapSet(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapDelete(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapGet(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapHas(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL protoFuncWeakMapSet(HeapPtr<JSGlobalObject>, CallFrame*);
 
 void WeakMapPrototype::finishCreation(VM& vm, JSGlobalObject* globalObject)
 {
@@ -69,7 +71,7 @@ ALWAYS_INLINE static JSWeakMap* getWeakMap(JSGlobalObject* globalObject, JSValue
     return nullptr;
 }
 
-EncodedJSValue JSC_HOST_CALL protoFuncWeakMapDelete(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL protoFuncWeakMapDelete(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto* map = getWeakMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -78,7 +80,7 @@ EncodedJSValue JSC_HOST_CALL protoFuncWeakMapDelete(JSGlobalObject* globalObject
     return JSValue::encode(jsBoolean(key.isObject() && map->remove(asObject(key))));
 }
 
-EncodedJSValue JSC_HOST_CALL protoFuncWeakMapGet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL protoFuncWeakMapGet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto* map = getWeakMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -89,7 +91,7 @@ EncodedJSValue JSC_HOST_CALL protoFuncWeakMapGet(JSGlobalObject* globalObject, C
     return JSValue::encode(map->get(asObject(key)));
 }
 
-EncodedJSValue JSC_HOST_CALL protoFuncWeakMapHas(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL protoFuncWeakMapHas(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     auto* map = getWeakMap(globalObject, callFrame->thisValue());
     if (!map)
@@ -98,7 +100,7 @@ EncodedJSValue JSC_HOST_CALL protoFuncWeakMapHas(JSGlobalObject* globalObject, C
     return JSValue::encode(jsBoolean(key.isObject() && map->has(asObject(key))));
 }
 
-EncodedJSValue JSC_HOST_CALL protoFuncWeakMapSet(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL protoFuncWeakMapSet(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);

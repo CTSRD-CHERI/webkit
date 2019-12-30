@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +30,7 @@
 #include "BuiltinNames.h"
 #include "Error.h"
 #include "ExceptionHelpers.h"
+#include "HeapPtr.h"
 #include "IteratorOperations.h"
 #include "JSCInlines.h"
 #include "JSSet.h"
@@ -47,13 +49,13 @@ const ClassInfo SetPrototype::s_info = { "Set", &Base::s_info, &setPrototypeTabl
 @end
 */
 
-static EncodedJSValue JSC_HOST_CALL setProtoFuncAdd(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL setProtoFuncClear(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL setProtoFuncDelete(JSGlobalObject*, CallFrame*);
-static EncodedJSValue JSC_HOST_CALL setProtoFuncHas(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL setProtoFuncAdd(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL setProtoFuncClear(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL setProtoFuncDelete(HeapPtr<JSGlobalObject>, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL setProtoFuncHas(HeapPtr<JSGlobalObject>, CallFrame*);
 
 
-static EncodedJSValue JSC_HOST_CALL setProtoFuncSize(JSGlobalObject*, CallFrame*);
+static EncodedJSValue JSC_HOST_CALL setProtoFuncSize(HeapPtr<JSGlobalObject>, CallFrame*);
 
 void SetPrototype::finishCreation(VM& vm, JSGlobalObject* globalObject)
 {
@@ -92,7 +94,7 @@ ALWAYS_INLINE static JSSet* getSet(JSGlobalObject* globalObject, JSValue thisVal
     return nullptr;
 }
 
-EncodedJSValue JSC_HOST_CALL setProtoFuncAdd(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setProtoFuncAdd(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSValue thisValue = callFrame->thisValue();
     JSSet* set = getSet(globalObject, thisValue);
@@ -102,7 +104,7 @@ EncodedJSValue JSC_HOST_CALL setProtoFuncAdd(JSGlobalObject* globalObject, CallF
     return JSValue::encode(thisValue);
 }
 
-EncodedJSValue JSC_HOST_CALL setProtoFuncClear(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setProtoFuncClear(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSSet* set = getSet(globalObject, callFrame->thisValue());
     if (!set)
@@ -111,7 +113,7 @@ EncodedJSValue JSC_HOST_CALL setProtoFuncClear(JSGlobalObject* globalObject, Cal
     return JSValue::encode(jsUndefined());
 }
 
-EncodedJSValue JSC_HOST_CALL setProtoFuncDelete(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setProtoFuncDelete(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSSet* set = getSet(globalObject, callFrame->thisValue());
     if (!set)
@@ -119,7 +121,7 @@ EncodedJSValue JSC_HOST_CALL setProtoFuncDelete(JSGlobalObject* globalObject, Ca
     return JSValue::encode(jsBoolean(set->remove(globalObject, callFrame->argument(0))));
 }
 
-EncodedJSValue JSC_HOST_CALL setProtoFuncHas(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setProtoFuncHas(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSSet* set = getSet(globalObject, callFrame->thisValue());
     if (!set)
@@ -127,7 +129,7 @@ EncodedJSValue JSC_HOST_CALL setProtoFuncHas(JSGlobalObject* globalObject, CallF
     return JSValue::encode(jsBoolean(set->has(globalObject, callFrame->argument(0))));
 }
 
-EncodedJSValue JSC_HOST_CALL setProtoFuncSize(JSGlobalObject* globalObject, CallFrame* callFrame)
+EncodedJSValue JSC_HOST_CALL setProtoFuncSize(HeapPtr<JSGlobalObject> globalObject, CallFrame* callFrame)
 {
     JSSet* set = getSet(globalObject, callFrame->thisValue());
     if (!set)
