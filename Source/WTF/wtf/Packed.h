@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +28,7 @@
 
 #include <array>
 #include <wtf/MathExtras.h>
+#include <wtf/PlainPtr.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/UnalignedAccess.h>
 
@@ -100,7 +102,7 @@ private:
 // PackedAlignedPtr can take alignment parameter too. PackedAlignedPtr only uses this alignment information if it is profitable: we use
 // alignment information only when we can reduce the size of the storage. Since the pointer width is 36 bits and JSCells are aligned to 16 bytes,
 // we can use 4 bits in Darwin ARM64, we can compact cell pointer into 4 bytes (32 bits).
-template<typename T, size_t alignment = alignof(T)>
+template<typename T, size_t alignment = alignof(T), typename RepresentationT = PlainPtr<T>>
 class PackedAlignedPtr {
     WTF_MAKE_FAST_ALLOCATED;
 public:
@@ -123,16 +125,18 @@ public:
     {
     }
 
-    PackedAlignedPtr(T* value)
+    PackedAlignedPtr(T* value) : PackedAlignedPtr(RepresentationT(value)) {}
+
+    PackedAlignedPtr(RepresentationT value)
     {
         set(value);
     }
 
-    T* get() const
+    RepresentationT get() const
     {
         // FIXME: PackedPtr<> can load memory with one mov by checking page boundary.
         // https://bugs.webkit.org/show_bug.cgi?id=197754
-        uintptr_t value = 0;
+        typename RepresentationT::integer_t value = 0;
 #if CPU(LITTLE_ENDIAN)
         memcpy(&value, m_storage.data(), storageSize);
 #else
@@ -140,12 +144,12 @@ public:
 #endif
         if (isAlignmentShiftProfitable)
             value <<= alignmentShiftSize;
-        return bitwise_cast<T*>(value);
+        return bitwise_cast<RepresentationT>(value);
     }
 
-    void set(T* passedValue)
+    void set(RepresentationT passedValue)
     {
-        uintptr_t value = bitwise_cast<uintptr_t>(passedValue);
+        typename RepresentationT::integer_t value = bitwise_cast<typename RepresentationT::integer_t>(passedValue);
         if (isAlignmentShiftProfitable)
             value >>= alignmentShiftSize;
 #if CPU(LITTLE_ENDIAN)
@@ -165,7 +169,7 @@ public:
     bool operator!() const { return !get(); }
     explicit operator bool() const { return get(); }
 
-    PackedAlignedPtr& operator=(T* value)
+    PackedAlignedPtr& operator=(RepresentationT value)
     {
         set(value);
         return *this;

@@ -33,15 +33,15 @@
 
 namespace JSC {
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 /* CHERI pointers can't be packed */
 template<typename T>
 using PackedCellPtr = T*;
 #else
 template<typename T>
-class PackedCellPtr : public PackedAlignedPtr<T, MarkedBlock::atomSize> {
+class PackedCellPtr : public PackedAlignedPtr<T, MarkedBlock::atomSize, HeapPtr<T>> {
 public:
-    using Base = PackedAlignedPtr<T, MarkedBlock::atomSize>;
+    using Base = PackedAlignedPtr<T, MarkedBlock::atomSize, HeapPtr<T>>;
     PackedCellPtr(T* pointer)
         : Base(pointer)
     {
