@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -117,7 +117,11 @@ void Data::performAssertions(VM& vm)
 #elif USE(JSVALUE32_64)
     ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 1);
 #elif (CPU(X86_64) && !OS(WINDOWS))  || CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 5 * MachineRegisterSize / SlotSize);
+#else
     ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 4);
+#endif
 #elif (CPU(X86_64) && OS(WINDOWS))
     ASSERT(CodeBlock::llintBaselineCalleeSaveSpaceAsVirtualRegisters() == 4);
 #endif

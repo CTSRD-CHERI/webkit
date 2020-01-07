@@ -1,6 +1,6 @@
 # Copyright (C) 2011-2019 Apple Inc. All rights reserved.
 # Copyright (C) 2014 University of Szeged. All rights reserved.
-# Copyright (C) 2019 Arm Ltd. All rights reserved.
+# Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -624,6 +624,8 @@ class Instruction
             emitARM64Add("adds", operands, :ptr)
         when 'addq'
             emitARM64Add("add", operands, :quad)
+        when 'addqs'
+            emitARM64Add("adds", operands, :quad)
         when "andi"
             emitARM64TAC("and", operands, :word)
         when "andp"
@@ -795,7 +797,7 @@ class Instruction
         when "movdz"
             # FIXME: Remove it or support it.
             raise "ARM64 does not support this opcode yet, #{codeOriginString}"
-        when "pop"
+        when "pop", "popp"
             operands.each_slice(2) {
                 | ops |
                 # Note that the operands are in the reverse order of the case for push.
@@ -809,12 +811,12 @@ class Instruction
                 # instructions we need to flip flop the argument positions that were passed to us.
                 $asm.puts "ldp #{ops[1].arm64Operand(:quad)}, #{ops[0].arm64Operand(:quad)}, [sp], #16"
             }
-        when "push"
+        when "push", "pushp"
             operands.each_slice(2) {
                 | ops |
                 $asm.puts "stp #{ops[0].arm64Operand(:quad)}, #{ops[1].arm64Operand(:quad)}, [sp, #-16]!"
             }
-        when "move"
+        when "move", "movep"
             if operands[0].immediate?
                 emitARM64MoveImmediate(operands[0].value, operands[1])
             else
@@ -1051,8 +1053,8 @@ class Instruction
             $asm.puts "L_offlineasm_loh_ldr_#{uid}:"
             $asm.puts "ldr #{operands[1].arm64Operand(:quad)}, [#{operands[1].arm64Operand(:quad)}, #{operands[0].asmLabel}@GOTPAGEOFF]"
 
-            # On Linux, use ELF GOT relocation specifiers.
-            $asm.putStr("#elif OS(LINUX)")
+            # On Linux/FreeBSD, use ELF GOT relocation specifiers.
+            $asm.putStr("#elif OS(LINUX) || OS(FREEBSD)")
             $asm.puts "adrp #{operands[1].arm64Operand(:quad)}, :got:#{operands[0].asmLabel}"
             $asm.puts "ldr #{operands[1].arm64Operand(:quad)}, [#{operands[1].arm64Operand(:quad)}, :got_lo12:#{operands[0].asmLabel}]"
 

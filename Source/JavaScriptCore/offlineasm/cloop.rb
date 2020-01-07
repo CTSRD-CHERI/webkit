@@ -1,5 +1,5 @@
 # Copyright (C) 2012-2019 Apple Inc. All rights reserved.
-# Copyright (C) 2019 Arm Ltd. All rights reserved.
+# Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -875,7 +875,7 @@ class Instruction
             $asm.putc "    #{operands[1].clLValue} = (uint32_t)asInt32;"
             $asm.putc "}"
 
-        when "move"
+        when "move", "movep"
             $asm.putc "#{operands[1].clLValue(:intptr)} = #{operands[0].clValue(:intptr)};"
         when "sxi2q"
             $asm.putc "#{operands[1].clLValue(:int64)} = #{operands[0].clValue(:int32)};"
@@ -1243,12 +1243,12 @@ class Instruction
             
         when "memfence"
 
-        when "push"
+        when "push", "pushq", "pushp"
             operands.each {
                 | op |
                 $asm.putc "PUSH(#{op.clDump});"
             }
-        when "pop"
+        when "pop", "popq", "popp"
             operands.each {
                 | op |
                 $asm.putc "POP(#{op.clDump});"

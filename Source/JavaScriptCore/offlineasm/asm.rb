@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 # Copyright (C) 2011, 2016 Apple Inc. All rights reserved.
+# Copyright (C) 2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -335,10 +336,13 @@ $cheriCapSize = ARGV.shift.to_i
 
 $options = {}
 OptionParser.new do |opts|
-    opts.banner = "Usage: asm.rb asmFile offsetsFile outputFileName cheriCapSize [--assembler=<ASM>]"
+    opts.banner = "Usage: asm.rb asmFile offsetsFile outputFileName cheriCapSize [--assembler=<ASM>] [--jsheap_cheri_offset_refs]"
     # This option is currently only used to specify the masm assembler
     opts.on("--assembler=[ASM]", "Specify an assembler to use.") do |assembler|
         $options[:assembler] = assembler
+    end
+    opts.on("--jsheap_cheri_offset_refs", "Indicate that JS heap references are represented with CHERI offsets.") do |v|
+        $options[:jsheap_cheri_offset_refs] = v
     end
 end.parse!
 

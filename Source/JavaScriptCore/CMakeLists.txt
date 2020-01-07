@@ -183,6 +183,7 @@ set(LLINT_ASM
 set(OFFLINE_ASM
     offlineasm/arm.rb
     offlineasm/arm64.rb
+    offlineasm/arm64_caps.rb
     offlineasm/ast.rb
     offlineasm/backends.rb
     offlineasm/cloop.rb
@@ -246,7 +247,11 @@ else ()
     elseif (WTF_CPU_X86_64)
         set(OFFLINE_ASM_BACKEND "X86_64")
     elseif (WTF_CPU_ARM64)
-        set(OFFLINE_ASM_BACKEND "ARM64")
+        if(CHERI_PURE_CAPABILITY)
+            set(OFFLINE_ASM_BACKEND "ARM64_CAPS")
+	else()
+            set(OFFLINE_ASM_BACKEND "ARM64")
+	endif()
     elseif (ARM_THUMB2_DETECTED)
         set(OFFLINE_ASM_BACKEND "ARMv7")
     elseif (WTF_CPU_MIPS)
@@ -310,6 +315,10 @@ if (MSVC AND NOT ENABLE_C_LOOP)
 else ()
     set(LLIntOutput LLIntAssembly.h)
 endif ()
+
+if (ENABLE_JSHEAP_CHERI_OFFSET_REFS)
+    set(OFFLINE_ASM_ARGS ${OFFLINE_ASM_ARGS} --jsheap_cheri_offset_refs)
+endif()
 
 add_custom_command(
     OUTPUT ${JavaScriptCore_DERIVED_SOURCES_DIR}/${LLIntOutput}

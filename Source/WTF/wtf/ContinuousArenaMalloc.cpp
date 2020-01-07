@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -98,6 +98,14 @@ void ContinuousArenaMalloc::initialize(void) {
     ASSERT(mallctlRet == 0);
 
     s_Initialized = true;
+}
+
+void ContinuousArenaMalloc::initializePerThread()
+{
+    ASSERT(s_Initialized);
+#ifdef __CHERI_PURE_CAPABILITY__
+    asm volatile("msr ddc, %0" :: "C"(s_Start));
+#endif
 }
 
 void *ContinuousArenaMalloc::internalAllocateAligned(size_t alignment,

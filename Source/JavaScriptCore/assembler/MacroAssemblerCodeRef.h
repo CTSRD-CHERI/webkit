@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -336,7 +337,7 @@ public:
         return retagCodePtr<T, tag, newTag>(m_value);
     }
 
-#if CPU(ARM_THUMB2)
+#if CPU(ARM_THUMB2) || defined(__CHERI_PURE_CAPABILITY__)
     // To use this pointer as a data address remove the decoration.
     template<typename T = void*>
     T dataLocation() const

@@ -41,9 +41,14 @@ class MacroAssemblerARM64 : public AbstractMacroAssembler<Assembler> {
 public:
     static constexpr unsigned numGPRs = 32;
     static constexpr unsigned numFPRs = 32;
-    
+
+#if CPU(ARM64_CAPS)
+    static constexpr RegisterID dataTempRegister = ARM64Registers::cip0;
+    static constexpr RegisterID memoryTempRegister = ARM64Registers::cip1;
+#else
     static constexpr RegisterID dataTempRegister = ARM64Registers::ip0;
     static constexpr RegisterID memoryTempRegister = ARM64Registers::ip1;
+#endif
 
     RegisterID scratchRegister()
     {

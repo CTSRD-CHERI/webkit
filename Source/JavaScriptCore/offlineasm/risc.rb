@@ -1,4 +1,5 @@
 # Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+# Copyright (C) 2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -46,7 +47,7 @@ def riscLowerSimpleBranchOps(list)
         if node.is_a? Instruction
             annotation = node.annotation
             case node.opcode
-            when /^b(addi|subi|ori|addp)/
+            when /^b(addi|subi|ori|addp|addq)/
                 op = $1
                 branch = "b" + $~.post_match
                 
@@ -55,6 +56,8 @@ def riscLowerSimpleBranchOps(list)
                     op = "addis"
                 when "addp"
                     op = "addps"
+                when "addq"
+                    op = "addqs"
                 when "subi"
                     op = "subis"
                 when "ori"
@@ -192,7 +195,7 @@ class Address
 
         tmp = Tmp.new(codeOrigin, :gpr)
         list << Instruction.new(codeOrigin, "move", [offset, tmp])
-        list << Instruction.new(codeOrigin, "addp", [base, tmp])
+        list << Instruction.new(codeOrigin, "addp", [base, tmp, tmp])
         Address.new(codeOrigin, tmp, Immediate.new(codeOrigin, 0))
     end
 end
@@ -619,7 +622,7 @@ def riscLowerHardBranchOps64(list)
             newList << Instruction.new(node.codeOrigin, "smulli", [node.operands[0], node.operands[1], node.operands[1]])
             newList << Instruction.new(node.codeOrigin, "rshiftp", [node.operands[1], Immediate.new(node.codeOrigin, 32), tmp1])
             newList << Instruction.new(node.codeOrigin, "rshifti", [node.operands[1], Immediate.new(node.codeOrigin, 31), tmp2])
-            newList << Instruction.new(node.codeOrigin, "zxi2p", [node.operands[1], node.operands[1]])
+            newList << Instruction.new(node.codeOrigin, "zxi2q", [node.operands[1], node.operands[1]])
             newList << Instruction.new(node.codeOrigin, "bineq", [tmp1, tmp2, node.operands[2]])
         else
             newList << node

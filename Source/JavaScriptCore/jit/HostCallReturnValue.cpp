@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -90,9 +91,14 @@ asm (
 ".text" "\n"
 ".align 2" "\n"
 ".globl " SYMBOL_STRING(getHostCallReturnValue) "\n"
+".type " SYMBOL_STRING(getHostCallReturnValue) ", @function\n"
 HIDE_SYMBOL(getHostCallReturnValue) "\n"
 SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+#if CPU(ARM64_CAPS)
+     "sub c0, csp, #32" "\n"
+#else
      "sub x0, sp, #16" "\n"
+#endif
      "b " LOCAL_REFERENCE(getHostCallReturnValueWithExecState) "\n"
 );
 

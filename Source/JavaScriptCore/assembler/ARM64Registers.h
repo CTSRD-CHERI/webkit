@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2019 Metrological Group B.V.
  * Copyright (C) 2019 Igalia S.L.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +41,48 @@
 // return address" operations in CCallHelpers.
 
 #if !PLATFORM(IOS_FAMILY)
+#if CPU(ARM64_CAPS)
+#define FOR_EACH_GP_REGISTER(macro)                             \
+    /* Parameter/result registers. */                           \
+    macro(c0,  "c0",  0, 0)                                     \
+    macro(c1,  "c1",  0, 0)                                     \
+    macro(c2,  "c2",  0, 0)                                     \
+    macro(c3,  "c3",  0, 0)                                     \
+    macro(c4,  "c4",  0, 0)                                     \
+    macro(c5,  "c5",  0, 0)                                     \
+    macro(c6,  "c6",  0, 0)                                     \
+    macro(c7,  "c7",  0, 0)                                     \
+    /* Indirect result location register. */                    \
+    macro(c8,  "c8",  0, 0)                                     \
+    /* Temporary registers. */                                  \
+    macro(c9,  "c9",  0, 0)                                     \
+    macro(c10, "c10", 0, 0)                                     \
+    macro(c11, "c11", 0, 0)                                     \
+    macro(c12, "c12", 0, 0)                                     \
+    macro(c13, "c13", 0, 0)                                     \
+    macro(c14, "c14", 0, 0)                                     \
+    macro(c15, "c15", 0, 0)                                     \
+    /* Intra-procedure-call scratch registers (temporary). */   \
+    macro(c16, "c16", 0, 0)                                     \
+    macro(c17, "c17", 0, 0)                                     \
+    /* Platform Register (temporary). */                        \
+    macro(c18, "c18", 0, 0)                                     \
+    /* Callee-saved. */                                         \
+    macro(c19, "c19", 0, 1)                                     \
+    macro(c20, "c20", 0, 1)                                     \
+    macro(c21, "c21", 0, 1)                                     \
+    macro(c22, "c22", 0, 1)                                     \
+    macro(c23, "c23", 0, 1)                                     \
+    macro(c24, "c24", 0, 1)                                     \
+    macro(c25, "c25", 0, 1)                                     \
+    macro(c26, "c26", 0, 1)                                     \
+    macro(c27, "c27", 0, 1)                                     \
+    macro(c28, "c28", 0, 1)                                     \
+    /* Special. */                                              \
+    macro(fp,  "cfp", 0, 1)                                     \
+    macro(lr,  "clr", 1, 0)                                     \
+    macro(sp,  "csp", 0, 0)
+#else
 #define FOR_EACH_GP_REGISTER(macro)                             \
     /* Parameter/result registers. */                           \
     macro(x0,  "x0",  0, 0)                                     \
@@ -80,7 +123,12 @@
     macro(fp,  "fp",  0, 1)                                     \
     macro(lr,  "lr",  1, 0)                                     \
     macro(sp,  "sp",  0, 0)
+#endif
 #else
+#if CPU(ARM64_CAPS)
+#error "Not supported."
+#endif
+
 #define FOR_EACH_GP_REGISTER(macro)                             \
     /* Parameter/result registers. */                           \
     macro(x0,  "x0",  0, 0)                                     \
@@ -123,12 +171,21 @@
     macro(sp,  "sp",  0, 0)
 #endif
 
+#if CPU(ARM64_CAPS)
+#define FOR_EACH_REGISTER_ALIAS(macro)            \
+    macro(cip0, "cip0", c16)                      \
+    macro(cip1, "cip1", c17)                      \
+    macro(c29,  "c29",  fp)                       \
+    macro(c30,  "c30",  lr)                       \
+    macro(zr,   "zr",   0x3f)
+#else
 #define FOR_EACH_REGISTER_ALIAS(macro)          \
     macro(ip0, "ip0", x16)                      \
     macro(ip1, "ip1", x17)                      \
     macro(x29, "x29", fp)                       \
     macro(x30, "x30", lr)                       \
     macro(zr,  "zr",  0x3f)
+#endif
 
 #define FOR_EACH_SP_REGISTER(macro)             \
     macro(pc,   "pc")                           \

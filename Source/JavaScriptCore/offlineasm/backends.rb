@@ -1,4 +1,5 @@
 # Copyright (C) 2011-2018 Apple Inc. All rights reserved.
+# Copyright (C) 2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,6 +25,7 @@
 require "config"
 require "arm"
 require "arm64"
+require "arm64_caps"
 require "ast"
 require "x86"
 require "mips"
@@ -42,6 +44,7 @@ BACKENDS =
      "X86_64_WIN",
      "ARMv7",
      "ARM64",
+     "ARM64_CAPS",
      "ARM64E",
      "MIPS",
      "C_LOOP",
@@ -61,6 +64,7 @@ WORKING_BACKENDS =
      "X86_64_WIN",
      "ARMv7",
      "ARM64",
+     "ARM64_CAPS",
      "ARM64E",
      "MIPS",
      "C_LOOP",

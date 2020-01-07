@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,8 +52,11 @@ RegisterSet RegisterSet::reservedHardwareRegisters()
 #define SET_IF_RESERVED(id, name, isReserved, isCalleeSaved)    \
     if (isReserved)                                             \
         result.set(RegisterNames::id);
-    FOR_EACH_GP_REGISTER(SET_IF_RESERVED)
+#define SET_IF_RESERVED_GP(id, name, isReserved, isCalleeSaved) \
+    SET_IF_RESERVED(id, name, isReserved, isCalleeSaved)
+    FOR_EACH_GP_REGISTER(SET_IF_RESERVED_GP)
     FOR_EACH_FP_REGISTER(SET_IF_RESERVED)
+#undef SET_IF_RESERVED_GP
 #undef SET_IF_RESERVED
 
     return result;
@@ -112,11 +116,14 @@ RegisterSet RegisterSet::calleeSaveRegisters()
 {
     RegisterSet result;
 
-#define SET_IF_CALLEESAVED(id, name, isReserved, isCalleeSaved)        \
-    if (isCalleeSaved)                                                 \
+#define SET_IF_CALLEESAVED(id, name, isReserved, isCalleeSaved)                        \
+    if (isCalleeSaved)                                                                 \
         result.set(RegisterNames::id);
-    FOR_EACH_GP_REGISTER(SET_IF_CALLEESAVED)
+#define SET_IF_CALLEESAVED_GP(id, name, isReserved, isCalleeSaved)  \
+    SET_IF_CALLEESAVED(id, name, isReserved, isCalleeSaved)
+    FOR_EACH_GP_REGISTER(SET_IF_CALLEESAVED_GP)
     FOR_EACH_FP_REGISTER(SET_IF_CALLEESAVED)
+#undef SET_IF_CALLEESAVED_GP
 #undef SET_IF_CALLEESAVED
         
     return result;
@@ -193,12 +200,22 @@ RegisterSet RegisterSet::llintBaselineCalleeSaveRegisters()
 #elif CPU(ARM_THUMB2)
     result.set(GPRInfo::regCS0);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    static_assert(GPRInfo::regCS3 == GPRInfo::numberTagRegister, "");
+    static_assert(GPRInfo::regCS4 == GPRInfo::notCellMaskRegister, "");
+    result.set(GPRInfo::regCS3);
+    result.set(GPRInfo::regCS4);
+    result.set(GPRInfo::regCS5);
+    result.set(GPRInfo::regCS6);
+    result.set(GPRInfo::regCS7);
+#else
     result.set(GPRInfo::regCS6);
     result.set(GPRInfo::regCS7);
     static_assert(GPRInfo::regCS8 == GPRInfo::numberTagRegister, "");
     static_assert(GPRInfo::regCS9 == GPRInfo::notCellMaskRegister, "");
     result.set(GPRInfo::regCS8);
     result.set(GPRInfo::regCS9);
+#endif
 #elif CPU(MIPS)
     result.set(GPRInfo::regCS0);
 #else
@@ -230,10 +247,17 @@ RegisterSet RegisterSet::dfgCalleeSaveRegisters()
 #endif
 #elif CPU(ARM_THUMB2)
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    static_assert(GPRInfo::regCS3 == GPRInfo::numberTagRegister, "");
+    static_assert(GPRInfo::regCS4 == GPRInfo::notCellMaskRegister, "");
+    result.set(GPRInfo::regCS3);
+    result.set(GPRInfo::regCS4);
+#else
     static_assert(GPRInfo::regCS8 == GPRInfo::numberTagRegister, "");
     static_assert(GPRInfo::regCS9 == GPRInfo::notCellMaskRegister, "");
     result.set(GPRInfo::regCS8);
     result.set(GPRInfo::regCS9);
+#endif
 #elif CPU(MIPS)
 #else
     UNREACHABLE_FOR_PLATFORM();

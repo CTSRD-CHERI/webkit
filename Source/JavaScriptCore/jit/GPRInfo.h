@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -606,7 +607,58 @@ public:
     static constexpr unsigned numberOfRegisters = 16;
     static constexpr unsigned numberOfArgumentRegisters = 8;
 
+#if CPU(ARM64_CAPS)
     // These registers match the baseline JIT.
+    static constexpr GPRReg callFrameRegister = ARM64Registers::fp;
+    static constexpr GPRReg numberTagRegister = ARM64Registers::c22;
+    static constexpr GPRReg notCellMaskRegister = ARM64Registers::c23;
+    static constexpr GPRReg dataTempRegister = MacroAssembler::dataTempRegister;
+    static constexpr GPRReg memoryTempRegister = MacroAssembler::memoryTempRegister;
+    // Temporary registers.
+    static constexpr GPRReg regT0 = ARM64Registers::c0;
+    static constexpr GPRReg regT1 = ARM64Registers::c1;
+    static constexpr GPRReg regT2 = ARM64Registers::c2;
+    static constexpr GPRReg regT3 = ARM64Registers::c3;
+    static constexpr GPRReg regT4 = ARM64Registers::c4;
+    static constexpr GPRReg regT5 = ARM64Registers::c5;
+    static constexpr GPRReg regT6 = ARM64Registers::c6;
+    static constexpr GPRReg regT7 = ARM64Registers::c7;
+    static constexpr GPRReg regT8 = ARM64Registers::c8;
+    static constexpr GPRReg regT9 = ARM64Registers::c9;
+    static constexpr GPRReg regT10 = ARM64Registers::c10;
+    static constexpr GPRReg regT11 = ARM64Registers::c11;
+    static constexpr GPRReg regT12 = ARM64Registers::c12;
+    static constexpr GPRReg regT13 = ARM64Registers::c13;
+    static constexpr GPRReg regT14 = ARM64Registers::c14;
+    static constexpr GPRReg regT15 = ARM64Registers::c15;
+    static constexpr GPRReg regCS0 = ARM64Registers::c19; // Used by FTL only
+    static constexpr GPRReg regCS1 = ARM64Registers::c20; // Used by FTL only
+    static constexpr GPRReg regCS2 = ARM64Registers::c21; // Used by FTL only
+    static constexpr GPRReg regCS3 = ARM64Registers::c22; // numberTag
+    static constexpr GPRReg regCS4 = ARM64Registers::c23; // notCellMask
+    static constexpr GPRReg regCS5 = ARM64Registers::c24; // Used by FTL only
+    static constexpr GPRReg regCS6 = ARM64Registers::c25;
+    static constexpr GPRReg regCS7 = ARM64Registers::c26;
+    static constexpr GPRReg regCS8 = ARM64Registers::c27;
+    static constexpr GPRReg regCS9 = ARM64Registers::c28;
+    // These constants provide the names for the general purpose argument & return value registers.
+    static constexpr GPRReg argumentGPR0 = ARM64Registers::c0; // regT0
+    static constexpr GPRReg argumentGPR1 = ARM64Registers::c1; // regT1
+    static constexpr GPRReg argumentGPR2 = ARM64Registers::c2; // regT2
+    static constexpr GPRReg argumentGPR3 = ARM64Registers::c3; // regT3
+    static constexpr GPRReg argumentGPR4 = ARM64Registers::c4; // regT4
+    static constexpr GPRReg argumentGPR5 = ARM64Registers::c5; // regT5
+    static constexpr GPRReg argumentGPR6 = ARM64Registers::c6; // regT6
+    static constexpr GPRReg argumentGPR7 = ARM64Registers::c7; // regT7
+    static constexpr GPRReg nonArgGPR0 = ARM64Registers::c8; // regT8
+    static constexpr GPRReg nonArgGPR1 = ARM64Registers::c9; // regT9
+    static constexpr GPRReg returnValueGPR = ARM64Registers::c0; // regT0
+    static constexpr GPRReg returnValueGPR2 = ARM64Registers::c1; // regT1
+    static constexpr GPRReg nonPreservedNonReturnGPR = ARM64Registers::c2;
+    static constexpr GPRReg nonPreservedNonArgumentGPR0 = ARM64Registers::c8;
+    static constexpr GPRReg nonPreservedNonArgumentGPR1 = ARM64Registers::c9;
+    static constexpr GPRReg patchpointScratchRegister = ARM64Registers::cip0;
+#else
     static constexpr GPRReg callFrameRegister = ARM64Registers::fp;
     static constexpr GPRReg numberTagRegister = ARM64Registers::x27;
     static constexpr GPRReg notCellMaskRegister = ARM64Registers::x28;
@@ -656,6 +708,7 @@ public:
     static constexpr GPRReg nonPreservedNonArgumentGPR0 = ARM64Registers::x8;
     static constexpr GPRReg nonPreservedNonArgumentGPR1 = ARM64Registers::x9;
     static constexpr GPRReg patchpointScratchRegister = ARM64Registers::ip0;
+#endif
 
     // GPRReg mapping is direct, the machine register numbers can
     // be used directly as indices into the GPR RegisterBank.

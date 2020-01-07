@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -71,7 +72,7 @@ static_assert(!(maxFrameExtentForSlowPathCall % sizeof(Register)), "Extent must 
 
 #if ENABLE(ASSEMBLER)
 // Make sure that cfr - maxFrameExtentForSlowPathCall bytes will make the stack pointer aligned
-static_assert((maxFrameExtentForSlowPathCall % 16) == 16 - sizeof(CallerFrameAndPC), "Extent must align stack from callframe pointer");
+static_assert((maxFrameExtentForSlowPathCall % 16) == (16 - sizeof(CallerFrameAndPC)) % 16, "Extent must align stack from callframe pointer");
 #endif
 
 static constexpr size_t maxFrameExtentForSlowPathCallInRegisters = maxFrameExtentForSlowPathCall / sizeof(Register);

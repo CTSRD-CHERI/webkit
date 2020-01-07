@@ -1,5 +1,5 @@
 # Copyright (C) 2011-2018 Apple Inc. All rights reserved.
-# Copyright (C) 2019 Arm Ltd. All rights reserved.
+# Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -97,8 +97,13 @@ MACRO_INSTRUCTIONS =
      "bcd2i",
      "movdz",
      "pop",
+     "popq",
+     "popp",
      "push",
+     "pushq",
+     "pushp",
      "move",
+     "movep",
      "sxi2q",
      "zxi2q",
      "nop",
@@ -262,6 +267,7 @@ MACRO_INSTRUCTIONS =
      "loadvmc",
      "storev",
      "makecap",
+     "copy_ddc",
      "memfence",
      "tagReturnAddress",
      "untagReturnAddress",
@@ -296,7 +302,8 @@ RISC_INSTRUCTIONS =
      "addis",   # Add integers and set a flag.
      "subis",   # Same, but for subtraction.
      "oris",    # Same, but for bitwise or.
-     "addps"    # addis but for pointers.
+     "addps",   # addis but for pointers.
+     "addqs"    # addis but for quads.
     ]
 
 MIPS_INSTRUCTIONS =

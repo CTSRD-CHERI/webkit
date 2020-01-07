@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2008-2017 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -143,6 +143,10 @@ void Thread::entryPoint(NewThreadContext* newThreadContext)
         // Ack completion of initialization to the creating thread.
         context->stage = NewThreadContext::Stage::Initialized;
         context->condition.signal();
+#endif
+
+#if USE(CONTINUOUS_ARENA)
+        ContinuousArenaMalloc::initializePerThread();
 #endif
     }
 
@@ -342,6 +346,7 @@ void initializeThreading()
 
 #if USE(CONTINUOUS_ARENA)
         ContinuousArenaMalloc::initialize();
+        ContinuousArenaMalloc::initializePerThread();
 #endif // USE(CONTINUOUS_ARENA)
     });
 }

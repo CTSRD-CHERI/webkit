@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2019 Arm Ltd. All rights reserved.
+ *  Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -23,7 +23,7 @@
 #include <new>
 #include <stdlib.h>
 #include <wtf/StdLibExtras.h>
-#include <wtf/Threading.h>
+#include <wtf/ThreadingPrimitives.h>
 
 #if USE(CONTINUOUS_ARENA)
 #include <malloc_np.h>
@@ -33,6 +33,7 @@ namespace WTF {
 class ContinuousArenaMalloc {
 public:
     static void initialize();
+    static void initializePerThread();
 
     static void* malloc(size_t size) {
         void *ret = tryMalloc(size);
@@ -114,11 +115,15 @@ private:
     {
       ASSERT(s_Initialized);
 
-      ASSERT(non_cap_ptr == 0 || __builtin_cheri_address_get(s_Start) <= non_cap_ptr);
+      char *ddc_cap;
+      asm("mrs %0, ddc" : "=C"(ddc_cap));
+      ASSERT(ddc_cap == s_Start);
+
+      ASSERT(non_cap_ptr == 0 || __builtin_cheri_address_get(ddc_cap) <= non_cap_ptr);
       ASSERT(non_cap_ptr == 0 || __builtin_cheri_address_get(s_End) > non_cap_ptr);
 
-      return __builtin_cheri_offset_increment(s_Start,
-                   non_cap_ptr - __builtin_cheri_address_get(s_Start));
+      return __builtin_cheri_offset_increment(ddc_cap,
+                   non_cap_ptr - __builtin_cheri_address_get(ddc_cap));
     }
 #endif
 
