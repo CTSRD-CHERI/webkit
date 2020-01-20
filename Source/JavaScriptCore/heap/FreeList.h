@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2019 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,12 +36,22 @@ class HeapCell;
 struct FreeCell {
     static uintptr_t scramble(FreeCell* cell, uintptr_t secret)
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+        (void) secret;
+        return bitwise_cast<uintptr_t>(cell);
+#else
         return bitwise_cast<uintptr_t>(cell) ^ secret;
+#endif
     }
     
     static FreeCell* descramble(uintptr_t cell, uintptr_t secret)
     {
+#ifdef __CHERI_PURE_CAPABILITY__
+        (void) secret;
+        return bitwise_cast<FreeCell*>(cell);
+#else
         return bitwise_cast<FreeCell*>(cell ^ secret);
+#endif
     }
     
     void setNext(FreeCell* next, uintptr_t secret)

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -541,7 +541,9 @@ void AssemblyHelpers::emitAllocateWithNonNullAllocator(GPRReg resultGPR, const J
     popPath.link(this);
         
     loadPtr(Address(allocatorGPR, LocalAllocator::offsetOfFreeList() + FreeList::offsetOfScrambledHead()), resultGPR);
+#ifndef __CHERI_PURE_CAPABILITY__
     xorPtr(Address(allocatorGPR, LocalAllocator::offsetOfFreeList() + FreeList::offsetOfSecret()), resultGPR);
+#endif
     slowPath.append(branchTestPtr(Zero, resultGPR));
         
     // The object is half-allocated: we have what we know is a fresh object, but
