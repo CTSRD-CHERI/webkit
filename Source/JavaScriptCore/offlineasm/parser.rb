@@ -1,5 +1,5 @@
 # Copyright (C) 2011, 2016 Apple Inc. All rights reserved.
-# Copyright (C) 2019 Arm Ltd. All rights reserved.
+# Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -395,25 +395,34 @@ class Parser
         # [a,b,c]  -> BaseIndex
         
         @idx += 1
+
+        if @tokens[@idx] == "^"
+            @idx += 1
+	    compressedBaseFlag = Immediate.new(codeOrigin, 1)
+        else
+            compressedBaseFlag = Immediate.new(codeOrigin, 0)
+        end
+
         if @tokens[@idx] == "]"
             @idx += 1
+	    raise "Absolute address can't be compressed" unless not compressedBaseFlag
             return AbsoluteAddress.new(codeOrigin, offset)
         end
         a = parseVariable
         if @tokens[@idx] == "]"
-            result = Address.new(codeOrigin, a, offset)
+            result = Address.new(codeOrigin, a, offset, compressedBaseFlag)
         else
             parseError unless @tokens[@idx] == ","
             @idx += 1
             b = parseVariable
             if @tokens[@idx] == "]"
-                result = BaseIndex.new(codeOrigin, a, b, Immediate.new(codeOrigin, 1), offset)
+                result = BaseIndex.new(codeOrigin, a, b, Immediate.new(codeOrigin, 1), offset, compressedBaseFlag)
             else
                 parseError unless @tokens[@idx] == ","
                 @idx += 1
                 c = parseExpressionAtom
                 parseError unless @tokens[@idx] == "]"
-                result = BaseIndex.new(codeOrigin, a, b, c, offset)
+                result = BaseIndex.new(codeOrigin, a, b, c, offset, compressedBaseFlag)
             end
         end
         @idx += 1

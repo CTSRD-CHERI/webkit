@@ -194,9 +194,13 @@ class Address
         return self if yield node, self
 
         tmp = Tmp.new(codeOrigin, :gpr)
-        list << Instruction.new(codeOrigin, "move", [offset, tmp])
-        list << Instruction.new(codeOrigin, "addp", [base, tmp, tmp])
-        Address.new(codeOrigin, tmp, Immediate.new(codeOrigin, 0))
+        if compressedBaseFlag.value == 0
+            list << Instruction.new(codeOrigin, "move", [offset, tmp])
+            list << Instruction.new(codeOrigin, "addp", [base, tmp, tmp])
+        else
+            list << Instruction.new(codeOrigin, "addq", [offset, base, tmp])
+        end
+        Address.new(codeOrigin, tmp, Immediate.new(codeOrigin, 0), compressedBaseFlag)
     end
 end
 
@@ -205,8 +209,8 @@ class BaseIndex
         return self if yield node, self
         
         tmp = Tmp.new(codeOrigin, :gpr)
-        list << Instruction.new(codeOrigin, "leap", [BaseIndex.new(codeOrigin, base, index, scale, Immediate.new(codeOrigin, 0)), tmp])
-        Address.new(codeOrigin, tmp, offset).riscLowerMalformedAddressesRecurse(list, node, &block)
+        list << Instruction.new(codeOrigin, "leap", [BaseIndex.new(codeOrigin, base, index, scale, Immediate.new(codeOrigin, 0), compressedBaseFlag), tmp])
+        Address.new(codeOrigin, tmp, offset, compressedBaseFlag).riscLowerMalformedAddressesRecurse(list, node, &block)
     end
 end
 
@@ -250,7 +254,7 @@ class BaseIndex
     def riscDoubleAddress(list)
         tmp = Tmp.new(codeOrigin, :gpr)
         list << Instruction.new(codeOrigin, "leap", [self, tmp])
-        Address.new(codeOrigin, tmp, Immediate.new(codeOrigin, 0))
+        Address.new(codeOrigin, tmp, Immediate.new(codeOrigin, 0), compressedBaseFlag)
     end
 end
 

@@ -1,5 +1,5 @@
 # Copyright (C) 2011-2018 Apple Inc. All rights reserved.
-# Copyright (C) 2019 Arm Ltd. All rights reserved.
+# Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -803,30 +803,37 @@ class Variable < NoChildren
 end
 
 class Address < Node
-    attr_reader :base, :offset
+    attr_reader :base, :offset, :compressedBaseFlag
     
-    def initialize(codeOrigin, base, offset)
+    def initialize(codeOrigin, base, offset, compressedBaseFlag=Immediate.new(codeOrigin, 0))
         super(codeOrigin)
         @base = base
         @offset = offset
+	@compressedBaseFlag = compressedBaseFlag
         raise "Bad base for address #{base.inspect} at #{codeOriginString}" unless base.is_a? Variable or base.register?
         raise "Bad offset for address #{offset.inspect} at #{codeOriginString}" unless offset.is_a? Variable or offset.immediate?
     end
     
     def withOffset(extraOffset)
-        Address.new(codeOrigin, @base, Immediate.new(codeOrigin, @offset.value + extraOffset))
+        Address.new(codeOrigin, @base, Immediate.new(codeOrigin, @offset.value + extraOffset), @compressedBaseFlag)
     end
     
     def children
-        [@base, @offset]
+        [@base, @offset, @compressedBaseFlag]
     end
     
     def mapChildren
-        Address.new(codeOrigin, (yield @base), (yield @offset))
+        Address.new(codeOrigin, (yield @base), (yield @offset), (yield @compressedBaseFlag))
     end
     
     def dump
-        "#{offset.dump}[#{base.dump}]"
+        if @compressedBaseFlag
+	    mark = "^"
+	else
+	    mark = ""
+	end
+
+        "#{offset.dump}[#{mark}#{base.dump}]"
     end
     
     def address?
@@ -851,14 +858,15 @@ class Address < Node
 end
 
 class BaseIndex < Node
-    attr_reader :base, :index, :scale, :offset
+    attr_reader :base, :index, :scale, :offset, :compressedBaseFlag
     
-    def initialize(codeOrigin, base, index, scale, offset)
+    def initialize(codeOrigin, base, index, scale, offset, compressedBaseFlag=Immediate.new(codeOrigin, 0))
         super(codeOrigin)
         @base = base
         @index = index
         @scale = scale
         @offset = offset
+	@compressedBaseFlag = compressedBaseFlag
     end
 
     def scaleValue
@@ -886,19 +894,25 @@ class BaseIndex < Node
     end
     
     def withOffset(extraOffset)
-        BaseIndex.new(codeOrigin, @base, @index, @scale, Immediate.new(codeOrigin, @offset.value + extraOffset))
+        BaseIndex.new(codeOrigin, @base, @index, @scale, Immediate.new(codeOrigin, @offset.value + extraOffset), @compressedBaseFlag)
     end
     
     def children
-        [@base, @index, @scale, @offset]
+        [@base, @index, @scale, @offset, @compressedBaseFlag]
     end
     
     def mapChildren
-        BaseIndex.new(codeOrigin, (yield @base), (yield @index), (yield @scale), (yield @offset))
+        BaseIndex.new(codeOrigin, (yield @base), (yield @index), (yield @scale), (yield @offset), (yield @compressedBaseFlag))
     end
     
     def dump
-        "#{offset.dump}[#{base.dump}, #{index.dump}, #{scale.value}]"
+        if @compressedBaseFlag
+	    mark = "^"
+	else
+	    mark = ""
+	end
+
+        "#{offset.dump}[#{mark}#{base.dump}, #{index.dump}, #{scale.value}]"
     end
     
     def address?

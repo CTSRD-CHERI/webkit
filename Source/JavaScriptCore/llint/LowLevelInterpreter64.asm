@@ -97,7 +97,7 @@ macro dispatchAfterCall(size, opcodeStruct, dispatch)
     loadi ArgumentCount + TagOffset[cfr], PC
     printp PC, "dispatchAfterCall"
     loadvmc CodeBlock[cfr], PB
-    loadp CodeBlock::m_instructionsRawPointer[PB], PB
+    loadp CodeBlock::m_instructionsRawPointer[^PB], PB
     printp PB, "dispatchAfterCall instructions"
     printp PC, "dispatchAfterCall index"
     printc PC, "dispatchAfterCall index"
@@ -512,7 +512,7 @@ macro loadConstantOrVariable(size, index, value)
         jmp .done
     .constant:
         loadvmc CodeBlock[cfr], value
-        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[value], value
+        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[^value], value
         printp index
         printp value, "VectorBuffer"
         loadv -(FirstConstantRegisterIndexNarrow * SlotSize)[value, index, SlotSize], value
@@ -529,7 +529,7 @@ macro loadConstantOrVariable(size, index, value)
         jmp .done
     .constant:
         loadvmc CodeBlock[cfr], value
-        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[value], value
+        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[^value], value
         printp index
         printp value, "VectorBuffer"
         loadv -(FirstConstantRegisterIndexWide16 * SlotSize)[value, index, SlotSize], value
@@ -546,7 +546,7 @@ macro loadConstantOrVariable(size, index, value)
         jmp .done
     .constant:
         loadvmc CodeBlock[cfr], value
-        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[value], value
+        loadp CodeBlock::m_constantRegisters + VectorBufferOffset[^value], value
         subp FirstConstantRegisterIndexWide32, index
         printp index
         printp value, "VectorBuffer"
@@ -627,7 +627,7 @@ macro writeBarrierOnGlobalObject(size, get, valueFieldName)
     writeBarrierOnGlobal(size, get, valueFieldName,
         macro(registerToStoreGlobal)
             loadvmc CodeBlock[cfr], registerToStoreGlobal
-            loadvmc CodeBlock::m_globalObject[registerToStoreGlobal], registerToStoreGlobal
+            loadvmc CodeBlock::m_globalObject[^registerToStoreGlobal], registerToStoreGlobal
         end)
 end
 
@@ -635,15 +635,15 @@ macro writeBarrierOnGlobalLexicalEnvironment(size, get, valueFieldName)
     writeBarrierOnGlobal(size, get, valueFieldName,
         macro(registerToStoreGlobal)
             loadvmc CodeBlock[cfr], registerToStoreGlobal
-            loadvmc CodeBlock::m_globalObject[registerToStoreGlobal], registerToStoreGlobal
-            loadvmc JSGlobalObject::m_globalLexicalEnvironment[registerToStoreGlobal], registerToStoreGlobal
+            loadvmc CodeBlock::m_globalObject[^registerToStoreGlobal], registerToStoreGlobal
+            loadvmc JSGlobalObject::m_globalLexicalEnvironment[^registerToStoreGlobal], registerToStoreGlobal
         end)
 end
 
 macro structureIDToStructureWithScratch(structureIDThenStructure, scratch, scratch2)
     loadvmc CodeBlock[cfr], scratch
     move structureIDThenStructure, scratch2
-    loadp CodeBlock::m_vm[scratch], scratch
+    loadp CodeBlock::m_vm[^scratch], scratch
     rshifti NumberOfStructureIDEntropyBits, scratch2
     loadp VM::heap + Heap::m_structureIDTable + StructureIDTable::m_table[scratch], scratch
 if ENCODE_STRUCTURE_BITS
@@ -658,7 +658,7 @@ end
 end
 
 macro loadStructureWithScratch(cell, structure, scratch, scratch2)
-    loadi JSCell::m_structureID[cell], structure
+    loadi JSCell::m_structureID[^cell], structure
     printp cell, "cell"
     printp structure, "structure id"
     structureIDToStructureWithScratch(structure, scratch, scratch2)
@@ -669,7 +669,7 @@ end
 # Expects that CodeBlock is in t1, which is what prologue() leaves behind.
 macro functionArityCheck(doneLabel, slowPath)
     loadi PayloadOffset + ArgumentCount[cfr], t0
-    biaeq t0, CodeBlock::m_numParameters[t1], doneLabel
+    biaeq t0, CodeBlock::m_numParameters[^t1], doneLabel
     prepareStateForCCall()
     movep cfr, a0
     movep PC, a1
@@ -743,7 +743,7 @@ macro functionArityCheck(doneLabel, slowPath)
 .continue:
     # Reload CodeBlock and reset PC, since the slow_path clobbered them.
     loadvmc CodeBlock[cfr], t1
-    loadp CodeBlock::m_instructionsRawPointer[t1], PB
+    loadp CodeBlock::m_instructionsRawPointer[^t1], PB
     move 0, PC
     jmp doneLabel
 end
@@ -754,7 +754,7 @@ _llint_op_enter:
     traceExecution()
     checkStackPointerAlignment(t2, 0xdead00e1)
     loadvmc CodeBlock[cfr], t2              // t2<CodeBlock> = cfr.CodeBlock
-    loadi CodeBlock::m_numVars[t2], t2      // t2<size_t> = t2<CodeBlock>.m_numVars
+    loadi CodeBlock::m_numVars[^t2], t2      // t2<size_t> = t2<CodeBlock>.m_numVars
     printq t2
     subq CalleeSaveSpaceAsVirtualRegisters, t2
     printq t2
@@ -795,7 +795,7 @@ end)
 
 llintOpWithReturn(op_get_scope, OpGetScope, macro (size, get, dispatch, return)
     loadvmc Callee[cfr], t0
-    loadvmc JSCallee::m_scope[t0], t0
+    loadvmc JSCallee::m_scope[^t0], t0
     return(t0)
 end)
 
@@ -805,8 +805,8 @@ llintOpWithMetadata(op_to_this, OpToThis, macro (size, get, dispatch, metadata, 
     loadv [cfr, t0, SlotSize], t0
     btqnz t0, notCellMask, .opToThisSlow
     makecap t0
-    bbneq JSCell::m_type[t0], FinalObjectType, .opToThisSlow
-    loadi JSCell::m_structureID[t0], t1
+    bbneq JSCell::m_type[^t0], FinalObjectType, .opToThisSlow
+    loadi JSCell::m_structureID[^t0], t1
     metadata(t2, t3)
     loadi OpToThis::Metadata::m_cachedStructureID[t2], t2
     bineq t1, t2, .opToThisSlow
@@ -875,14 +875,14 @@ macro equalNullComparisonOp(opcodeName, opcodeStruct, fn)
         loadv [cfr, t0, SlotSize], t0
         btqnz t0, notCellMask, .immediate
         makecap t0
-        btbnz JSCell::m_flags[t0], MasqueradesAsUndefined, .masqueradesAsUndefined
+        btbnz JSCell::m_flags[^t0], MasqueradesAsUndefined, .masqueradesAsUndefined
         move 0, t0
         jmp .done
     .masqueradesAsUndefined:
         loadStructureWithScratch(t0, t2, t1, t3)
         loadvmc CodeBlock[cfr], t0
-        loadvmc CodeBlock::m_globalObject[t0], t0
-        cqeq Structure::m_globalObject[t2], t0, t0
+        loadvmc CodeBlock::m_globalObject[^t0], t0
+        cqeq Structure::m_globalObject[^t2], t0, t0
         jmp .done
     .immediate:
         andq ~TagUndefined, t0
@@ -1018,7 +1018,7 @@ llintOpWithReturn(op_to_string, OpToString, macro (size, get, dispatch, return)
     loadConstantOrVariable(size, t1, t0)
     btqnz t0, notCellMask, .opToStringSlow
     makecap t0
-    bbneq JSCell::m_type[t0], StringType, .opToStringSlow
+    bbneq JSCell::m_type[^t0], StringType, .opToStringSlow
 .opToStringIsString:
     return(t0)
 
@@ -1033,7 +1033,7 @@ llintOpWithProfile(op_to_object, OpToObject, macro (size, get, dispatch, return)
     loadConstantOrVariable(size, t0, t2)
     btqnz t2, notCellMask, .opToObjectSlow
     makecap t2
-    bbb JSCell::m_type[t2], ObjectType, .opToObjectSlow
+    bbb JSCell::m_type[^t2], ObjectType, .opToObjectSlow
     return(t2)
 
 .opToObjectSlow:
@@ -1271,14 +1271,14 @@ llintOp(op_overrides_has_instance, OpOverridesHasInstance, macro (size, get, dis
     get(m_hasInstanceValue, t1)
     loadConstantOrVariable(size, t1, t0)
     loadvmc CodeBlock[cfr], t2
-    loadvmc CodeBlock::m_globalObject[t2], t2
-    loadvmc JSGlobalObject::m_functionProtoHasInstanceSymbolFunction[t2], t2
+    loadvmc CodeBlock::m_globalObject[^t2], t2
+    loadvmc JSGlobalObject::m_functionProtoHasInstanceSymbolFunction[^t2], t2
     bqneq t0, t2, .opOverridesHasInstanceNotDefaultSymbol
 
     get(m_constructor, t1)
     loadConstantOrVariable(size, t1, t0)
     makecap t0
-    tbz JSCell::m_flags[t0], ImplementsDefaultHasInstance, t1
+    tbz JSCell::m_flags[^t0], ImplementsDefaultHasInstance, t1
     orq ValueFalse, t1
     storev t1, [cfr, t3, SlotSize]
     dispatch()
@@ -1307,14 +1307,14 @@ llintOpWithReturn(op_is_undefined, OpIsUndefined, macro (size, get, dispatch, re
     return(t3)
 .opIsUndefinedCell:
     makecap t0
-    btbnz JSCell::m_flags[t0], MasqueradesAsUndefined, .masqueradesAsUndefined
+    btbnz JSCell::m_flags[^t0], MasqueradesAsUndefined, .masqueradesAsUndefined
     move ValueFalse, t1
     return(t1)
 .masqueradesAsUndefined:
     loadStructureWithScratch(t0, t3, t1, t2)
     loadvmc CodeBlock[cfr], t1
-    loadvmc CodeBlock::m_globalObject[t1], t1
-    cbeq Structure::m_globalObject[t3], t1, t0
+    loadvmc CodeBlock::m_globalObject[^t1], t1
+    cbeq Structure::m_globalObject[^t3], t1, t0
     orq ValueFalse, t0
     return(t0)
 end)
@@ -1348,7 +1348,7 @@ llintOpWithReturn(op_is_cell_with_type, OpIsCellWithType, macro (size, get, disp
     printp t1
     printp t3
     printp t0
-    cbeq JSCell::m_type[t3], t0, t1
+    cbeq JSCell::m_type[^t3], t0, t1
     orq ValueFalse, t1
     return(t1)
 .notCellCase:
@@ -1361,7 +1361,7 @@ llintOpWithReturn(op_is_object, OpIsObject, macro (size, get, dispatch, return)
     loadConstantOrVariable(size, t1, t0)
     btbnz t0, notCellMask, .opIsObjectNotCell
     makecap t0
-    cbaeq JSCell::m_type[t0], ObjectType, t1
+    cbaeq JSCell::m_type[^t0], ObjectType, t1
     orq ValueFalse, t1
     return(t1)
 .opIsObjectNotCell:
@@ -1372,7 +1372,7 @@ end)
 macro loadPropertyAtVariableOffset(propertyOffsetAsInt, objectAndStorage, value)
     printi propertyOffsetAsInt
     bilt propertyOffsetAsInt, firstOutOfLineOffset, .isInline
-    loadp JSObject::m_butterfly[objectAndStorage], objectAndStorage
+    loadp JSObject::m_butterfly[^objectAndStorage], objectAndStorage
     printp propertyOffsetAsInt
     printc propertyOffsetAsInt
     negq propertyOffsetAsInt
@@ -1384,9 +1384,12 @@ macro loadPropertyAtVariableOffset(propertyOffsetAsInt, objectAndStorage, value)
     printp objectAndStorage, "before addp"
     addp sizeof JSObject - (firstOutOfLineOffset - 2) * SlotSize, objectAndStorage
     printp objectAndStorage, "after addp"
+    loadv (firstOutOfLineOffset - 2) * SlotSize[^objectAndStorage, propertyOffsetAsInt, SlotSize], value
+    jmp .complete
 .ready:
     printp objectAndStorage, "objectAndStorage"
     loadv (firstOutOfLineOffset - 2) * SlotSize[objectAndStorage, propertyOffsetAsInt, SlotSize], value
+.complete:
 end
 
 
@@ -1394,14 +1397,17 @@ macro storePropertyAtVariableOffset(propertyOffsetAsInt, objectAndStorage, value
     printp propertyOffsetAsInt
     printi propertyOffsetAsInt
     bilt propertyOffsetAsInt, firstOutOfLineOffset, .isInline
-    loadp JSObject::m_butterfly[objectAndStorage], objectAndStorage
+    loadp JSObject::m_butterfly[^objectAndStorage], objectAndStorage
     negq propertyOffsetAsInt
     sxi2q propertyOffsetAsInt, propertyOffsetAsInt
     jmp .ready
 .isInline:
     addp sizeof JSObject - (firstOutOfLineOffset - 2) * SlotSize, objectAndStorage
+    storev value, (firstOutOfLineOffset - 2) * SlotSize[^objectAndStorage, propertyOffsetAsInt, SlotSize]
+    jmp .complete
 .ready:
     storev value, (firstOutOfLineOffset - 2) * SlotSize[objectAndStorage, propertyOffsetAsInt, SlotSize]
+.complete:
 end
 
 
@@ -1410,7 +1416,7 @@ llintOpWithMetadata(op_get_by_id_direct, OpGetByIdDirect, macro (size, get, disp
     get(m_base, t0)
     printp t0
     loadConstantOrVariableCell(size, t0, t3, .opGetByIdDirectSlow)
-    loadi JSCell::m_structureID[t3], t1
+    loadi JSCell::m_structureID[^t3], t1
     printp t1, "m_structureID"
     printp PB
     printp PC
@@ -1438,7 +1444,7 @@ llintOpWithMetadata(op_get_by_id, OpGetById, macro (size, get, dispatch, metadat
 
 .opGetByIdDefault:
     bbneq t1, constexpr GetByIdMode::Default, .opGetByIdProtoLoad
-    loadi JSCell::m_structureID[t3], t1
+    loadi JSCell::m_structureID[^t3], t1
     loadi OpGetById::Metadata::m_modeMetadata.defaultMode.structureID[t2], t0
     bineq t0, t1, .opGetByIdSlow
     loadis OpGetById::Metadata::m_modeMetadata.defaultMode.cachedOffset[t2], t1
@@ -1448,7 +1454,7 @@ llintOpWithMetadata(op_get_by_id, OpGetById, macro (size, get, dispatch, metadat
 
 .opGetByIdProtoLoad:
     bbneq t1, constexpr GetByIdMode::ProtoLoad, .opGetByIdArrayLength
-    loadi JSCell::m_structureID[t3], t1
+    loadi JSCell::m_structureID[^t3], t1
     loadi OpGetById::Metadata::m_modeMetadata.protoLoadMode.structureID[t2], t3
     bineq t3, t1, .opGetByIdSlow
     loadis OpGetById::Metadata::m_modeMetadata.protoLoadMode.cachedOffset[t2], t1
@@ -1463,7 +1469,7 @@ llintOpWithMetadata(op_get_by_id, OpGetById, macro (size, get, dispatch, metadat
     arrayProfile(OpGetById::Metadata::m_modeMetadata.arrayLengthMode.arrayProfile, t0, t2, t5)
     btiz t0, IsArray, .opGetByIdSlow
     btiz t0, IndexingShapeMask, .opGetByIdSlow
-    loadCagedJSValue(JSObject::m_butterfly[t3], t0, t1)
+    loadCagedJSValue(JSObject::m_butterfly[^t3], t0, t1)
     loadi -sizeof IndexingHeader + IndexingHeader::u.lengths.publicLength[t0], t0
     bilt t0, 0, .opGetByIdSlow
     orq numberTag, t0
@@ -1471,7 +1477,7 @@ llintOpWithMetadata(op_get_by_id, OpGetById, macro (size, get, dispatch, metadat
     return(t0)
 
 .opGetByIdUnset:
-    loadi JSCell::m_structureID[t3], t1
+    loadi JSCell::m_structureID[^t3], t1
     loadi OpGetById::Metadata::m_modeMetadata.unsetMode.structureID[t2], t0
     bineq t0, t1, .opGetByIdSlow
     valueProfile(OpGetById, t2, ValueUndefined)
@@ -1495,7 +1501,7 @@ llintOpWithMetadata(op_put_by_id, OpPutById, macro (size, get, dispatch, metadat
     loadConstantOrVariableCell(size, t3, t0, .opPutByIdSlow)
     metadata(t5, t2)
     loadi OpPutById::Metadata::m_oldStructureID[t5], t2
-    bineq t2, JSCell::m_structureID[t0], .opPutByIdSlow
+    bineq t2, JSCell::m_structureID[^t0], .opPutByIdSlow
 
     # At this point, we have:
     # t0 -> object base
@@ -1516,22 +1522,22 @@ llintOpWithMetadata(op_put_by_id, OpPutById, macro (size, get, dispatch, metadat
     # reload the StructureChain since we used t3 as a scratch above
     loadvmc OpPutById::Metadata::m_structureChain[t5], t3
 
-    loadvmc StructureChain::m_vector[t3], t3
+    loadvmc StructureChain::m_vector[^t3], t3
     assert(macro (ok) btqnz t3, ok end)
 
-    loadv Structure::m_prototype[t2], t2
+    loadv Structure::m_prototype[^t2], t2
     bqeq t2, ValueNull, .opPutByIdTransitionChainDone
 .opPutByIdTransitionChainLoop:
     makecap t2
     # At this point, t2 contains a prototye, and [t3] contains the Structure* that we want that
     # prototype to have. We don't want to have to load the Structure* for t2. Instead, we load
     # the Structure* from [t3], and then we compare its id to the id in the header of t2.
-    loadvmc [t3], t1
-    loadi JSCell::m_structureID[t2], t2
+    loadvmc [^t3], t1
+    loadi JSCell::m_structureID[^t2], t2
     # Now, t1 has the Structure* and t2 has the StructureID that we want that Structure* to have.
-    bineq t2, Structure::m_blob + StructureIDBlob::u.fields.structureID[t1], .opPutByIdSlow
+    bineq t2, Structure::m_blob + StructureIDBlob::u.fields.structureID[^t1], .opPutByIdSlow
     addp SlotSize, t3
-    loadv Structure::m_prototype[t1], t2
+    loadv Structure::m_prototype[^t1], t2
     bqneq t2, ValueNull, .opPutByIdTransitionChainLoop
 
 .opPutByIdTransitionChainDone:
@@ -1539,7 +1545,7 @@ llintOpWithMetadata(op_put_by_id, OpPutById, macro (size, get, dispatch, metadat
     loadi OpPutById::Metadata::m_newStructureID[t5], t1
 
 .opPutByIdTransitionDirect:
-    storei t1, JSCell::m_structureID[t0]
+    storei t1, JSCell::m_structureID[^t0]
     writeBarrierOnOperandWithReload(size, get, m_base, macro ()
         # Reload metadata into t5
         metadata(t5, t1)
@@ -1602,7 +1608,7 @@ llintOpWithMetadata(op_get_by_val, OpGetByVal, macro (size, get, dispatch, metad
     printq t1
     sxi2q t1, t1
 
-    loadCagedJSValue(JSObject::m_butterfly[t0], t3, numberTag)
+    loadCagedJSValue(JSObject::m_butterfly[^t0], t3, numberTag)
     move TagNumber, numberTag
 
     printp t2, "before and"
@@ -1649,7 +1655,7 @@ llintOpWithMetadata(op_get_by_val, OpGetByVal, macro (size, get, dispatch, metad
 
 .opGetByValNotIndexedStorage:
     # First lets check if we even have a typed array. This lets us do some boilerplate up front.
-    loadb JSCell::m_type[t0], t2
+    loadb JSCell::m_type[^t0], t2
     subi FirstTypedArrayType, t2
     biaeq t2, NumberOfTypedArrayTypesExcludingDataView, .opGetByValSlow
     
@@ -1658,14 +1664,14 @@ llintOpWithMetadata(op_get_by_val, OpGetByVal, macro (size, get, dispatch, metad
     if ARM64E
         const length = t6
         const scratch = t7
-        loadi JSArrayBufferView::m_length[t0], length
+        loadi JSArrayBufferView::m_length[^t0], length
         biaeq t1, length, .opGetByValSlow
     else
         # length and scratch are intentionally undefined on this branch because they are not used on other platforms.
-        biaeq t1, JSArrayBufferView::m_length[t0], .opGetByValSlow
+        biaeq t1, JSArrayBufferView::m_length[^t0], .opGetByValSlow
     end
 
-    loadp JSArrayBufferView::m_vector[t0], t3
+    loadp JSArrayBufferView::m_vector[^t0], t3
     cagedPrimitive(t3, length, t0, scratch)
 
     # Now bisect through the various types:
@@ -1782,7 +1788,7 @@ macro putByValOp(opcodeName, opcodeStruct, osrExitPoint)
         get(m_property, t0)
         loadConstantOrVariableInt32(size, t0, t3, .opPutByValSlow)
         sxi2q t3, t3
-        loadCagedJSValue(JSObject::m_butterfly[t1], t0, numberTag)
+        loadCagedJSValue(JSObject::m_butterfly[^t1], t0, numberTag)
         move TagNumber, numberTag
         btinz t2, CopyOnWrite, .opPutByValSlow
         andi IndexingShapeMask, t2
@@ -1887,7 +1893,7 @@ macro equalNullJumpOp(opcodeName, opcodeStruct, cellHandler, immediateHandler)
         btqnz t0, notCellMask, .immediate
         makecap t0
         loadStructureWithScratch(t0, t2, t1, t3)
-        cellHandler(t2, JSCell::m_flags[t0], .target)
+        cellHandler(t2, JSCell::m_flags[^t0], .target)
         dispatch()
 
     .target:
@@ -1904,8 +1910,8 @@ equalNullJumpOp(jeq_null, OpJeqNull,
     macro (structure, value, target) 
         btbz value, MasqueradesAsUndefined, .notMasqueradesAsUndefined
         loadvmc CodeBlock[cfr], t0
-        loadvmc CodeBlock::m_globalObject[t0], t0
-        bqeq Structure::m_globalObject[structure], t0, target
+        loadvmc CodeBlock::m_globalObject[^t0], t0
+        bqeq Structure::m_globalObject[^structure], t0, target
 .notMasqueradesAsUndefined:
     end,
     macro (value, target) bqeq value, ValueNull, target end)
@@ -1915,8 +1921,8 @@ equalNullJumpOp(jneq_null, OpJneqNull,
     macro (structure, value, target) 
         btbz value, MasqueradesAsUndefined, target
         loadvmc CodeBlock[cfr], t0
-        loadvmc CodeBlock::m_globalObject[t0], t0
-        bqneq Structure::m_globalObject[structure], t0, target
+        loadvmc CodeBlock::m_globalObject[^t0], t0
+        bqneq Structure::m_globalObject[^structure], t0, target
     end,
     macro (value, target) bqneq value, ValueNull, target end)
 
@@ -1943,8 +1949,8 @@ llintOpWithMetadata(op_jneq_ptr, OpJneqPtr, macro (size, get, dispatch, metadata
     get(m_value, t0)
     getu(size, OpJneqPtr, m_specialPointer, t1)
     loadvmc CodeBlock[cfr], t2
-    loadvmc CodeBlock::m_globalObject[t2], t2
-    loadp JSGlobalObject::m_specialPointers[t2, t1, PtrSize], t1
+    loadvmc CodeBlock::m_globalObject[^t2], t2
+    loadp JSGlobalObject::m_specialPointers[^t2, t1, PtrSize], t1
     loadvmc [cfr, t0, SlotSize], t0
     bqneq t1, t0, .opJneqPtrTarget
     dispatch()
@@ -2053,7 +2059,7 @@ llintOpWithJump(op_switch_imm, OpSwitchImm, macro (size, get, jump, dispatch)
     getu(size, OpSwitchImm, m_tableIndex, t3)
     loadConstantOrVariable(size, t2, t1)
     loadvmc CodeBlock[cfr], t2
-    loadp CodeBlock::m_rareData[t2], t2
+    loadp CodeBlock::m_rareData[^t2], t2
     muli sizeof SimpleJumpTable, t3
     loadp CodeBlock::RareData::m_switchJumpTables + VectorBufferOffset[t2], t2
     addp t3, t2
@@ -2081,14 +2087,14 @@ llintOpWithJump(op_switch_char, OpSwitchChar, macro (size, get, jump, dispatch)
     getu(size, OpSwitchChar, m_tableIndex, t3)
     loadConstantOrVariable(size, t2, t1)
     loadvmc CodeBlock[cfr], t2
-    loadp CodeBlock::m_rareData[t2], t2
+    loadp CodeBlock::m_rareData[^t2], t2
     muli sizeof SimpleJumpTable, t3
     loadp CodeBlock::RareData::m_switchJumpTables + VectorBufferOffset[t2], t2
     addp t3, t2
     btqnz t1, notCellMask, .opSwitchCharFallThrough
     makecap t1
-    bbneq JSCell::m_type[t1], StringType, .opSwitchCharFallThrough
-    loadp JSString::m_fiber[t1], t0
+    bbneq JSCell::m_type[^t1], StringType, .opSwitchCharFallThrough
+    loadp JSString::m_fiber[^t1], t0
     btqnz t0, isRopeInPointer, .opSwitchOnRope
     bineq StringImpl::m_length[t0], 1, .opSwitchCharFallThrough
     loadp StringImpl::m_data8[t0], t1
@@ -2109,7 +2115,7 @@ llintOpWithJump(op_switch_char, OpSwitchChar, macro (size, get, jump, dispatch)
     jump(m_defaultOffset)
 
 .opSwitchOnRope:
-    bineq JSRopeString::m_compactFibers + JSRopeString::CompactFibers::m_length[t1], 1, .opSwitchCharFallThrough
+    bineq JSRopeString::m_compactFibers + JSRopeString::CompactFibers::m_length[^t1], 1, .opSwitchCharFallThrough
 
 .opSwitchOnRopeChar:
     callSlowPath(_llint_slow_path_switch_char)
@@ -2124,7 +2130,7 @@ macro arrayProfileForCall(opcodeStruct, getu)
     loadv ThisArgumentOffset[cfr, t3, SlotSize], t0
     btqnz t0, notCellMask, .done
     makecap t0
-    loadi JSCell::m_structureID[t0], t3 # m_structureID is an int32
+    loadi JSCell::m_structureID[^t0], t3 # m_structureID is an int32
     storei t3, %opcodeStruct%::Metadata::m_callLinkInfo.m_arrayProfile.m_lastSeenStructureID[t5] # m_lastSeenStructureID is an int32
 .done:
 end
@@ -2175,7 +2181,7 @@ llintOpWithReturn(op_to_primitive, OpToPrimitive, macro (size, get, dispatch, re
     loadConstantOrVariable(size, t2, t0)
     btqnz t0, notCellMask, .opToPrimitiveIsImm
     makecap t0
-    bbaeq JSCell::m_type[t0], ObjectType, .opToPrimitiveSlowCase
+    bbaeq JSCell::m_type[^t0], ObjectType, .opToPrimitiveSlowCase
 .opToPrimitiveIsImm:
     return(t0)
 
@@ -2199,8 +2205,8 @@ commonOp(llint_op_catch, macro() end, macro (size)
     restoreStackPointerAfterCall()
 
     loadvmc CodeBlock[cfr], PB
-    loadp CodeBlock::m_metadata[PB], metadataTable
-    loadp CodeBlock::m_instructionsRawPointer[PB], PB
+    loadp CodeBlock::m_metadata[^PB], metadataTable
+    loadp CodeBlock::m_instructionsRawPointer[^PB], PB
     loadp VM::targetInterpreterPCForThrow[t3], PC
     subp PB, PC
 
@@ -2210,14 +2216,14 @@ commonOp(llint_op_catch, macro() end, macro (size)
 
 .isCatchableException:
     loadvmc CodeBlock[cfr], t3
-    loadp CodeBlock::m_vm[t3], t3
+    loadp CodeBlock::m_vm[^t3], t3
 
     loadp VM::m_exception[t3], t0
     storep 0, VM::m_exception[t3]
     get(size, OpCatch, m_exception, t2)
     storev t0, [cfr, t2, SlotSize]
 
-    loadv Exception::m_value[t0], t3
+    loadv Exception::m_value[^t0], t3
     get(size, OpCatch, m_thrownValue, t2)
     storev t3, [cfr, t2, SlotSize]
 
@@ -2266,11 +2272,11 @@ macro nativeCallTrampoline(executableOffsetToFunction)
     storev 0, CodeBlock[cfr]
     loadvmc Callee[cfr], a0
     printc a0, "callee"
-    loadvmc JSFunction::m_executable[a0], a2
+    loadvmc JSFunction::m_executable[^a0], a2
     printp a2, "executable"
-    loadvmc JSFunction::m_globalObject[a0], a0
+    loadvmc JSFunction::m_globalObject[^a0], a0
     printc a0, "global object"
-    loadp JSGlobalObject::m_vm[a0], a1
+    loadp JSGlobalObject::m_vm[^a0], a1
     printp a1, "VM"
     storep cfr, VM::topCallFrame[a1]
     if ARM64 or ARM64E or ARM64_CAPS or C_LOOP or C_LOOP_WIN
@@ -2280,20 +2286,20 @@ macro nativeCallTrampoline(executableOffsetToFunction)
     checkStackPointerAlignment(t3, 0xdead0001) #XXXKG: does nothing for CLOOP
     if C_LOOP or C_LOOP_WIN
         printi executableOffsetToFunction, "executable offset"
-        cloopCallNative executableOffsetToFunction[a2]
+        cloopCallNative executableOffsetToFunction[^a2]
     else
         if X86_64_WIN
             subp 32, sp
-            call executableOffsetToFunction[a2], JSEntryPtrTag
+            call executableOffsetToFunction[^a2], JSEntryPtrTag
             addp 32, sp
         else
-            call executableOffsetToFunction[a2], JSEntryPtrTag
+            call executableOffsetToFunction[^a2], JSEntryPtrTag
         end
     end
 
     loadvmc Callee[cfr], t3
-    loadvmc JSFunction::m_globalObject[t3], t3
-    loadp JSGlobalObject::m_vm[t3], t3
+    loadvmc JSFunction::m_globalObject[^t3], t3
+    loadp JSGlobalObject::m_vm[^t3], t3
 
     btqnz VM::m_exception[t3], .handleException
 
@@ -2309,8 +2315,8 @@ macro internalFunctionCallTrampoline(offsetOfFunction)
     functionPrologue()
     storev 0, CodeBlock[cfr]
     loadvmc Callee[cfr], a2
-    loadvmc InternalFunction::m_globalObject[a2], a0
-    loadp JSGlobalObject::m_vm[a0], a1
+    loadvmc InternalFunction::m_globalObject[^a2], a0
+    loadp JSGlobalObject::m_vm[^a0], a1
     storep cfr, VM::topCallFrame[a1]
     if ARM64 or ARM64E or ARM64_CAPS or C_LOOP or C_LOOP_WIN
         storep lr, ReturnPC[cfr]
@@ -2318,20 +2324,20 @@ macro internalFunctionCallTrampoline(offsetOfFunction)
     movep cfr, a1
     checkStackPointerAlignment(t3, 0xdead0001)
     if C_LOOP or C_LOOP_WIN
-        cloopCallNative offsetOfFunction[a2]
+        cloopCallNative offsetOfFunction[^a2]
     else
         if X86_64_WIN
             subp 32, sp
-            call offsetOfFunction[a2], JSEntryPtrTag
+            call offsetOfFunction[^a2], JSEntryPtrTag
             addp 32, sp
         else
-            call offsetOfFunction[a2], JSEntryPtrTag
+            call offsetOfFunction[^a2], JSEntryPtrTag
         end
     end
 
     loadvmc Callee[cfr], t3
-    loadvmc InternalFunction::m_globalObject[t3], t3
-    loadp JSGlobalObject::m_vm[t3], t3
+    loadvmc InternalFunction::m_globalObject[^t3], t3
+    loadp JSGlobalObject::m_vm[^t3], t3
 
     printp VM::m_exception[t3], "m_exception"
     btqnz VM::m_exception[t3], .handleException
@@ -2346,8 +2352,8 @@ end
 
 macro varInjectionCheck(slowPath, scratch)
     loadvmc CodeBlock[cfr], scratch
-    loadvmc CodeBlock::m_globalObject[scratch], scratch
-    loadp JSGlobalObject::m_varInjectionWatchpoint[scratch], scratch
+    loadvmc CodeBlock::m_globalObject[^scratch], scratch
+    loadp JSGlobalObject::m_varInjectionWatchpoint[^scratch], scratch
     bbeq WatchpointSet::m_state[scratch], IsInvalidated, slowPath
 end
 
@@ -2365,7 +2371,7 @@ llintOpWithMetadata(op_resolve_scope, OpResolveScope, macro (size, get, dispatch
 
     macro globalLexicalBindingEpochCheck(slowPath, globalObject, scratch)
         loadi OpResolveScope::Metadata::m_globalLexicalBindingEpoch[t5], scratch
-        bineq JSGlobalObject::m_globalLexicalBindingEpoch[globalObject], scratch, slowPath
+        bineq JSGlobalObject::m_globalLexicalBindingEpoch[^globalObject], scratch, slowPath
     end
 
     macro resolveScope()
@@ -2380,7 +2386,7 @@ llintOpWithMetadata(op_resolve_scope, OpResolveScope, macro (size, get, dispatch
 
     .resolveScopeLoop:
         makecap t0
-        loadv JSScope::m_next[t0], t0
+        loadv JSScope::m_next[^t0], t0
         printp t0
         subi 1, t2
         btinz t2, .resolveScopeLoop
@@ -2477,7 +2483,7 @@ llintOpWithMetadata(op_get_from_scope, OpGetFromScope, macro (size, get, dispatc
         printi t1
         printp t1
         makecap t0
-        loadvmc JSLexicalEnvironment_variables[t0, t1, SlotSize], t0
+        loadvmc JSLexicalEnvironment_variables[^t0, t1, SlotSize], t0
         valueProfile(OpGetFromScope, t5, t0)
         printi t0
         printp t0
@@ -2567,7 +2573,7 @@ llintOpWithMetadata(op_put_to_scope, OpPutToScope, macro (size, get, dispatch, m
         loadp OpPutToScope::Metadata::m_operand[t5], t1
         printi t1, "putClosureVar"
         printp t1, "putClosureVar"
-        storev t2, JSLexicalEnvironment_variables[t0, t1, SlotSize]
+        storev t2, JSLexicalEnvironment_variables[^t0, t1, SlotSize]
     end
 
     macro putLocalClosureVar()
@@ -2582,7 +2588,7 @@ llintOpWithMetadata(op_put_to_scope, OpPutToScope, macro (size, get, dispatch, m
         printp t0, "putLocalClosureVar"
         printp t1, "putLocalClosureVar"
         printi JSLexicalEnvironment_variables, "JSLexicalEnvironment_variables"
-        storev t2, JSLexicalEnvironment_variables[t0, t1, SlotSize]
+        storev t2, JSLexicalEnvironment_variables[^t0, t1, SlotSize]
     end
 
     macro checkTDZInGlobalPutToScopeIfNecessary()
@@ -2684,7 +2690,7 @@ llintOpWithProfile(op_get_from_arguments, OpGetFromArguments, macro (size, get, 
     loadVariable(get, m_arguments, t0)
     makecap t0
     getu(size, OpGetFromArguments, m_index, t1)
-    loadv DirectArguments_storage[t0, t1, SlotSize], t0
+    loadv DirectArguments_storage[^t0, t1, SlotSize], t0
     return(t0)
 end)
 
@@ -2695,7 +2701,7 @@ llintOp(op_put_to_arguments, OpPutToArguments, macro (size, get, dispatch)
     getu(size, OpPutToArguments, m_index, t1)
     get(m_value, t3)
     loadConstantOrVariable(size, t3, t2)
-    storev t2, DirectArguments_storage[t0, t1, SlotSize]
+    storev t2, DirectArguments_storage[^t0, t1, SlotSize]
     writeBarrierOnOperands(size, get, m_arguments, m_value)
     dispatch()
 end)
@@ -2704,14 +2710,14 @@ end)
 llintOpWithReturn(op_get_parent_scope, OpGetParentScope, macro (size, get, dispatch, return)
     loadVariable(get, m_scope, t0)
     makecap t0
-    loadvmc JSScope::m_next[t0], t0
+    loadvmc JSScope::m_next[^t0], t0
     return(t0)
 end)
 
 
 llintOpWithMetadata(op_profile_type, OpProfileType, macro (size, get, dispatch, metadata, return)
     loadvmc CodeBlock[cfr], t1
-    loadp CodeBlock::m_vm[t1], t1
+    loadp CodeBlock::m_vm[^t1], t1
     # t1 is holding the pointer to the typeProfilerLog.
     loadp VM::m_typeProfilerLog[t1], t1
     # t2 is holding the pointer to the current log entry.
@@ -2735,7 +2741,7 @@ llintOpWithMetadata(op_profile_type, OpProfileType, macro (size, get, dispatch, 
     jmp .opProfileTypeSkipIsCell
 .opProfileTypeIsCell:
     makecap t0
-    loadi JSCell::m_structureID[t0], t3
+    loadi JSCell::m_structureID[^t0], t3
     storei t3, TypeProfilerLog::LogEntry::structureID[t2]
 .opProfileTypeSkipIsCell:
     
@@ -2778,7 +2784,7 @@ end)
 llintOpWithProfile(op_get_internal_field, OpGetInternalField, macro (size, get, dispatch, return)
     loadVariable(get, m_base, t1)
     getu(size, OpGetInternalField, m_index, t2)
-    loadvmc JSInternalFieldObjectImpl_internalFields[t1, t2, SlotSize], t0
+    loadvmc JSInternalFieldObjectImpl_internalFields[^t1, t2, SlotSize], t0
     return(t0)
 end)
 
@@ -2787,7 +2793,7 @@ llintOp(op_put_internal_field, OpPutInternalField, macro (size, get, dispatch)
     get(m_value, t1)
     loadConstantOrVariable(size, t1, t2)
     getu(size, OpPutInternalField, m_index, t1)
-    storev t2, JSInternalFieldObjectImpl_internalFields[t0, t1, SlotSize]
+    storev t2, JSInternalFieldObjectImpl_internalFields[^t0, t1, SlotSize]
     writeBarrierOnCellAndValueWithReload(t0, t2, macro() end)
     dispatch()
 end)

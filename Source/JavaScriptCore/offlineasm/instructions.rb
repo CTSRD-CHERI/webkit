@@ -267,7 +267,6 @@ MACRO_INSTRUCTIONS =
      "loadvmc",
      "storev",
      "makecap",
-     "copy_ddc",
      "memfence",
      "tagReturnAddress",
      "untagReturnAddress",

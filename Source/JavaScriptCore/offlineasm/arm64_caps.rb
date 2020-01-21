@@ -218,8 +218,15 @@ end
 
 class Address
     def arm64capsOperand(kind)
-        raise "Invalid offset #{offset.value} at #{codeOriginString}" if offset.value < -255 or offset.value > 4095
-        "[#{base.arm64capsOperand(:ptr)}, \##{offset.value}]"
+        if compressedBaseFlag.value == 0
+	    baseType = :ptr
+            raise "Invalid offset #{offset.value} at #{codeOriginString}" if offset.value < -255 or offset.value > 4095
+	else
+	    baseType = :quad
+            raise "Invalid offset #{offset.value} at #{codeOriginString}" if offset.value < -128 or offset.value > 127
+	end
+
+        "[#{base.arm64capsOperand(baseType)}, \##{offset.value}]"
     end
 
     def arm64capsEmitLea(destination, kind)
@@ -229,8 +236,14 @@ end
 
 class BaseIndex
     def arm64capsOperand(kind)
+        if compressedBaseFlag.value == 0
+	    baseType = :ptr
+	else
+	    baseType = :quad
+	end
+
         raise "Invalid offset #{offset.value} at #{codeOriginString}" if offset.value != 0
-        "[#{base.arm64capsOperand(:ptr)}, #{index.arm64capsOperand(:quad)}, lsl \##{scaleShift}]"
+        "[#{base.arm64capsOperand(baseType)}, #{index.arm64capsOperand(:quad)}, lsl \##{scaleShift}]"
     end
 
     def arm64capsEmitLea(destination, kind)
@@ -276,9 +289,17 @@ def arm64capsLowerMalformedLoadStoreAddresses(list)
         malformed = false
         if operand.is_a? Address
             if opcode =~ /p$/
-                malformed ||= (not (0..4095).include? operand.offset.value)
+	        if operand.compressedBaseFlag.value == 0
+                    malformed ||= (not (0..4095).include? operand.offset.value)
+                else
+                    malformed ||= (not (-128..127).include? operand.offset.value)
+		end
             else
-                malformed ||= (not (-255..4095).include? operand.offset.value)
+	        if operand.compressedBaseFlag.value == 0
+                    malformed ||= (not (-255..4095).include? operand.offset.value)
+                else
+                    malformed ||= (not (-32..31).include? operand.offset.value)
+		end
             end
             if opcode =~ /q$/
                 malformed ||= operand.offset.value % 8
@@ -294,12 +315,12 @@ def arm64capsLowerMalformedLoadStoreAddresses(list)
                 address = node.operands[1]
                 tmp = Tmp.new(codeOrigin, :gpr)
                 newList << Instruction.new(node.codeOrigin, "move", [address.offset, tmp])
-                newList << Instruction.new(node.codeOrigin, node.opcode, [node.operands[0], BaseIndex.new(node.codeOrigin, address.base, tmp, Immediate.new(codeOrigin, 1), Immediate.new(codeOrigin, 0))], node.annotation)
+                newList << Instruction.new(node.codeOrigin, node.opcode, [node.operands[0], BaseIndex.new(node.codeOrigin, address.base, tmp, Immediate.new(codeOrigin, 1), Immediate.new(codeOrigin, 0), address.compressedBaseFlag)], node.annotation)
             elsif node.opcode =~ /^load/ and isAddressMalformed(node.opcode, node.operands[0])
                 address = node.operands[0]
                 tmp = Tmp.new(codeOrigin, :gpr)
                 newList << Instruction.new(node.codeOrigin, "move", [address.offset, tmp])
-                newList << Instruction.new(node.codeOrigin, node.opcode, [BaseIndex.new(node.codeOrigin, address.base, tmp, Immediate.new(codeOrigin, 1), Immediate.new(codeOrigin, 0)), node.operands[1]], node.annotation)
+                newList << Instruction.new(node.codeOrigin, node.opcode, [BaseIndex.new(node.codeOrigin, address.base, tmp, Immediate.new(codeOrigin, 1), Immediate.new(codeOrigin, 0), address.compressedBaseFlag), node.operands[1]], node.annotation)
             else
                 newList << node
             end
@@ -475,7 +496,19 @@ class Sequence
                 address.offset.value == 0 and
                     (node.opcode =~ /^lea/ or address.scale == 1 or address.scaleValue == size)
             elsif address.is_a? Address
-                (-255..4095).include? address.offset.value
+                if size == 16
+	            if address.compressedBaseFlag.value == 0
+                        (0..4095).include? address.offset.value
+                    else
+                        (-128..127).include? address.offset.value
+	            end
+                else
+	            if address.compressedBaseFlag.value == 0
+                        (-255..4095).include? address.offset.value
+                    else
+                        (-32..31).include? address.offset.value
+	            end
+                end
             else
                 false
             end
@@ -554,10 +587,6 @@ def emitARM64CAPSMakeCapabilityFromPointer(operands)
     end
 
     emitARM64CAPSTAC("cvtz", [src1, src2, dst], [:ptr, :quad, :ptr])
-end
-
-def emitARM64CAPSMakeCapabilityFromDDC(operand)
-    emitARM64CAPS("cvtdz", [operand, operand], [:quad, :ptr])
 end
 
 def emitARM64CAPSAdd(opcode, operands, kind)
@@ -840,7 +869,7 @@ class Instruction
         when "loadis"
             emitARM64CAPSAccess("ldrsw", "ldursw", operands[1], operands[0], :quad)
         when "loadp"
-            emitARM64CAPSAccess("ldr", "<unsupported>", operands[1], operands[0], :ptr)
+            emitARM64CAPSAccess("ldr", "ldur", operands[1], operands[0], :ptr)
         when "loadq"
             emitARM64CAPSAccess("ldr", "ldur", operands[1], operands[0], :quad)
         when "loadv"
@@ -852,7 +881,6 @@ class Instruction
         when "loadvmc"
             if $options.has_key?(:jsheap_cheri_offset_refs)
                 emitARM64CAPSAccess("ldr", "ldur", operands[1], operands[0], :quad)
-                emitARM64CAPSMakeCapabilityFromDDC(operands[1])
             else
                 emitARM64CAPSAccess("ldr", "ldur", operands[1], operands[0], :ptr)
             end
@@ -1240,13 +1268,7 @@ class Instruction
         when "print", "printi", "printb", "printq", "printp", "printc"
             $asm.putStr("/* print instructions not supported in arm64caps llint */")
         when "makecap"
-            if $options.has_key?(:jsheap_cheri_offset_refs)
-                emitARM64CAPSMakeCapabilityFromDDC(operands[0])
-            else
-                $asm.putStr("/* makecap instruction is NOP */")
-            end
-        when "copy_ddc"
-            $asm.puts "mrs #{operands[0].arm64capsOperand(:ptr)}, DDC"
+            $asm.putStr("/* makecap instruction is NOP */")
         else
             lowerDefault
         end
