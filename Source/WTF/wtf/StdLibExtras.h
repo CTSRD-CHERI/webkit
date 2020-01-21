@@ -217,8 +217,8 @@ template<size_t divisor,
 
 template<size_t divisor, typename T> inline T* roundUpToMultipleOf(T* x)
 {
-    static_assert(sizeof(T*) == sizeof(size_t), "");
-    return reinterpret_cast<T*>(roundUpToMultipleOf<divisor>(reinterpret_cast<size_t>(x)));
+    static_assert(sizeof(T*) == sizeof(uintptr_t), "");
+    return reinterpret_cast<T*>(roundUpToMultipleOf<divisor>(reinterpret_cast<uintptr_t>(x)));
 }
 
 enum BinarySearchMode {
