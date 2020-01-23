@@ -37,6 +37,7 @@
 #include "MacroAssemblerHelpers.h"
 #include "Options.h"
 #include <wtf/CryptographicallyRandomNumber.h>
+#include <wtf/MathExtras.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/SharedTask.h>
 #include <wtf/Vector.h>
@@ -121,13 +122,17 @@ public:
         TimesTwo,
         TimesFour,
         TimesEight,
+        TimesSixteen,
     };
-    
-    static Scale timesPtr()
+
+    static constexpr Scale timesValue()
     {
-        if (sizeof(void*) == 4)
-            return TimesFour;
-        return TimesEight;
+        return static_cast<Scale>(WTF::fastLog2(sizeof(JSC::EncodedJSValue)));
+    }
+    
+    static constexpr Scale timesPtr()
+    {
+        return static_cast<Scale>(WTF::fastLog2(sizeof(void *)));
     }
     
     struct BaseIndex;
@@ -281,7 +286,7 @@ public:
         {
         }
 
-        explicit TrustedImmPtr(size_t value)
+        explicit TrustedImmPtr(uintptr_t value)
             : m_value(reinterpret_cast<void*>(value))
         {
         }
@@ -301,6 +306,13 @@ public:
 
     struct ImmPtr : private TrustedImmPtr
     {
+#if CPU(ARM64_CAPS)
+        explicit ImmPtr(uintptr_t value)
+            : ImmPtr(reinterpret_cast<const void *>(value))
+        {
+        }
+#endif
+
         explicit ImmPtr(const void* value)
             : TrustedImmPtr(value)
         {
@@ -1066,6 +1078,16 @@ protected:
             value = m_value;
             return m_masm->isTempRegisterValid(m_validBit);
         }
+
+#if CPU(ARM64_CAPS)
+        bool value(int64_t& int64Value)
+        {
+            intptr_t intptrValue;
+            bool ret = value(intptrValue);
+            int64Value = static_cast<int64_t>(intptrValue);
+            return ret;
+        }
+#endif
 
         void setValue(intptr_t value)
         {

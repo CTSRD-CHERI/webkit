@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -719,7 +720,7 @@ void JIT::compileWithoutLinking(JITCompilationEffort effort)
                     continue;
                 int offset = CallFrame::argumentOffsetIncludingThis(argument) * static_cast<int>(sizeof(Register));
 #if USE(JSVALUE64)
-                load64(Address(callFrameRegister, offset), regT0);
+                loadValue(Address(callFrameRegister, offset), JSValueRegs(regT0));
 #elif USE(JSVALUE32_64)
                 load32(Address(callFrameRegister, offset + OBJECT_OFFSETOF(JSValue, u.asBits.payload)), regT0);
                 load32(Address(callFrameRegister, offset + OBJECT_OFFSETOF(JSValue, u.asBits.tag)), regT1);

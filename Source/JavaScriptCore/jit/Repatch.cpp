@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1195,7 +1196,8 @@ void linkPolymorphicCall(JSGlobalObject* globalObject, CallFrame* callFrame, Cal
     }
     stubJit.move(CCallHelpers::TrustedImmPtr(globalObject), GPRInfo::regT3);
     stubJit.move(CCallHelpers::TrustedImmPtr(&callLinkInfo), GPRInfo::regT2);
-    stubJit.move(CCallHelpers::TrustedImmPtr(callLinkInfo.callReturnLocation().untaggedExecutableAddress()), GPRInfo::regT4);
+    const void *retAddress = callLinkInfo.callReturnLocation().untaggedExecutableAddress();
+    stubJit.move(CCallHelpers::TrustedImmPtr(retAddress), GPRInfo::regT4);
     
     stubJit.restoreReturnAddressBeforeReturn(GPRInfo::regT4);
     AssemblyHelpers::Jump slow = stubJit.jump();

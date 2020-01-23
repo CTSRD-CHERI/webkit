@@ -179,6 +179,13 @@ void LinkBuffer::copyCompactAndLinkCode(MacroAssembler& macroAssembler, void* ow
             ASSERT(!(readPtr % 2));
             ASSERT(!(writePtr % 2));
             while (copySource != copyEnd) {
+#if CPU(ARM64_CAPS)
+                if (copyIfCapability<InstructionType>(copySource,
+                                                      sizeof(InstructionType *) * (copyEnd - copySource),
+                                                      copyDst)) {
+                    continue;
+                }
+#endif
                 InstructionType insn = *copySource++;
 #if CPU(ARM64E) && ENABLE(FAST_JIT_PERMISSIONS)
                 static_assert(sizeof(InstructionType) == 4, "");
@@ -241,12 +248,22 @@ void LinkBuffer::copyCompactAndLinkCode(MacroAssembler& macroAssembler, void* ow
         RELEASE_ASSERT(bitwise_cast<uintptr_t>(src) % sizeof(InstructionType) == 0);
         RELEASE_ASSERT(bytes % sizeof(InstructionType) == 0);
 
-        for (size_t i = 0; i < bytes; i += sizeof(InstructionType)) {
+        size_t i = 0;
+        while (i < bytes) {
+#if CPU(ARM64_CAPS)
+            InstructionType *srcPrev = src;
+            if (copyIfCapability<InstructionType>(src, bytes - i, dst)) {
+                i += (src - srcPrev) * sizeof(InstructionType);
+                continue;
+            }
+#endif
+
             InstructionType insn = *src++;
 #if CPU(ARM64E) && ENABLE(FAST_JIT_PERMISSIONS)
             verifyUncompactedHash.update(insn);
 #endif
             *dst++ = insn;
+            i += sizeof(InstructionType);
         }
     }
 

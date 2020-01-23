@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Apple Inc. All rights reserved.
  * Copyright (C) 2014 Saam Barati. <saambarati1@gmail.com>
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,7 +66,7 @@ private:
     int m_startOffset;
     int m_endOffset;
     Vector<Gap> m_gaps;
-    UCPURegister m_executionCount;
+    size_t m_executionCount;
 };
 
 } // namespace JSC

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -487,7 +488,7 @@ void AccessCase::generateWithGuard(
                         // Miss/InMiss need to do this to ensure there isn't a new item at the end of the chain that
                         // has the property.
 #if USE(JSVALUE64)
-                        jit.load64(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset)), baseForAccessGPR);
+                        jit.loadValue(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset)), JSValueRegs(baseForAccessGPR));
                         fallThrough.append(jit.branch64(CCallHelpers::NotEqual, baseForAccessGPR, CCallHelpers::TrustedImm64(JSValue::ValueNull)));
 #else
                         jit.load32(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset) + PayloadOffset), baseForAccessGPR);
@@ -502,7 +503,7 @@ void AccessCase::generateWithGuard(
                     } else {
                         RELEASE_ASSERT(structure->isObject()); // Primitives must have a stored prototype. We use prototypeForLookup for them.
 #if USE(JSVALUE64)
-                        jit.load64(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset)), baseForAccessGPR);
+                        jit.loadValue(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset)), JSValueRegs(baseForAccessGPR));
                         fallThrough.append(jit.branch64(CCallHelpers::Equal, baseForAccessGPR, CCallHelpers::TrustedImm64(JSValue::ValueNull)));
 #else
                         jit.load32(MacroAssembler::Address(baseForAccessGPR, offsetRelativeToBase(knownPolyProtoOffset) + PayloadOffset), baseForAccessGPR);
@@ -636,11 +637,11 @@ void AccessCase::generateWithGuard(
         
         jit.emitLoadStructure(vm, valueGPR, scratch2GPR, scratchGPR);
 #if USE(JSVALUE64)
-        jit.load64(CCallHelpers::Address(scratch2GPR, Structure::prototypeOffset()), scratch2GPR);
+        jit.loadValue(CCallHelpers::Address(scratch2GPR, Structure::prototypeOffset()), JSValueRegs(scratch2GPR));
         CCallHelpers::Jump hasMonoProto = jit.branchTest64(CCallHelpers::NonZero, scratch2GPR);
-        jit.load64(
+        jit.loadValue(
             CCallHelpers::Address(valueGPR, offsetRelativeToBase(knownPolyProtoOffset)),
-            scratch2GPR);
+            JSValueRegs(scratch2GPR));
         hasMonoProto.link(&jit);
 #else
         jit.load32(
@@ -841,8 +842,8 @@ void AccessCase::generateImpl(AccessGenerationState& state)
             }
 
 #if USE(JSVALUE64)
-            jit.load64(
-                CCallHelpers::Address(storageGPR, offsetRelativeToBase(m_offset)), loadedValueGPR);
+            jit.loadValue(
+                CCallHelpers::Address(storageGPR, offsetRelativeToBase(m_offset)), JSValueRegs(loadedValueGPR));
 #else
             if (m_type == Load || m_type == GetGetter) {
                 jit.load32(

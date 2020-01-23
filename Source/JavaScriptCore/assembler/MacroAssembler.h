@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -149,6 +150,9 @@ public:
     using MacroAssemblerBase::sub32;
     using MacroAssemblerBase::urshift32;
     using MacroAssemblerBase::xor32;
+    using MacroAssemblerBase::storePtr;
+    using MacroAssemblerBase::addPtr;
+    using MacroAssemblerBase::subPtr;
 
     static bool isPtrAlignedAddressOffset(ptrdiff_t value)
     {
@@ -872,6 +876,7 @@ public:
 
 #else // !CPU(X86_64) && !CPU(ARM64)
 
+#if !CPU(ARM64)
     void addPtr(RegisterID src, RegisterID dest)
     {
         add64(src, dest);
@@ -916,6 +921,7 @@ public:
     {
         add64(imm, address);
     }
+#endif
 
     void andPtr(RegisterID src, RegisterID dest)
     {
@@ -1002,6 +1008,7 @@ public:
         rotateRight64(imm, srcDst);
     }
 
+#if !CPU(ARM64)
     void subPtr(RegisterID src, RegisterID dest)
     {
         sub64(src, dest);
@@ -1016,6 +1023,7 @@ public:
     {
         sub64(TrustedImm64(imm), dest);
     }
+#endif
 
     void xorPtr(RegisterID src, RegisterID dest)
     {
@@ -1043,6 +1051,7 @@ public:
         xor64(TrustedImm64(imm), srcDest);
     }
 
+#if !CPU(ARM64)
     void loadPtr(ImplicitAddress address, RegisterID dest)
     {
         load64(address, dest);
@@ -1057,6 +1066,7 @@ public:
     {
         load64(address, dest);
     }
+#endif
 
 #if ENABLE(FAST_TLS_JIT)
     void loadFromTLSPtr(uint32_t offset, RegisterID dst)
@@ -1079,6 +1089,7 @@ public:
         return load64WithCompactAddressOffsetPatch(address, dest);
     }
 
+#if !CPU(ARM64)
     void storePtr(RegisterID src, ImplicitAddress address)
     {
         store64(src, address);
@@ -1108,6 +1119,7 @@ public:
     {
         store64(TrustedImm64(imm), address);
     }
+#endif
 
     DataLabel32 storePtrWithAddressOffsetPatch(RegisterID src, Address address)
     {
@@ -1254,6 +1266,11 @@ public:
     
     bool shouldBlind(ImmPtr imm)
     {
+#if CPU(ARM64_CAPS)
+        /* capabilities can't be blinded */
+        return false;
+#endif
+
         if (!canBlind())
             return false;
         

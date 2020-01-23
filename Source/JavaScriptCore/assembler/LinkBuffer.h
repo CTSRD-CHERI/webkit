@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -327,6 +328,29 @@ private:
 #if ENABLE(BRANCH_COMPACTION)
     template <typename InstructionType>
     void copyCompactAndLinkCode(MacroAssembler&, void* ownerUID, JITCompilationEffort);
+#if defined(__CHERI_PURE_CAPABILITY__)
+    template <typename InstructionType>
+    bool copyIfCapability(InstructionType* &copySource, size_t sizeLeft, InstructionType* &copyDst) {
+        COMPILE_ASSERT(sizeof(void *) % sizeof(InstructionType) == 0,
+                       "sizeof capability should be divisible by sizeof InstructionType.");
+        if (sizeLeft >= sizeof(void *) && isPointerAligned(copySource)) {
+            void **copyPtrSource = reinterpret_cast<void **>(copySource);
+
+            if (__builtin_cheri_tag_get(*copyPtrSource)) {
+                void **copyPtrDst = reinterpret_cast<void **>(copyDst);
+
+                *copyPtrDst++ = *copyPtrSource++;
+
+                copySource = reinterpret_cast<InstructionType *>(copyPtrSource);
+                copyDst = reinterpret_cast<InstructionType *>(copyPtrDst);
+
+                return true;
+            }
+        }
+
+	return false;
+    }
+#endif
 #endif
 
     void performFinalization();

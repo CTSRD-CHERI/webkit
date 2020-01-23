@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -103,13 +104,13 @@ namespace JSC {
 #if USE(JSVALUE64)
     inline JSInterfaceJIT::Jump JSInterfaceJIT::emitLoadJSCell(unsigned virtualRegisterIndex, RegisterID dst)
     {
-        load64(addressFor(virtualRegisterIndex), dst);
+        loadValue(addressFor(virtualRegisterIndex), JSValueRegs(dst));
         return branchIfNotCell(dst);
     }
     
     inline JSInterfaceJIT::Jump JSInterfaceJIT::emitLoadInt32(unsigned virtualRegisterIndex, RegisterID dst)
     {
-        load64(addressFor(virtualRegisterIndex), dst);
+        loadValue(addressFor(virtualRegisterIndex), JSValueRegs(dst));
         Jump notInt32 = branchIfNotInt32(dst);
         zeroExtend32ToPtr(dst, dst);
         return notInt32;
@@ -117,7 +118,7 @@ namespace JSC {
 
     inline JSInterfaceJIT::Jump JSInterfaceJIT::emitLoadDouble(unsigned virtualRegisterIndex, FPRegisterID dst, RegisterID scratch)
     {
-        load64(addressFor(virtualRegisterIndex), scratch);
+        loadValue(addressFor(virtualRegisterIndex), JSValueRegs(scratch));
         Jump notNumber = branchIfNotNumber(scratch);
         Jump notInt = branchIfNotInt32(scratch);
         convertInt32ToDouble(scratch, dst);

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2009-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2010 Patrick Gansterer <paroga@paroga.com>
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,15 +62,23 @@ void JIT::emit_op_mov(const Instruction* currentInstruction)
 
     if (m_codeBlock->isConstantRegisterIndex(src)) {
         JSValue value = m_codeBlock->getConstant(src);
+
+#if CPU(ARM64_CAPS)
+        if (value.isCell()) {
+            storeValue(ImmPtr(JSValue::encode(value)), addressFor(dst));
+            return;
+        }
+#endif
+
         if (!value.isNumber())
-            store64(TrustedImm64(JSValue::encode(value)), addressFor(dst));
+            storeValue(TrustedImm64(JSValue::encode(value)), addressFor(dst));
         else
-            store64(Imm64(JSValue::encode(value)), addressFor(dst));
+            storeValue(Imm64(JSValue::encode(value)), addressFor(dst));
         return;
     }
 
-    load64(addressFor(src), regT0);
-    store64(regT0, addressFor(dst));
+    emitGetVirtualRegister(src, regT0);
+    emitPutVirtualRegister(dst, regT0);
 }
 
 
@@ -694,7 +703,7 @@ void JIT::emit_op_catch(const Instruction* currentInstruction)
     restoreCalleeSavesFromEntryFrameCalleeSavesBuffer(vm().topEntryFrame);
 
     move(TrustedImmPtr(m_vm), regT3);
-    load64(Address(regT3, VM::callFrameForCatchOffset()), callFrameRegister);
+    loadPtr(Address(regT3, VM::callFrameForCatchOffset()), callFrameRegister);
     storePtr(TrustedImmPtr(nullptr), Address(regT3, VM::callFrameForCatchOffset()));
 
     addPtr(TrustedImm32(stackPointerOffsetFor(codeBlock()) * sizeof(Register)), callFrameRegister, stackPointerRegister);
@@ -705,11 +714,11 @@ void JIT::emit_op_catch(const Instruction* currentInstruction)
     isCatchableException.link(this);
 
     move(TrustedImmPtr(m_vm), regT3);
-    load64(Address(regT3, VM::exceptionOffset()), regT0);
-    store64(TrustedImm64(JSValue::encode(JSValue())), Address(regT3, VM::exceptionOffset()));
+    loadPtr(Address(regT3, VM::exceptionOffset()), regT0);
+    storeValue(TrustedImm64(JSValue::encode(JSValue())), Address(regT3, VM::exceptionOffset()));
     emitPutVirtualRegister(bytecode.m_exception.offset());
 
-    load64(Address(regT0, Exception::valueOffset()), regT0);
+    loadValue(Address(regT0, Exception::valueOffset()), JSValueRegs(regT0));
     emitPutVirtualRegister(bytecode.m_thrownValue.offset());
 
 #if ENABLE(DFG_JIT)
@@ -1348,7 +1357,7 @@ void JIT::emit_op_get_direct_pname(const Instruction* currentInstruction)
     Jump outOfLineAccess = branch32(AboveOrEqual, regT1, Address(regT2, JSPropertyNameEnumerator::cachedInlineCapacityOffset()));
     addPtr(TrustedImm32(JSObject::offsetOfInlineStorage()), regT0);
     signExtend32ToPtr(regT1, regT1);
-    load64(BaseIndex(regT0, regT1, TimesEight), regT0);
+    loadValue(BaseIndex(regT0, regT1, timesValue()), JSValueRegs(regT0));
     
     Jump done = jump();
 
@@ -1359,7 +1368,7 @@ void JIT::emit_op_get_direct_pname(const Instruction* currentInstruction)
     neg32(regT1);
     signExtend32ToPtr(regT1, regT1);
     int32_t offsetOfFirstProperty = static_cast<int32_t>(offsetInButterfly(firstOutOfLineOffset)) * sizeof(EncodedJSValue);
-    load64(BaseIndex(regT0, regT1, TimesEight, offsetOfFirstProperty), regT0);
+    loadValue(BaseIndex(regT0, regT1, timesValue(), offsetOfFirstProperty), JSValueRegs(regT0));
     
     done.link(this);
     emitValueProfilingSite(bytecode.metadata(m_codeBlock));
@@ -1384,7 +1393,7 @@ void JIT::emit_op_enumerator_structure_pname(const Instruction* currentInstructi
 
     loadPtr(Address(regT1, JSPropertyNameEnumerator::cachedPropertyNamesVectorOffset()), regT1);
     signExtend32ToPtr(regT0, regT0);
-    load64(BaseIndex(regT1, regT0, TimesEight), regT0);
+    loadValue(BaseIndex(regT1, regT0, timesValue()), JSValueRegs(regT0));
 
     done.link(this);
     emitPutVirtualRegister(dst);
@@ -1408,7 +1417,7 @@ void JIT::emit_op_enumerator_generic_pname(const Instruction* currentInstruction
 
     loadPtr(Address(regT1, JSPropertyNameEnumerator::cachedPropertyNamesVectorOffset()), regT1);
     signExtend32ToPtr(regT0, regT0);
-    load64(BaseIndex(regT1, regT0, TimesEight), regT0);
+    loadValue(BaseIndex(regT1, regT0, timesValue()), JSValueRegs(regT0));
     
     done.link(this);
     emitPutVirtualRegister(dst);
@@ -1452,7 +1461,7 @@ void JIT::emit_op_profile_type(const Instruction* currentInstruction)
     loadPtr(Address(regT2, TypeProfilerLog::currentLogEntryOffset()), regT1);
 
     // Store the JSValue onto the log entry.
-    store64(regT0, Address(regT1, TypeProfilerLog::LogEntry::valueOffset()));
+    storeValue(JSValueRegs(regT0), Address(regT1, TypeProfilerLog::LogEntry::valueOffset()));
 
     // Store the structureID of the cell if T0 is a cell, otherwise, store 0 on the log entry.
     Jump notCell = branchIfNotCell(regT0);
@@ -1465,11 +1474,11 @@ void JIT::emit_op_profile_type(const Instruction* currentInstruction)
 
     // Store the typeLocation on the log entry.
     move(TrustedImmPtr(cachedTypeLocation), regT0);
-    store64(regT0, Address(regT1, TypeProfilerLog::LogEntry::locationOffset()));
+    storePtr(regT0, Address(regT1, TypeProfilerLog::LogEntry::locationOffset()));
 
     // Increment the current log entry.
     addPtr(TrustedImm32(sizeof(TypeProfilerLog::LogEntry)), regT1);
-    store64(regT1, Address(regT2, TypeProfilerLog::currentLogEntryOffset()));
+    storePtr(regT1, Address(regT2, TypeProfilerLog::currentLogEntryOffset()));
     Jump skipClearLog = branchPtr(NotEqual, regT1, TrustedImmPtr(cachedTypeProfilerLog->logEndPtr()));
     // Clear the log if we're at the end of the log.
     callOperation(operationProcessTypeProfilerLog, &vm());

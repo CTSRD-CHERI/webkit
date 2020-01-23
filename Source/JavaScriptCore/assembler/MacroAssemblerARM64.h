@@ -66,6 +66,10 @@ protected:
 
     static constexpr size_t INSTRUCTION_SIZE = 4;
 
+    static constexpr size_t PtrSize = Assembler::pointerSize;
+    static constexpr size_t BitsInByte = 8;
+    static constexpr size_t PtrSizeBits = PtrSize * BitsInByte;
+
 #if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
     // 1 instruction to load the pointer + 1 call instruction.
     static constexpr ptrdiff_t REPATCH_OFFSET_CALL_TO_LOAD = - 2 * INSTRUCTION_SIZE;
@@ -98,7 +102,7 @@ public:
     template <Assembler::CopyFunction copy>
     static void link(LinkRecord& record, uint8_t* from, const uint8_t* fromInstruction, uint8_t* to) { return Assembler::link<copy>(record, from, fromInstruction, to); }
 
-    static constexpr Scale ScalePtr = TimesEight;
+    static constexpr Scale ScalePtr = timesPtr();
 
     static bool isCompactPtrAlignedAddressOffset(ptrdiff_t value)
     {
@@ -266,7 +270,7 @@ public:
 
     void add64(TrustedImm64 imm, RegisterID dest)
     {
-        intptr_t immediate = imm.m_value;
+        int64_t immediate = imm.m_value;
 
         if (isUInt12(immediate)) {
             m_assembler.add<64>(dest, dest, UInt12(static_cast<int32_t>(immediate)));
@@ -335,7 +339,7 @@ public:
 
     void addPtrNoFlags(TrustedImm32 imm, RegisterID srcDest)
     {
-        add64(imm, srcDest);
+        addPtr(imm, srcDest);
     }
 
     void add64(Address src, RegisterID dest)
@@ -348,6 +352,107 @@ public:
     {
         load64(src.m_ptr, getCachedDataTempRegisterIDAndInvalidate());
         m_assembler.add<64>(dest, dest, dataTempRegister);
+    }
+
+    void addPtr(RegisterID src, RegisterID dest)
+    {
+        if (src == ARM64Registers::sp)
+            m_assembler.add<PtrSizeBits>(dest, src, dest);
+        else
+            m_assembler.add<PtrSizeBits>(dest, dest, src);
+    }
+
+    void addPtr(RegisterID left, RegisterID right, RegisterID dest)
+    {
+        ASSERT(left != ARM64Registers::sp || left != ARM64Registers::sp);
+        if (right == ARM64Registers::sp)
+            std::swap(left, right);
+        m_assembler.add<PtrSizeBits>(dest, left, right);
+    }
+
+    void addPtr(Address src, RegisterID dest)
+    {
+        loadPtr(src, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dest, dataTempRegister, dest);
+    }
+
+    void addPtr(TrustedImm32 imm, RegisterID dest)
+    {
+        if (isUInt12(imm.m_value)) {
+            m_assembler.add<PtrSizeBits>(dest, dest, UInt12(imm.m_value));
+            return;
+        }
+        if (isUInt12(-imm.m_value)) {
+            m_assembler.sub<PtrSizeBits>(dest, dest, UInt12(-imm.m_value));
+            return;
+        }
+
+        signExtend32ToPtr(imm, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dest, dest, dataTempRegister);
+    }
+
+    void addPtr(TrustedImm32 imm, RegisterID src, RegisterID dest)
+    {
+        if (isUInt12(imm.m_value)) {
+            m_assembler.add<PtrSizeBits>(dest, src, UInt12(imm.m_value));
+            return;
+        }
+        if (isUInt12(-imm.m_value)) {
+            m_assembler.sub<PtrSizeBits>(dest, src, UInt12(-imm.m_value));
+            return;
+        }
+
+        signExtend32ToPtr(imm, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dest, src, dataTempRegister);
+    }
+
+    void addPtr(TrustedImm32 imm, Address address)
+    {
+        loadPtr(address, getCachedDataTempRegisterIDAndInvalidate());
+
+        if (isUInt12(imm.m_value))
+            m_assembler.add<PtrSizeBits>(dataTempRegister, dataTempRegister, UInt12(imm.m_value));
+        else if (isUInt12(-imm.m_value))
+            m_assembler.sub<PtrSizeBits>(dataTempRegister, dataTempRegister, UInt12(-imm.m_value));
+        else {
+            signExtend32ToPtr(imm, getCachedMemoryTempRegisterIDAndInvalidate());
+            m_assembler.add<PtrSizeBits>(dataTempRegister, dataTempRegister, memoryTempRegister);
+        }
+
+        storePtr(dataTempRegister, address);
+    }
+
+    void addPtr(AbsoluteAddress src, RegisterID dest)
+    {
+        loadPtr(src.m_ptr, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dest, dataTempRegister, dest);
+    }
+
+    void addPtr(TrustedImmPtr imm, RegisterID dest)
+    {
+        move(imm, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dest, dataTempRegister, dest);
+    }
+
+    void addPtr(TrustedImm32 imm, AbsoluteAddress address)
+    {
+        loadPtr(address.m_ptr, getCachedDataTempRegisterIDAndInvalidate());
+
+        if (isUInt12(imm.m_value)) {
+            m_assembler.add<PtrSizeBits>(dataTempRegister, dataTempRegister, UInt12(imm.m_value));
+            storePtr(dataTempRegister, address.m_ptr);
+            return;
+        }
+
+        if (isUInt12(-imm.m_value)) {
+            m_assembler.sub<PtrSizeBits>(dataTempRegister, dataTempRegister, UInt12(-imm.m_value));
+            storePtr(dataTempRegister, address.m_ptr);
+            return;
+        }
+
+        signExtend32ToPtr(imm, getCachedMemoryTempRegisterIDAndInvalidate());
+        m_assembler.add<PtrSizeBits>(dataTempRegister, dataTempRegister, memoryTempRegister);
+        storePtr(dataTempRegister, address.m_ptr);
     }
 
     void and32(RegisterID src, RegisterID dest)
@@ -415,7 +520,7 @@ public:
 
     void and64(TrustedImm32 imm, RegisterID dest)
     {
-        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<intptr_t>(static_cast<int64_t>(imm.m_value)));
+        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<uint64_t>(static_cast<int64_t>(imm.m_value)));
 
         if (logicalImm.isValid()) {
             m_assembler.and_<64>(dest, dest, logicalImm);
@@ -700,7 +805,7 @@ public:
 
     void or64(TrustedImm32 imm, RegisterID src, RegisterID dest)
     {
-        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<intptr_t>(static_cast<int64_t>(imm.m_value)));
+        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<uint64_t>(static_cast<int64_t>(imm.m_value)));
 
         if (logicalImm.isValid()) {
             m_assembler.orr<64>(dest, src, logicalImm);
@@ -726,7 +831,7 @@ public:
 
     void or64(TrustedImm64 imm, RegisterID dest)
     {
-        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<intptr_t>(static_cast<int64_t>(imm.m_value)));
+        LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<uint64_t>(static_cast<int64_t>(imm.m_value)));
 
         if (logicalImm.isValid()) {
             m_assembler.orr<64>(dest, dest, logicalImm);
@@ -902,7 +1007,7 @@ public:
     
     void sub64(TrustedImm64 imm, RegisterID dest)
     {
-        intptr_t immediate = imm.m_value;
+        int64_t immediate = imm.m_value;
 
         if (isUInt12(immediate)) {
             m_assembler.sub<64>(dest, dest, UInt12(static_cast<int32_t>(immediate)));
@@ -915,6 +1020,31 @@ public:
 
         move(imm, getCachedDataTempRegisterIDAndInvalidate());
         m_assembler.sub<64>(dest, dest, dataTempRegister);
+    }
+
+    void subPtr(RegisterID src, RegisterID dest)
+    {
+#if CPU(ARM64_CAPS)
+        neg64(src, getCachedDataTempRegisterIDAndInvalidate());
+        addPtr(dataTempRegister, dest);
+#else
+        m_assembler.sub<PtrSizeBits>(dest, dest, src);
+#endif
+    }
+
+    void subPtr(TrustedImm32 imm, RegisterID dest)
+    {
+        if (isUInt12(imm.m_value)) {
+            m_assembler.sub<PtrSizeBits>(dest, dest, UInt12(imm.m_value));
+            return;
+        }
+        if (isUInt12(-imm.m_value)) {
+            m_assembler.add<PtrSizeBits>(dest, dest, UInt12(-imm.m_value));
+            return;
+        }
+
+        signExtend32ToPtr(imm, getCachedDataTempRegisterIDAndInvalidate());
+        m_assembler.sub<PtrSizeBits>(dest, dest, dataTempRegister);
     }
 
     void urshift32(RegisterID src, RegisterID shiftAmount, RegisterID dest)
@@ -1044,7 +1174,7 @@ public:
         if (imm.m_value == -1)
             m_assembler.mvn<64>(dest, src);
         else {
-            LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<intptr_t>(static_cast<int64_t>(imm.m_value)));
+            LogicalImmediate logicalImm = LogicalImmediate::create64(static_cast<uint64_t>(static_cast<int64_t>(imm.m_value)));
 
             if (logicalImm.isValid()) {
                 m_assembler.eor<64>(dest, src, logicalImm);
@@ -1115,6 +1245,37 @@ public:
         m_assembler.ldr<64>(dest, src, simm);
     }
 
+    void loadPtr(ImplicitAddress address, RegisterID dest)
+    {
+        if (tryLoadWithOffset<PtrSizeBits>(dest, address.base, address.offset))
+            return;
+
+        signExtend32ToPtr(TrustedImm32(address.offset), getCachedMemoryTempRegisterIDAndInvalidate());
+        m_assembler.ldr<PtrSizeBits>(dest, address.base, memoryTempRegister);
+    }
+
+    void loadPtr(BaseIndex address, RegisterID dest)
+    {
+        if (!address.offset && (!address.scale || address.scale == timesPtr())) {
+            m_assembler.ldr<PtrSizeBits>(dest, address.base, address.index, Assembler::UXTX, address.scale);
+            return;
+        }
+
+        signExtend32ToPtr(TrustedImm32(address.offset), getCachedMemoryTempRegisterIDAndInvalidate());
+        m_assembler.add<64>(memoryTempRegister, memoryTempRegister, address.index, Assembler::UXTX, address.scale);
+        m_assembler.ldr<PtrSizeBits>(dest, address.base, memoryTempRegister);
+}
+
+    void loadPtr(const void* address, RegisterID dest)
+    {
+        load<PtrSizeBits>(address, dest);
+    }
+
+    void loadPtr(RegisterID src, PostIndex simm, RegisterID dest)
+    {
+        m_assembler.ldr<PtrSizeBits>(dest, src, simm);
+    }
+
     DataLabel32 load64WithAddressOffsetPatch(Address address, RegisterID dest)
     {
         DataLabel32 label(this);
@@ -1158,7 +1319,7 @@ public:
         breakpoint();
     }
 
-    void abortWithReason(AbortReason reason, intptr_t misc)
+    void abortWithReason(AbortReason reason, int64_t misc)
     {
         // It is safe to use memoryTempRegister directly since this is a crashing JIT Assert.
         move(TrustedImm64(misc), memoryTempRegister);
@@ -1420,6 +1581,65 @@ public:
     {
         m_assembler.str<64>(src, dest, simm);
     }
+
+    void storePtr(RegisterID src, ImplicitAddress address)
+    {
+        if (tryStoreWithOffset<PtrSizeBits>(src, address.base, address.offset))
+            return;
+
+        signExtend32ToPtr(TrustedImm32(address.offset), getCachedMemoryTempRegisterIDAndInvalidate());
+        m_assembler.str<PtrSizeBits>(src, address.base, memoryTempRegister);
+    }
+
+    void storePtr(RegisterID src, BaseIndex address)
+    {
+        if (!address.offset && (!address.scale || address.scale == timesPtr())) {
+            m_assembler.str<PtrSizeBits>(src, address.base, address.index, Assembler::UXTX, address.scale);
+            return;
+        }
+
+        signExtend32ToPtr(TrustedImm32(address.offset), getCachedMemoryTempRegisterIDAndInvalidate());
+        m_assembler.add<64>(memoryTempRegister, memoryTempRegister, address.index, Assembler::UXTX, address.scale);
+        m_assembler.str<PtrSizeBits>(src, address.base, memoryTempRegister);
+    }
+
+    void storePtr(RegisterID src, const void* address)
+    {
+        store<PtrSizeBits>(src, address);
+    }
+
+    void storePtr(TrustedImmPtr imm, ImplicitAddress address)
+    {
+        if (!imm.m_value) {
+            storePtr(ARM64Registers::zr, address);
+            return;
+        }
+
+        moveToCachedReg(imm, dataMemoryTempRegister());
+        storePtr(dataTempRegister, address);
+    }
+
+    void storePtr(TrustedImm64 imm, ImplicitAddress address)
+    {
+        if (!imm.m_value) {
+            storePtr(ARM64Registers::zr, address);
+            return;
+        }
+
+        moveToCachedReg(imm, dataMemoryTempRegister());
+        storePtr(dataTempRegister, address);
+    }
+
+    void storePtr(TrustedImmPtr imm, BaseIndex address)
+    {
+        if (!imm.m_value) {
+            storePtr(ARM64Registers::zr, address);
+            return;
+        }
+
+        moveToCachedReg(imm, dataMemoryTempRegister());
+        storePtr(dataTempRegister, address);
+    }
     
     void storeZero64(ImplicitAddress address)
     {
@@ -1431,6 +1651,11 @@ public:
         store64(ARM64Registers::zr, address);
     }
     
+    void storeZeroPtr(ImplicitAddress address)
+    {
+        storePtr(ARM64Registers::zr, address);
+    }
+
     DataLabel32 store64WithAddressOffsetPatch(RegisterID src, Address address)
     {
         DataLabel32 label(this);
@@ -1625,7 +1850,7 @@ public:
 
     void getEffectiveAddress(BaseIndex address, RegisterID dest)
     {
-        m_assembler.add<64>(dest, address.base, address.index, Assembler::LSL, address.scale);
+        m_assembler.add<PtrSizeBits>(dest, address.base, address.index, Assembler::LSL, address.scale);
         if (address.offset)
             add64(TrustedImm32(address.offset), dest);
     }
@@ -2268,24 +2493,46 @@ public:
         CRASH();
     }
 
+    template<int datasize>
     void popPair(RegisterID dest1, RegisterID dest2)
     {
-        m_assembler.ldp<64>(dest1, dest2, ARM64Registers::sp, PairPostIndex(16));
+        m_assembler.ldp<datasize>(dest1, dest2, ARM64Registers::sp, PairPostIndex(datasize * 2 / BitsInByte));
     }
 
+    void popPairPtr(RegisterID src1, RegisterID src2)
+    {
+        popPair<PtrSizeBits>(src1, src2);
+    }
+
+    void popPair64(RegisterID src1, RegisterID src2)
+    {
+        popPair<64>(src1, src2);
+    }
+
+    template<int datasize>
     void pushPair(RegisterID src1, RegisterID src2)
     {
-        m_assembler.stp<64>(src1, src2, ARM64Registers::sp, PairPreIndex(-16));
+        m_assembler.stp<datasize>(src1, src2, ARM64Registers::sp, PairPreIndex(-static_cast<int>(datasize * 2 / BitsInByte)));
+    }
+
+    void pushPairPtr(RegisterID src1, RegisterID src2)
+    {
+        pushPair<PtrSizeBits>(src1, src2);
+    }
+
+    void pushPair64(RegisterID src1, RegisterID src2)
+    {
+        pushPair<64>(src1, src2);
     }
 
     void popToRestore(RegisterID dest)
     {
-        m_assembler.ldr<64>(dest, ARM64Registers::sp, PostIndex(16));
+        m_assembler.ldr<PtrSizeBits>(dest, ARM64Registers::sp, PostIndex(16));
     }
 
     void pushToSave(RegisterID src)
     {
-        m_assembler.str<64>(src, ARM64Registers::sp, PreIndex(-16));
+        m_assembler.str<PtrSizeBits>(src, ARM64Registers::sp, PreIndex(-16));
     }
     
     void pushToSaveImmediateWithoutTouchingRegisters(TrustedImm32 imm)
@@ -2295,10 +2542,10 @@ public:
         // we restore its original value.
         RegisterID reg = dataTempRegister;
 
-        pushPair(reg, reg);
+        pushPairPtr(reg, reg);
         move(imm, reg);
         store64(reg, stackPointerRegister);
-        load64(Address(stackPointerRegister, 8), reg);
+        loadPtr(Address(stackPointerRegister, PtrSize), reg);
     }
 
     void pushToSave(Address address)
@@ -2331,8 +2578,13 @@ public:
 
     void move(RegisterID src, RegisterID dest)
     {
-        if (src != dest)
+        if (src != dest) {
+#if CPU(ARM64_CAPS)
+            m_assembler.mov<128>(dest, src);
+#else
             m_assembler.mov<64>(dest, src);
+#endif
+        }
     }
 
     void move(TrustedImm32 imm, RegisterID dest)
@@ -2366,7 +2618,7 @@ public:
 
     void signExtend32ToPtr(TrustedImm32 imm, RegisterID dest)
     {
-        move(TrustedImmPtr(reinterpret_cast<void*>(static_cast<intptr_t>(imm.m_value))), dest);
+        move(TrustedImm64(static_cast<int64_t>(imm.m_value)), dest);
     }
     
     void signExtend32ToPtr(RegisterID src, RegisterID dest)
@@ -2666,7 +2918,7 @@ public:
 
     Jump branch64(RelationalCondition cond, RegisterID left, TrustedImm64 right)
     {
-        intptr_t immediate = right.m_value;
+        int64_t immediate = right.m_value;
         if (!immediate) {
             if (auto resultCondition = commuteCompareToZeroIntoTest(cond))
                 return branchTest64(*resultCondition, left, left);
@@ -3216,7 +3468,7 @@ public:
 
     ALWAYS_INLINE Call call(Address address, PtrTag tag)
     {
-        load64(address, getCachedDataTempRegisterIDAndInvalidate());
+        loadPtr(address, getCachedDataTempRegisterIDAndInvalidate());
         return call(dataTempRegister, tag);
     }
 
@@ -3245,20 +3497,20 @@ public:
 
     void farJump(Address address, PtrTag)
     {
-        load64(address, getCachedDataTempRegisterIDAndInvalidate());
+        loadPtr(address, getCachedDataTempRegisterIDAndInvalidate());
         m_assembler.br(dataTempRegister);
     }
     
     void farJump(BaseIndex address, PtrTag)
     {
-        load64(address, getCachedDataTempRegisterIDAndInvalidate());
+        loadPtr(address, getCachedDataTempRegisterIDAndInvalidate());
         m_assembler.br(dataTempRegister);
     }
 
     void farJump(AbsoluteAddress address, PtrTag)
     {
         move(TrustedImmPtr(address.m_ptr), getCachedDataTempRegisterIDAndInvalidate());
-        load64(Address(dataTempRegister), dataTempRegister);
+        loadPtr(Address(dataTempRegister), dataTempRegister);
         m_assembler.br(dataTempRegister);
     }
 
@@ -3521,7 +3773,7 @@ public:
     {
         DataLabelPtr label(this);
         moveWithFixedWidth(initialValue, getCachedDataTempRegisterIDAndInvalidate());
-        store64(dataTempRegister, address);
+        storePtr(dataTempRegister, address);
         return label;
     }
 
@@ -4132,6 +4384,34 @@ protected:
         }
     }
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+    template<typename T1, typename T2>
+    static bool isSameCapabilityMeta(T1 value1, T2 value2) {
+       COMPILE_ASSERT(std::is_pointer<T1>::value
+                      || (std::is_same<T1, uintptr_t>::value)
+                      || (std::is_same<T1, intptr_t>::value),
+                      "The 1st argument should be a pointer value");
+       COMPILE_ASSERT(std::is_pointer<T2>::value
+                      || (std::is_same<T2, uintptr_t>::value)
+                      || (std::is_same<T2, intptr_t>::value),
+                      "The 2nd argument should be a pointer value");
+
+       const void* cap1 = bitwise_cast<const void*>(value1);
+       const void* cap2 = bitwise_cast<const void*>(value2);
+
+       return (__builtin_cheri_tag_get(cap1) == __builtin_cheri_tag_get(cap2)
+               && __builtin_cheri_base_get(cap1) == __builtin_cheri_base_get(cap2)
+               && __builtin_cheri_length_get(cap1) == __builtin_cheri_length_get(cap2)
+               && __builtin_cheri_perms_get(cap1) == __builtin_cheri_perms_get(cap2));
+    }
+
+    template<>
+    void moveInternal<TrustedImmPtr, intptr_t>(TrustedImmPtr imm, RegisterID dest)
+    {
+        moveWithFixedWidth(imm, dest);
+    }
+#endif
+
     template<int datasize>
     ALWAYS_INLINE void loadUnsignedImmediate(RegisterID rt, RegisterID rn, unsigned pimm)
     {
@@ -4185,9 +4465,12 @@ protected:
         skipData.link(this);
         int literalOffset = -static_cast<int>(sizeof(intptr_t));
         AssemblerLabel ldrLabel = m_assembler.label();
-        m_assembler.ldr_literal<64>(dest, literalOffset);
+        m_assembler.ldr_literal<PtrSizeBits>(dest, literalOffset);
         return ldrLabel;
 #else
+#if CPU(ARM64_CAPS)
+# error "A valid capability can't be reconstructed from pieces."
+#endif
         AssemblerLabel label = m_assembler.label();
 
         intptr_t value = reinterpret_cast<intptr_t>(imm.m_value);
@@ -4217,29 +4500,35 @@ protected:
     {
         intptr_t currentRegisterContents;
         if (cachedMemoryTempRegister().value(currentRegisterContents)) {
-            intptr_t addressAsInt = reinterpret_cast<intptr_t>(address);
-            intptr_t addressDelta = addressAsInt - currentRegisterContents;
+            bool isTryTempRegister = true;
 
-            if (dest == memoryTempRegister)
-                cachedMemoryTempRegister().invalidate();
-
-            if (isInt<32>(addressDelta)) {
-                if (Assembler::canEncodeSImmOffset(addressDelta)) {
-                    m_assembler.ldur<datasize>(dest,  memoryTempRegister, addressDelta);
-                    return;
-                }
-
-                if (Assembler::canEncodePImmOffset<datasize>(addressDelta)) {
-                    m_assembler.ldr<datasize>(dest,  memoryTempRegister, addressDelta);
-                    return;
-                }
+#if defined(__CHERI_PURE_CAPABILITY__)
+            if (!isSameCapabilityMeta(address, currentRegisterContents)) {
+                isTryTempRegister = false;
             }
+#endif
 
-            if ((addressAsInt & (~maskHalfWord0)) == (currentRegisterContents & (~maskHalfWord0))) {
-                m_assembler.movk<64>(memoryTempRegister, addressAsInt & maskHalfWord0, 0);
-                cachedMemoryTempRegister().setValue(reinterpret_cast<intptr_t>(address));
-                m_assembler.ldr<datasize>(dest, memoryTempRegister, ARM64Registers::zr);
-                return;
+            if (isTryTempRegister) {
+                intptr_t addressAsInt = reinterpret_cast<intptr_t>(address);
+                ptrdiff_t addressDelta = (const char *) addressAsInt - (const char *) currentRegisterContents;
+
+                if (dest == memoryTempRegister)
+                    cachedMemoryTempRegister().invalidate();
+
+                if (isInt<32>(addressDelta)) {
+                    if (tryLoadWithOffset<datasize>(dest, memoryTempRegister, addressDelta)) {
+                        return;
+                    }
+                }
+
+#if !defined(__CHERI_PURE_CAPABILITY__)
+                if ((addressAsInt & (~maskHalfWord0)) == (currentRegisterContents & (~maskHalfWord0))) {
+                    m_assembler.movk<64>(memoryTempRegister, addressAsInt & maskHalfWord0, 0);
+                    cachedMemoryTempRegister().setValue(reinterpret_cast<intptr_t>(address));
+                    m_assembler.ldr<datasize>(dest, memoryTempRegister, ARM64Registers::zr);
+                    return;
+                }
+#endif
             }
         }
 
@@ -4257,26 +4546,32 @@ protected:
         ASSERT(src != memoryTempRegister);
         intptr_t currentRegisterContents;
         if (cachedMemoryTempRegister().value(currentRegisterContents)) {
-            intptr_t addressAsInt = reinterpret_cast<intptr_t>(address);
-            intptr_t addressDelta = addressAsInt - currentRegisterContents;
+            bool isTryTempRegister = true;
 
-            if (isInt<32>(addressDelta)) {
-                if (Assembler::canEncodeSImmOffset(addressDelta)) {
-                    m_assembler.stur<datasize>(src, memoryTempRegister, addressDelta);
-                    return;
-                }
-
-                if (Assembler::canEncodePImmOffset<datasize>(addressDelta)) {
-                    m_assembler.str<datasize>(src, memoryTempRegister, addressDelta);
-                    return;
-                }
+#if defined(__CHERI_PURE_CAPABILITY__)
+            if (!isSameCapabilityMeta(address, currentRegisterContents)) {
+                isTryTempRegister = false;
             }
+#endif
 
-            if ((addressAsInt & (~maskHalfWord0)) == (currentRegisterContents & (~maskHalfWord0))) {
-                m_assembler.movk<64>(memoryTempRegister, addressAsInt & maskHalfWord0, 0);
-                cachedMemoryTempRegister().setValue(reinterpret_cast<intptr_t>(address));
-                m_assembler.str<datasize>(src, memoryTempRegister, ARM64Registers::zr);
-                return;
+            if (isTryTempRegister) {
+                intptr_t addressAsInt = reinterpret_cast<intptr_t>(address);
+                ptrdiff_t addressDelta = (const char *) addressAsInt - (const char *) currentRegisterContents;
+
+                if (isInt<32>(addressDelta)) {
+                    if (tryStoreWithOffset<datasize>(src, memoryTempRegister, addressDelta)) {
+                        return;
+                    }
+                }
+
+#if !defined(__CHERI_PURE_CAPABILITY__)
+                if ((addressAsInt & (~maskHalfWord0)) == (currentRegisterContents & (~maskHalfWord0))) {
+                    m_assembler.movk<64>(memoryTempRegister, addressAsInt & maskHalfWord0, 0);
+                    cachedMemoryTempRegister().setValue(reinterpret_cast<intptr_t>(address));
+                    m_assembler.str<datasize>(src, memoryTempRegister, ARM64Registers::zr);
+                    return;
+                }
+#endif
             }
         }
 
@@ -4285,10 +4580,44 @@ protected:
         m_assembler.str<datasize>(src, memoryTempRegister, ARM64Registers::zr);
     }
 
+#if defined(__CHERI_PURE_CAPABILITY__)
     template <int dataSize>
     ALWAYS_INLINE bool tryMoveUsingCacheRegisterContents(intptr_t immediate, CachedTempRegister& dest)
     {
+        COMPILE_ASSERT(dataSize == PtrSizeBits, "This should be pointer-wide operation");
+
         intptr_t currentRegisterContents;
+        if (!dest.value(currentRegisterContents)) {
+	    return false;
+	}
+
+        if (!isSameCapabilityMeta(immediate, currentRegisterContents)) {
+            return false;
+        }
+
+        ptrdiff_t diff = reinterpret_cast<const char *>(immediate) - reinterpret_cast<const char *>(currentRegisterContents);
+
+        RegisterID destRegId = dest.registerIDNoInvalidate();
+
+        if (diff == 0) {
+            /* do nothing */
+        } else if (isUInt12(diff)) {
+            m_assembler.add<dataSize>(destRegId, destRegId, UInt12(diff));
+        } else if (isUInt12(-diff)) {
+            m_assembler.sub<dataSize>(destRegId, destRegId, UInt12(-diff));
+	} else {
+            return false;
+	}
+
+	dest.setValue(immediate);
+	return true;
+    }
+#endif
+
+    template <int dataSize>
+    ALWAYS_INLINE bool tryMoveUsingCacheRegisterContents(int64_t immediate, CachedTempRegister& dest)
+    {
+        int64_t currentRegisterContents;
         if (dest.value(currentRegisterContents)) {
             if (currentRegisterContents == immediate)
                 return true;
@@ -4318,7 +4647,7 @@ protected:
 
     void moveToCachedReg(TrustedImm32 imm, CachedTempRegister& dest)
     {
-        if (tryMoveUsingCacheRegisterContents<32>(static_cast<intptr_t>(imm.m_value), dest))
+        if (tryMoveUsingCacheRegisterContents<32>(static_cast<int64_t>(imm.m_value), dest))
             return;
 
         moveInternal<TrustedImm32, int32_t>(imm, dest.registerIDNoInvalidate());
@@ -4327,7 +4656,7 @@ protected:
 
     void moveToCachedReg(TrustedImmPtr imm, CachedTempRegister& dest)
     {
-        if (tryMoveUsingCacheRegisterContents<64>(imm.asIntptr(), dest))
+        if (tryMoveUsingCacheRegisterContents<PtrSizeBits>(imm.asIntptr(), dest))
             return;
 
         moveInternal<TrustedImmPtr, intptr_t>(imm, dest.registerIDNoInvalidate());
@@ -4336,7 +4665,7 @@ protected:
 
     void moveToCachedReg(TrustedImm64 imm, CachedTempRegister& dest)
     {
-        if (tryMoveUsingCacheRegisterContents<64>(static_cast<intptr_t>(imm.m_value), dest))
+        if (tryMoveUsingCacheRegisterContents<64>(static_cast<int64_t>(imm.m_value), dest))
             return;
 
         moveInternal<TrustedImm64, int64_t>(imm, dest.registerIDNoInvalidate());
@@ -4346,6 +4675,17 @@ protected:
     template<int datasize>
     ALWAYS_INLINE bool tryLoadWithOffset(RegisterID rt, RegisterID rn, int32_t offset)
     {
+#if CPU(ARM64_CAPS)
+        if (datasize == PtrSizeBits) {
+            ASSERT(0 == (offset & 0xf));
+            if (Assembler::canEncodePImmOffset<datasize>(offset)) {
+                loadUnsignedImmediate<datasize>(rt, rn, static_cast<unsigned>(offset));
+                return true;
+            }
+
+            return false;
+        }
+#endif
         if (Assembler::canEncodeSImmOffset(offset)) {
             loadUnscaledImmediate<datasize>(rt, rn, offset);
             return true;
@@ -4388,6 +4728,17 @@ protected:
     template<int datasize>
     ALWAYS_INLINE bool tryStoreWithOffset(RegisterID rt, RegisterID rn, int32_t offset)
     {
+#if CPU(ARM64_CAPS)
+        if (datasize == PtrSizeBits) {
+            ASSERT(0 == (offset & 0xf));
+            if(Assembler::canEncodePImmOffset<datasize>(offset)) {
+                storeUnsignedImmediate<datasize>(rt, rn, static_cast<unsigned>(offset));
+                return true;
+            }
+
+            return false;
+        }
+#endif
         if (Assembler::canEncodeSImmOffset(offset)) {
             storeUnscaledImmediate<datasize>(rt, rn, offset);
             return true;

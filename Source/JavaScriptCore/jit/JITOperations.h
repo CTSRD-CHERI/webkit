@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,8 +35,12 @@
 
 namespace JSC {
 
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+typedef __intcap_t EncodedJSValue;
+#else
 typedef int64_t EncodedJSValue;
-    
+#endif
+
 class ArrayAllocationProfile;
 class ArrayProfile;
 class Butterfly;

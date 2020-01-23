@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020 Brett F. Gutstein. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,6 +36,7 @@
 #include "JSCPtrTag.h"
 #include <limits.h>
 #include <wtf/Assertions.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/Vector.h>
 #include <stdint.h>
 
@@ -42,17 +44,32 @@
 #include <zircon/syscalls.h>
 #endif
 
+#if CPU(ARM64_CAPS)
+#define CHECK_DATASIZE_OF_ALLOW_CAP(datasize) ASSERT(datasize == 32 || datasize == 64 || datasize == 128)
+#define CHECK_DATASIZE_ALLOW_CAP() CHECK_DATASIZE_OF_ALLOW_CAP(datasize)
+#define DATASIZE DATASIZE_OF_CAP(datasize)
+#define MEMOPSIZE_CAP MEMOPSIZE_OF_CAP(datasize)
+#define MEMPAIROPSIZE_INT MEMPAIROPSIZE_INT_CAP
+#else
+#define CHECK_DATASIZE_OF_ALLOW_CAP CHECK_DATASIZE_OF
+#define CHECK_DATASIZE_ALLOW_CAP CHECK_DATASIZE
+#define DATASIZE DATASIZE_OF(datasize)
+#define MEMOPSIZE_CAP MEMOPSIZE
+#define MEMPAIROPSIZE_INT MEMPAIROPSIZE_INT_NO_CAP
+#endif
 #define CHECK_DATASIZE_OF(datasize) ASSERT(datasize == 32 || datasize == 64)
 #define CHECK_MEMOPSIZE_OF(size) ASSERT(size == 8 || size == 16 || size == 32 || size == 64 || size == 128);
+#define DATASIZE_OF_CAP(datasize) ((datasize == 128) ? Datasize_Cap : DATASIZE_OF(datasize))
 #define DATASIZE_OF(datasize) ((datasize == 64) ? Datasize_64 : Datasize_32)
 #define MEMOPSIZE_OF(datasize) ((datasize == 8 || datasize == 128) ? MemOpSize_8_or_128 : (datasize == 16) ? MemOpSize_16 : (datasize == 32) ? MemOpSize_32 : MemOpSize_64)
+#define MEMOPSIZE_OF_CAP(datasize) ((datasize == 128) ? MemOpSize_Cap : MEMOPSIZE_OF(datasize))
 #define CHECK_DATASIZE() CHECK_DATASIZE_OF(datasize)
 #define CHECK_MEMOPSIZE() CHECK_MEMOPSIZE_OF(datasize)
 #define CHECK_VECTOR_DATASIZE() ASSERT(datasize == 64 || datasize == 128)
-#define DATASIZE DATASIZE_OF(datasize)
 #define MEMOPSIZE MEMOPSIZE_OF(datasize)
 #define CHECK_FP_MEMOP_DATASIZE() ASSERT(datasize == 8 || datasize == 16 || datasize == 32 || datasize == 64 || datasize == 128)
-#define MEMPAIROPSIZE_INT(datasize) ((datasize == 64) ? MemPairOp_64 : MemPairOp_32)
+#define MEMPAIROPSIZE_INT_CAP(datasize) ((datasize == 128) ? MemPairOp_Cap : MEMPAIROPSIZE_INT_NO_CAP(datasize))
+#define MEMPAIROPSIZE_INT_NO_CAP(datasize) ((datasize == 64) ? MemPairOp_64 : MemPairOp_32)
 #define MEMPAIROPSIZE_FP(datasize) ((datasize == 128) ? MemPairOp_V128 : (datasize == 64) ? MemPairOp_V64 : MemPairOp_32)
 
 namespace JSC {
@@ -67,7 +84,7 @@ ALWAYS_INLINE constexpr bool isInt(Type t)
 
 static ALWAYS_INLINE bool is4ByteAligned(const void* ptr)
 {
-    return !(reinterpret_cast<intptr_t>(ptr) & 0x3);
+    return !WTF::Pointer::getLowBits<0x3>(ptr);
 }
 
 ALWAYS_INLINE bool isUInt5(int32_t value)
@@ -204,6 +221,7 @@ static constexpr bool isZr(RegisterID reg) { return reg == zr; }
 class ARM64Assembler {
 public:
     static constexpr size_t instructionSize = sizeof(unsigned);
+    static constexpr size_t pointerSize = sizeof(UCPURegister);
 
     typedef ARM64Registers::RegisterID RegisterID;
     typedef ARM64Registers::SPRegisterID SPRegisterID;
@@ -490,11 +508,22 @@ protected:
         return pimm / (datasize / 8);
     }
 
+#if CPU(ARM64_CAPS)
+    static int encodeLoadRegisterLiteralCapImmediate(int offset)
+    {
+      ASSERT(!(offset & 15));
+      return offset >> 4;
+    }
+#endif
+
     enum Datasize {
         Datasize_32,
         Datasize_64,
         Datasize_64_top,
-        Datasize_16
+        Datasize_16,
+#if CPU(ARM64_CAPS)
+        Datasize_Cap
+#endif
     };
 
     enum MemOpSize {
@@ -502,6 +531,9 @@ protected:
         MemOpSize_16,
         MemOpSize_32,
         MemOpSize_64,
+#if CPU(ARM64_CAPS)
+        MemOpSize_Cap,
+#endif
     };
 
     enum BranchType {
@@ -654,10 +686,13 @@ protected:
         MemPairOp_32 = 0,
         MemPairOp_LoadSigned_32 = 1,
         MemPairOp_64 = 2,
+#if CPU(ARM64_CAPS)
+        MemPairOp_Cap = 4,
+#endif
 
         MemPairOp_V32 = MemPairOp_32,
         MemPairOp_V64 = 1,
-        MemPairOp_V128 = 2
+        MemPairOp_V128 = 2,
     };
 
     enum MoveWideOp {
@@ -709,7 +744,7 @@ public:
     template<int datasize, SetFlags setFlags = DontSetFlags>
     ALWAYS_INLINE void add(RegisterID rd, RegisterID rn, UInt12 imm12, int shift = 0)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         ASSERT(!shift || shift == 12);
         insn(addSubtractImmediate(DATASIZE, AddOp_ADD, setFlags, shift == 12, imm12, rn, rd));
     }
@@ -723,14 +758,14 @@ public:
     template<int datasize, SetFlags setFlags = DontSetFlags>
     ALWAYS_INLINE void add(RegisterID rd, RegisterID rn, RegisterID rm, ExtendType extend, int amount)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(addSubtractExtendedRegister(DATASIZE, AddOp_ADD, setFlags, rm, extend, amount, rn, rd));
     }
 
     template<int datasize, SetFlags setFlags = DontSetFlags>
     ALWAYS_INLINE void add(RegisterID rd, RegisterID rn, RegisterID rm, ShiftType shift, int amount)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         if (isSp(rd) || isSp(rn)) {
             ASSERT(shift == LSL);
             ASSERT(!isSp(rm));
@@ -1094,21 +1129,22 @@ public:
     template<int datasize>
     ALWAYS_INLINE void ldp(RegisterID rt, RegisterID rt2, RegisterID rn, PairPostIndex simm)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
+
         insn(loadStoreRegisterPairPostIndex(MEMPAIROPSIZE_INT(datasize), false, MemOp_LOAD, simm, rn, rt, rt2));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldp(RegisterID rt, RegisterID rt2, RegisterID rn, PairPreIndex simm)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(loadStoreRegisterPairPreIndex(MEMPAIROPSIZE_INT(datasize), false, MemOp_LOAD, simm, rn, rt, rt2));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldp(RegisterID rt, RegisterID rt2, RegisterID rn, unsigned pimm = 0)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(loadStoreRegisterPairOffset(MEMPAIROPSIZE_INT(datasize), false, MemOp_LOAD, pimm, rn, rt, rt2));
     }
 
@@ -1128,36 +1164,42 @@ public:
     template<int datasize>
     ALWAYS_INLINE void ldr(RegisterID rt, RegisterID rn, RegisterID rm, ExtendType extend, int amount)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterRegisterOffset(MEMOPSIZE, false, MemOp_LOAD, rm, extend, encodeShiftAmount<datasize>(amount), rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterRegisterOffset(MEMOPSIZE_CAP, false, MemOp_LOAD, rm, extend, encodeShiftAmount<datasize>(amount), rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldr(RegisterID rt, RegisterID rn, unsigned pimm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterUnsignedImmediate(MEMOPSIZE, false, MemOp_LOAD, encodePositiveImmediate<datasize>(pimm), rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterUnsignedImmediate(MEMOPSIZE_CAP, false, MemOp_LOAD, encodePositiveImmediate<datasize>(pimm), rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldr(RegisterID rt, RegisterID rn, PostIndex simm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterPostIndex(MEMOPSIZE, false, MemOp_LOAD, simm, rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterPostIndex(MEMOPSIZE_CAP, false, MemOp_LOAD, simm, rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldr(RegisterID rt, RegisterID rn, PreIndex simm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterPreIndex(MEMOPSIZE, false, MemOp_LOAD, simm, rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterPreIndex(MEMOPSIZE_CAP, false, MemOp_LOAD, simm, rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void ldr_literal(RegisterID rt, int offset = 0)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         ASSERT(!(offset & 3));
+#if CPU(ARM64_CAPS)
+        if (DATASIZE == Datasize_Cap) {
+            insn(loadRegisterLiteralCap(encodeLoadRegisterLiteralCapImmediate(offset), rt));
+            return;
+        }
+#endif
         insn(loadRegisterLiteral(datasize == 64 ? LdrLiteralOp_64BIT : LdrLiteralOp_32BIT, false, offset >> 2, rt));
     }
 
@@ -1411,7 +1453,13 @@ public:
     template<int datasize>
     ALWAYS_INLINE void mov(RegisterID rd, RegisterID rm)
     {
-        if (isSp(rd) || isSp(rm))
+#if CPU(ARM64_CAPS)
+        bool useAdd = true;
+#else
+        bool useAdd = isSp(rd) || isSp(rm);
+#endif
+
+        if (useAdd)
             add<datasize>(rd, rm, UInt12(0));
         else
             orr<datasize>(rd, ARM64Registers::zr, rm);
@@ -1727,21 +1775,21 @@ public:
     template<int datasize>
     ALWAYS_INLINE void stp(RegisterID rt, RegisterID rt2, RegisterID rn, PairPostIndex simm)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(loadStoreRegisterPairPostIndex(MEMPAIROPSIZE_INT(datasize), false, MemOp_STORE, simm, rn, rt, rt2));
     }
 
     template<int datasize>
     ALWAYS_INLINE void stp(RegisterID rt, RegisterID rt2, RegisterID rn, PairPreIndex simm)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(loadStoreRegisterPairPreIndex(MEMPAIROPSIZE_INT(datasize), false, MemOp_STORE, simm, rn, rt, rt2));
     }
 
     template<int datasize>
     ALWAYS_INLINE void stp(RegisterID rt, RegisterID rt2, RegisterID rn, unsigned pimm = 0)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         insn(loadStoreRegisterPairOffset(MEMPAIROPSIZE_INT(datasize), false, MemOp_STORE, pimm, rn, rt, rt2));
     }
 
@@ -1761,29 +1809,29 @@ public:
     template<int datasize>
     ALWAYS_INLINE void str(RegisterID rt, RegisterID rn, RegisterID rm, ExtendType extend, int amount)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterRegisterOffset(MEMOPSIZE, false, MemOp_STORE, rm, extend, encodeShiftAmount<datasize>(amount), rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterRegisterOffset(MEMOPSIZE_CAP, false, MemOp_STORE, rm, extend, encodeShiftAmount<datasize>(amount), rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void str(RegisterID rt, RegisterID rn, unsigned pimm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterUnsignedImmediate(MEMOPSIZE, false, MemOp_STORE, encodePositiveImmediate<datasize>(pimm), rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterUnsignedImmediate(MEMOPSIZE_CAP, false, MemOp_STORE, encodePositiveImmediate<datasize>(pimm), rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void str(RegisterID rt, RegisterID rn, PostIndex simm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterPostIndex(MEMOPSIZE, false, MemOp_STORE, simm, rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterPostIndex(MEMOPSIZE_CAP, false, MemOp_STORE, simm, rn, rt));
     }
 
     template<int datasize>
     ALWAYS_INLINE void str(RegisterID rt, RegisterID rn, PreIndex simm)
     {
-        CHECK_DATASIZE();
-        insn(loadStoreRegisterPreIndex(MEMOPSIZE, false, MemOp_STORE, simm, rn, rt));
+        CHECK_DATASIZE_ALLOW_CAP();
+        insn(loadStoreRegisterPreIndex(MEMOPSIZE_CAP, false, MemOp_STORE, simm, rn, rt));
     }
 
     ALWAYS_INLINE void strb(RegisterID rt, RegisterID rn, RegisterID rm)
@@ -1859,7 +1907,7 @@ public:
     template<int datasize, SetFlags setFlags = DontSetFlags>
     ALWAYS_INLINE void sub(RegisterID rd, RegisterID rn, UInt12 imm12, int shift = 0)
     {
-        CHECK_DATASIZE();
+        CHECK_DATASIZE_ALLOW_CAP();
         ASSERT(!shift || shift == 12);
         insn(addSubtractImmediate(DATASIZE, AddOp_SUB, setFlags, shift == 12, imm12, rn, rd));
     }
@@ -2515,7 +2563,7 @@ public:
     static void* getRelocatedAddress(void* code, AssemblerLabel label)
     {
         ASSERT(label.isSet());
-        return reinterpret_cast<void*>(reinterpret_cast<ptrdiff_t>(code) + label.m_offset);
+        return reinterpret_cast<void*>(reinterpret_cast<intptr_t>(code) + label.m_offset);
     }
     
     static int getDifferenceBetweenLabels(AssemblerLabel a, AssemblerLabel b)
@@ -2588,7 +2636,7 @@ public:
 
     static void replaceWithJump(void* where, void* to)
     {
-        intptr_t offset = (reinterpret_cast<intptr_t>(to) - reinterpret_cast<intptr_t>(where)) >> 2;
+        ptrdiff_t offset = (reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(where)) >> 2;
         ASSERT(static_cast<int>(offset) == offset);
         int insn = unconditionalBranchImmediate(false, static_cast<int>(offset));
         RELEASE_ASSERT(roundUpToMultipleOf<instructionSize>(where) == where);
@@ -2695,11 +2743,19 @@ public:
         int loadOffset;
         uintptr_t value = reinterpret_cast<uintptr_t>(valuePtr);
         RegisterID rt;
+#if CPU(ARM64_CAPS)
+        bool expected = disassembleLoadLiteralCap(address, rt, loadOffset);
+        ASSERT(expected);
+#else
         MemOpSize size;
         bool expected = disassembleLoadLiteral(address, size, rt, loadOffset);
         ASSERT(expected && size == MemOpSize_64);
+#endif
         performJITMemcpy((char *) address + loadOffset, &value, sizeof(value));
 #else
+#if CPU(ARM64_CAPS)
+# error "A valid capability can't be reconstructed from pieces."
+#endif
         uintptr_t value = reinterpret_cast<uintptr_t>(valuePtr);
         int buffer[3];
         buffer[0] = moveWideImediate(Datasize_64, MoveWideOp_Z, 0, getHalfword(value, 0), rd);
@@ -2717,7 +2773,11 @@ public:
     static void resetPatchablePointerLoad(int* address, RegisterID rt, bool flush)
     {
         int loadOffset = -static_cast<int>(sizeof(intptr_t));
+#if CPU(ARM64_CAPS)
+        uint32_t ldr = loadRegisterLiteralCap(encodeLoadRegisterLiteralCapImmediate(loadOffset), rt);
+#else
         uint32_t ldr = loadRegisterLiteral(LdrLiteralOp_64BIT, false, loadOffset >> 2, rt);
+#endif
         performJITMemcpy(address, &ldr, sizeof(ldr));
         if (flush) {
             cacheFlush(address, sizeof(ldr));
@@ -2902,7 +2962,7 @@ public:
         case JumpCondition: {
             ASSERT(is4ByteAligned(from));
             ASSERT(is4ByteAligned(to));
-            intptr_t relative = reinterpret_cast<intptr_t>(to) - (reinterpret_cast<intptr_t>(from));
+            ptrdiff_t relative = reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(from);
 
             if (isInt<21>(relative))
                 return LinkJumpConditionDirect;
@@ -2912,7 +2972,7 @@ public:
         case JumpCompareAndBranch:  {
             ASSERT(is4ByteAligned(from));
             ASSERT(is4ByteAligned(to));
-            intptr_t relative = reinterpret_cast<intptr_t>(to) - (reinterpret_cast<intptr_t>(from));
+            ptrdiff_t relative = reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(from);
 
             if (isInt<21>(relative))
                 return LinkJumpCompareAndBranchDirect;
@@ -2922,7 +2982,7 @@ public:
         case JumpTestBit:   {
             ASSERT(is4ByteAligned(from));
             ASSERT(is4ByteAligned(to));
-            intptr_t relative = reinterpret_cast<intptr_t>(to) - (reinterpret_cast<intptr_t>(from));
+            ptrdiff_t relative = reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(from);
 
             if (isInt<14>(relative))
                 return LinkJumpTestBitDirect;
@@ -2988,7 +3048,9 @@ public:
         RegisterID rt;
         int loadOffset;
         bool expected = disassembleLoadLiteral(address, size, rt, loadOffset);
-        ASSERT(expected && size == MemOpSize_64 && rt == expectedRt);
+        ASSERT_UNUSED(expected, expected);
+        ASSERT_UNUSED(expectedRt, rt == expectedRt);
+        ASSERT(size == MemOpSize_64);
     }
 
     static void emitPointerLiteralLoad(void *emitAt, void *loadFrom, RegisterID dest)
@@ -3052,11 +3114,17 @@ protected:
         ASSERT_UNUSED(isUnconditionalBranchImmediateOrNop, isUnconditionalBranchImmediateOrNop);
         constexpr bool isCall = (type == BranchType_CALL);
         ASSERT_UNUSED(isCall, (link == isCall) || disassembleNop(from));
-        ASSERT(!(reinterpret_cast<intptr_t>(from) & 3));
-        ASSERT(!(reinterpret_cast<intptr_t>(to) & 3));
+        ASSERT(!WTF::Pointer::getLowBits<3>(from));
+#if CPU(ARM64_CAPS)
+        if (isCall) {
+            ASSERT(WTF::Pointer::getLowBits<1>(to) == 0x1);
+            to = WTF::Pointer::clearLowBits<1>(to);
+	}
+#endif
+        ASSERT(!WTF::Pointer::getLowBits<3>(to));
         assertIsNotTagged(to);
         assertIsNotTagged(fromInstruction);
-        intptr_t offset = (reinterpret_cast<intptr_t>(to) - reinterpret_cast<intptr_t>(fromInstruction)) >> 2;
+        ptrdiff_t offset = (reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(fromInstruction)) >> 2;
         ASSERT(static_cast<int>(offset) == offset);
 
         int insn = unconditionalBranchImmediate(isCall, static_cast<int>(offset));
@@ -3067,9 +3135,9 @@ protected:
     template<BranchTargetType type, CopyFunction copy = performJITMemcpy>
     static void linkCompareAndBranch(Condition condition, bool is64Bit, RegisterID rt, int* from, const int* fromInstruction, void* to)
     {
-        ASSERT(!(reinterpret_cast<intptr_t>(from) & 3));
-        ASSERT(!(reinterpret_cast<intptr_t>(to) & 3));
-        intptr_t offset = (reinterpret_cast<intptr_t>(to) - reinterpret_cast<intptr_t>(fromInstruction)) >> 2;
+        ASSERT(!WTF::Pointer::getLowBits<3>(from));
+        ASSERT(!WTF::Pointer::getLowBits<3>(to));
+        ptrdiff_t offset = (reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(fromInstruction)) >> 2;
         ASSERT(isInt<26>(offset));
 
         bool useDirect = isInt<19>(offset);
@@ -3095,9 +3163,9 @@ protected:
     template<BranchTargetType type, CopyFunction copy = performJITMemcpy>
     static void linkConditionalBranch(Condition condition, int* from, const int* fromInstruction, void* to)
     {
-        ASSERT(!(reinterpret_cast<intptr_t>(from) & 3));
-        ASSERT(!(reinterpret_cast<intptr_t>(to) & 3));
-        intptr_t offset = (reinterpret_cast<intptr_t>(to) - reinterpret_cast<intptr_t>(fromInstruction)) >> 2;
+        ASSERT(!WTF::Pointer::getLowBits<3>(from));
+        ASSERT(!WTF::Pointer::getLowBits<3>(to));
+        ptrdiff_t offset = (reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(fromInstruction)) >> 2;
         ASSERT(isInt<26>(offset));
 
         bool useDirect = isInt<19>(offset);
@@ -3123,9 +3191,9 @@ protected:
     template<BranchTargetType type, CopyFunction copy = performJITMemcpy>
     static void linkTestAndBranch(Condition condition, unsigned bitNumber, RegisterID rt, int* from, const int* fromInstruction, void* to)
     {
-        ASSERT(!(reinterpret_cast<intptr_t>(from) & 3));
-        ASSERT(!(reinterpret_cast<intptr_t>(to) & 3));
-        intptr_t offset = (reinterpret_cast<intptr_t>(to) - reinterpret_cast<intptr_t>(fromInstruction)) >> 2;
+        ASSERT(!WTF::Pointer::getLowBits<3>(from));
+        ASSERT(!WTF::Pointer::getLowBits<3>(to));
+        ptrdiff_t offset = (reinterpret_cast<const char *>(to) - reinterpret_cast<const char *>(fromInstruction)) >> 2;
         ASSERT(static_cast<int>(offset) == offset);
         ASSERT(isInt<26>(offset));
 
@@ -3234,6 +3302,17 @@ protected:
     }
 
 #if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+#if CPU(ARM64_CAPS)
+    static bool disassembleLoadLiteralCap(void* address, RegisterID& rt, int& loadOffset)
+    {
+        int insn = *static_cast<int*>(address);
+        int32_t imm = (insn >> 5) & 0x1ffff;
+        loadOffset = (((imm << 15) >> 15) << 4);
+        rt = disassembleXOrZr(insn & 0x1f);
+        return (insn & 0xffc00000) == 0x82000000;
+    }
+#endif
+
     static bool disassembleLoadLiteral(void* address, MemOpSize& size, RegisterID& rt, int& loadOffset)
     {
         int insn = *static_cast<int*>(address);
@@ -3334,6 +3413,16 @@ public:
 protected:
     ALWAYS_INLINE static int addSubtractExtendedRegister(Datasize sf, AddOp op, SetFlags S, RegisterID rm, ExtendType option, int imm3, RegisterID rn, RegisterID rd)
     {
+#if CPU(ARM64_CAPS)
+        if (sf == Datasize_Cap)
+        {
+            ASSERT(op == AddOp_ADD);
+            ASSERT(imm3 < 5);
+            ASSERT(S == DontSetFlags);
+            return (0xc2a00000 | xOrZr(rm) << 16 | option << 13 | (imm3 & 0x7) << 10 | xOrSp(rn) << 5 | xOrSp(rd));
+        }
+#endif
+
         ASSERT(imm3 < 5);
         // The only allocated values for opt is 0.
         const int opt = 0;
@@ -3342,13 +3431,30 @@ protected:
 
     ALWAYS_INLINE static int addSubtractImmediate(Datasize sf, AddOp op, SetFlags S, int shift, int imm12, RegisterID rn, RegisterID rd)
     {
-        ASSERT(shift < 2);
         ASSERT(isUInt12(imm12));
+        ASSERT(shift < 2);
+#if CPU(ARM64_CAPS)
+        if (sf == Datasize_Cap) {
+            ASSERT(S == 0);
+            return (0x02000000 | op << 23 | shift << 22 | (imm12 & 0xfff) << 10 | xOrSp(rn) << 5 | xOrZrOrSp(S, rd));
+        }
+#endif
         return (0x11000000 | sf << 31 | op << 30 | S << 29 | shift << 22 | (imm12 & 0xfff) << 10 | xOrSp(rn) << 5 | xOrZrOrSp(S, rd));
     }
 
     ALWAYS_INLINE static int addSubtractShiftedRegister(Datasize sf, AddOp op, SetFlags S, ShiftType shift, RegisterID rm, int imm6, RegisterID rn, RegisterID rd)
     {
+#if CPU(ARM64_CAPS)
+        if (sf == Datasize_Cap)
+        {
+            ASSERT(op == AddOp_ADD);
+            ASSERT(shift == LSL);
+            ASSERT(imm6 < 5);
+            ASSERT(S == DontSetFlags);
+            return (0xc2a06000 | xOrZr(rm) << 16 | (imm6 & 0x7) << 10 | xOrSp(rn) << 5 | xOrSp(rd));
+        }
+#endif
+
         ASSERT(shift < 3);
         ASSERT(!(imm6 & (sf ? ~63 : ~31)));
         return (0x0b000000 | sf << 31 | op << 30 | S << 29 | shift << 22 | xOrZr(rm) << 16 | (imm6 & 0x3f) << 10 | xOrZr(rn) << 5 | xOrZr(rd));
@@ -3541,9 +3647,20 @@ protected:
         return loadRegisterLiteral(opc, V, imm19, xOrZrAsFPR(rt));
     }
 
+#if CPU(ARM64_CAPS)
+    ALWAYS_INLINE static int loadRegisterLiteralCap(int imm17, RegisterID rt)
+    {
+        ASSERT(isInt<17>(imm17));
+        return (0x82000000 | (imm17 & 0x1ffff) << 5 | rt);
+    }
+#endif
+
     // 'V' means vector
     ALWAYS_INLINE static int loadStoreRegisterPostIndex(MemOpSize size, bool V, MemOp opc, int imm9, RegisterID rn, FPRegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        ASSERT(size != MemOpSize_Cap);
+#endif
         ASSERT(!(size && V && (opc & 2))); // Maximum vector size is 128 bits.
         ASSERT(!((size & 2) && !V && (opc == 3))); // signed 32-bit load must be extending from 8/16 bits.
         ASSERT(isInt9(imm9));
@@ -3552,16 +3669,39 @@ protected:
 
     ALWAYS_INLINE static int loadStoreRegisterPostIndex(MemOpSize size, bool V, MemOp opc, int imm9, RegisterID rn, RegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        if (size == MemOpSize_Cap) {
+            ASSERT(!V);
+            ASSERT(opc == MemOp_LOAD || opc == MemOp_STORE);
+            ASSERT(isInt9(imm9));
+            return (0xa2000400 | opc << 22 | (imm9 & 0x1ff) << 12 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         return loadStoreRegisterPostIndex(size, V, opc, imm9, rn, xOrZrAsFPR(rt));
     }
 
     // 'V' means vector
     ALWAYS_INLINE static int loadStoreRegisterPairPostIndex(MemPairOpSize size, bool V, MemOp opc, int immediate, RegisterID rn, FPRegisterID rt, FPRegisterID rt2)
     {
+        unsigned immedShiftAmount = memPairOffsetShift(V, size);
+
+#if CPU(ARM64_CAPS)
+        if (size == MemPairOp_Cap)
+        {
+            ASSERT(opc == (opc & 1)); // Only load or store
+            ASSERT(!V);
+
+            int imm7 = immediate >> immedShiftAmount;
+            ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
+
+            return (0x22800000 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         ASSERT(size < 3);
         ASSERT(opc == (opc & 1)); // Only load or store, load signed 64 is handled via size.
         ASSERT(V || (size != MemPairOp_LoadSigned_32) || (opc == MemOp_LOAD)); // There isn't an integer store signed.
-        unsigned immedShiftAmount = memPairOffsetShift(V, size);
         int imm7 = immediate >> immedShiftAmount;
         ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
         return (0x28800000 | size << 30 | V << 26 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
@@ -3575,6 +3715,9 @@ protected:
     // 'V' means vector
     ALWAYS_INLINE static int loadStoreRegisterPreIndex(MemOpSize size, bool V, MemOp opc, int imm9, RegisterID rn, FPRegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        ASSERT(size != MemOpSize_Cap);
+#endif
         ASSERT(!(size && V && (opc & 2))); // Maximum vector size is 128 bits.
         ASSERT(!((size & 2) && !V && (opc == 3))); // signed 32-bit load must be extending from 8/16 bits.
         ASSERT(isInt9(imm9));
@@ -3583,16 +3726,39 @@ protected:
 
     ALWAYS_INLINE static int loadStoreRegisterPreIndex(MemOpSize size, bool V, MemOp opc, int imm9, RegisterID rn, RegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        if (size == MemOpSize_Cap) {
+            ASSERT(!V);
+            ASSERT(opc == MemOp_LOAD || opc == MemOp_STORE);
+            ASSERT(isInt9(imm9));
+            return (0xa2000c00 | opc << 22 | (imm9 & 0x1ff) << 12 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         return loadStoreRegisterPreIndex(size, V, opc, imm9, rn, xOrZrAsFPR(rt));
     }
 
     // 'V' means vector
     ALWAYS_INLINE static int loadStoreRegisterPairPreIndex(MemPairOpSize size, bool V, MemOp opc, int immediate, RegisterID rn, FPRegisterID rt, FPRegisterID rt2)
     {
+        unsigned immedShiftAmount = memPairOffsetShift(V, size);
+
+#if CPU(ARM64_CAPS)
+        if (size == MemPairOp_Cap)
+        {
+            ASSERT(opc == (opc & 1)); // Only load or store
+            ASSERT(!V);
+
+            int imm7 = immediate >> immedShiftAmount;
+            ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
+
+            return (0x62800000 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         ASSERT(size < 3);
         ASSERT(opc == (opc & 1)); // Only load or store, load signed 64 is handled via size.
         ASSERT(V || (size != MemPairOp_LoadSigned_32) || (opc == MemOp_LOAD)); // There isn't an integer store signed.
-        unsigned immedShiftAmount = memPairOffsetShift(V, size);
         int imm7 = immediate >> immedShiftAmount;
         ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
         return (0x29800000 | size << 30 | V << 26 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
@@ -3606,10 +3772,24 @@ protected:
     // 'V' means vector
     ALWAYS_INLINE static int loadStoreRegisterPairOffset(MemPairOpSize size, bool V, MemOp opc, int immediate, RegisterID rn, FPRegisterID rt, FPRegisterID rt2)
     {
+        unsigned immedShiftAmount = memPairOffsetShift(V, size);
+
+#if CPU(ARM64_CAPS)
+        if (size == MemPairOp_Cap)
+        {
+            ASSERT(opc == (opc & 1)); // Only load or store
+            ASSERT(!V);
+
+            int imm7 = immediate >> immedShiftAmount;
+            ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
+
+            return (0x42800000 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         ASSERT(size < 3);
         ASSERT(opc == (opc & 1)); // Only load or store, load signed 64 is handled via size.
         ASSERT(V || (size != MemPairOp_LoadSigned_32) || (opc == MemOp_LOAD)); // There isn't an integer store signed.
-        unsigned immedShiftAmount = memPairOffsetShift(V, size);
         int imm7 = immediate >> immedShiftAmount;
         ASSERT((imm7 << immedShiftAmount) == immediate && isInt<7>(imm7));
         return (0x29000000 | size << 30 | V << 26 | opc << 22 | (imm7 & 0x7f) << 15 | rt2 << 10 | xOrSp(rn) << 5 | rt);
@@ -3649,6 +3829,15 @@ protected:
 
     ALWAYS_INLINE static int loadStoreRegisterRegisterOffset(MemOpSize size, bool V, MemOp opc, RegisterID rm, ExtendType option, bool S, RegisterID rn, RegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        if (size == MemOpSize_Cap) {
+            ASSERT(!V);
+            ASSERT(opc == MemOp_LOAD || opc == MemOp_STORE);
+            ASSERT(option & 2); // The ExtendType for the address must be 32/64 bit, signed or unsigned - not 8/16bit.
+            return (0xa2200800 | opc << 22 | xOrZr(rm) << 16 | option << 13 | S << 12 | xOrSp(rn) << 5 | rt);
+        }
+#endif
+
         return loadStoreRegisterRegisterOffset(size, V, opc, rm, option, S, rn, xOrZrAsFPR(rt));
     }
 
@@ -3678,6 +3867,15 @@ protected:
 
     ALWAYS_INLINE static int loadStoreRegisterUnsignedImmediate(MemOpSize size, bool V, MemOp opc, int imm12, RegisterID rn, RegisterID rt)
     {
+#if CPU(ARM64_CAPS)
+        if (size == MemOpSize_Cap) {
+            ASSERT(!V);
+            ASSERT(opc == MemOp_LOAD || opc == MemOp_STORE);
+            ASSERT(isUInt12(imm12));
+            return (0xc2000000 | opc << 22 | (imm12 & 0xfff) << 10 | xOrSp(rn) << 5 | xOrZr(rt));
+        }
+#endif
+
         return loadStoreRegisterUnsignedImmediate(size, V, opc, imm12, rn, xOrZrAsFPR(rt));
     }
 
@@ -3747,6 +3945,12 @@ protected:
         return (0x36000000 | b5 << 31 | op << 24 | b40 << 19 | (imm14 & 0x3fff) << 5 | xOrZr(rt));
     }
 
+#if CPU(ARM64_CAPS)
+    ALWAYS_INLINE static int unconditionalBranchRegister(BranchType opc, RegisterID rn)
+    {
+        return (0xc2c21000 | opc << 13 | xOrZr(rn) << 5);
+    }
+#else
     ALWAYS_INLINE static int unconditionalBranchRegister(BranchType opc, RegisterID rn)
     {
         // The only allocated values for op2 is 0x1f, for op3 & op4 are 0.
@@ -3755,6 +3959,7 @@ protected:
         const int op4 = 0;
         return (0xd6000000 | opc << 21 | op2 << 16 | op3 << 10 | xOrZr(rn) << 5 | op4);
     }
+#endif
     
     static int exoticLoad(MemOpSize size, ExoticLoadFence fence, ExoticLoadAtomic atomic, RegisterID dst, RegisterID src)
     {

@@ -360,7 +360,7 @@ void AssemblyHelpers::loadProperty(GPRReg object, GPRReg offset, JSValueRegs res
     
     loadValue(
         BaseIndex(
-            result.payloadGPR(), offset, TimesEight, (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)),
+            result.payloadGPR(), offset, timesValue(), (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)),
         result);
 }
 
@@ -382,7 +382,7 @@ void AssemblyHelpers::emitLoadStructure(VM& vm, RegisterID source, RegisterID de
     load32(MacroAssembler::Address(source, JSCell::structureIDOffset()), scratch2);
     loadPtr(vm.heap.structureIDTable().base(), scratch);
     rshift32(scratch2, TrustedImm32(StructureIDTable::s_numberOfEntropyBits), dest);
-    loadPtr(MacroAssembler::BaseIndex(scratch, dest, MacroAssembler::TimesEight), dest);
+    loadPtr(MacroAssembler::BaseIndex(scratch, dest, MacroAssembler::timesPtr()), dest);
 #if ENCODE_STRUCTURE_BITS
     lshiftPtr(TrustedImm32(StructureIDTable::s_entropyBitsShiftForStructurePointer), scratch2);
     xorPtr(scratch2, dest);
@@ -986,7 +986,7 @@ void AssemblyHelpers::sanitizeStackInline(VM& vm, GPRReg scratch)
     Jump done = branchPtr(BelowOrEqual, stackPointerRegister, scratch);
     Label loop = label();
     storePtr(TrustedImmPtr(nullptr), scratch);
-    addPtr(TrustedImmPtr(sizeof(void*)), scratch);
+    addPtr(TrustedImm32(sizeof(void*)), scratch);
     branchPtr(Above, stackPointerRegister, scratch).linkTo(loop, this);
     done.link(this);
     move(stackPointerRegister, scratch);

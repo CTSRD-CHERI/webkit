@@ -29,21 +29,22 @@
 #include "ExecutableAllocator.h"
 #include "JSCPtrTag.h"
 #include <wtf/DataLog.h>
+#include <wtf/PointerMacro.h>
 #include <wtf/PrintStream.h>
 #include <wtf/RefPtr.h>
 #include <wtf/text/CString.h>
 
 // ASSERT_VALID_CODE_POINTER checks that ptr is a non-null pointer, and that it is a valid
 // instruction address on the platform (for example, check any alignment requirements).
-#if CPU(ARM_THUMB2) && ENABLE(JIT)
+#if (CPU(ARM_THUMB2) || CPU(ARM64_CAPS)) && ENABLE(JIT)
 // ARM instructions must be 16-bit aligned. Thumb2 code pointers to be loaded into
 // into the processor are decorated with the bottom bit set, while traditional ARM has
 // the lower bit clear. Since we don't know what kind of pointer, we check for both
 // decorated and undecorated null.
 #define ASSERT_NULL_OR_VALID_CODE_POINTER(ptr) \
-    ASSERT(!ptr || reinterpret_cast<intptr_t>(ptr) & ~1)
+    ASSERT(!ptr || WTF::Pointer::clearLowBits<1>(reinterpret_cast<intptr_t>(ptr)))
 #define ASSERT_VALID_CODE_POINTER(ptr) \
-    ASSERT(reinterpret_cast<intptr_t>(ptr) & ~1)
+    ASSERT(WTF::Pointer::clearLowBits<1>(reinterpret_cast<intptr_t>(ptr)))
 #define ASSERT_VALID_CODE_OFFSET(offset) \
     ASSERT(!(offset & 1)) // Must be multiple of 2.
 #else
@@ -278,7 +279,7 @@ public:
     MacroAssemblerCodePtr(std::nullptr_t) : m_value(nullptr) { }
 
     explicit MacroAssemblerCodePtr(const void* value)
-#if CPU(ARM_THUMB2)
+#if CPU(ARM_THUMB2) || CPU(ARM64_CAPS)
         // Decorate the pointer as a thumb code pointer.
         : m_value(reinterpret_cast<const char*>(value) + 1)
 #else
@@ -287,7 +288,7 @@ public:
     {
         assertIsTaggedWith(value, tag);
         ASSERT(value);
-#if CPU(ARM_THUMB2)
+#if CPU(ARM_THUMB2) || CPU(ARM64_CAPS)
         ASSERT(!(reinterpret_cast<uintptr_t>(value) & 1));
 #endif
         ASSERT_VALID_CODE_POINTER(m_value);
@@ -337,14 +338,26 @@ public:
         return retagCodePtr<T, tag, newTag>(m_value);
     }
 
-#if CPU(ARM_THUMB2) || defined(__CHERI_PURE_CAPABILITY__)
+#if CPU(ARM_THUMB2) || CPU(ARM64_CAPS)
     // To use this pointer as a data address remove the decoration.
     template<typename T = void*>
-    T dataLocation() const
+    typename std::enable_if<(sizeof(T) == sizeof(void *)), T>::type
+    dataLocation() const
     {
         ASSERT_VALID_CODE_POINTER(m_value);
         return bitwise_cast<T>(m_value ? bitwise_cast<char*>(m_value) - 1 : nullptr);
     }
+
+#if defined (__CHERI_PURE_CAPABILITY__)
+    template<typename T>
+    typename std::enable_if<(sizeof(T) == sizeof(size_t)), T>::type
+    dataLocation() const
+    {
+        void *pointer = dataLocation();
+
+        return bitwise_cast<T>((__cheri_addr size_t) pointer);
+    }
+#endif
 #else
     template<typename T = void*>
     T dataLocation() const

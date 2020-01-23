@@ -759,8 +759,8 @@ macro preserveCalleeSavesUsedByLLInt()
         emit "stp x27, x28, [x29, #-16]"
         emit "stp x25, x26, [x29, #-32]"
     elsif ARM64_CAPS
-        emit "stp c24, c25, [c29, #-32]"
-        emit "str c26, [c29, #-48]"
+        emit "str c26, [c29, #-16]"
+        emit "stp c24, c25, [c29, #-48]"
         emit "stp c22, c23, [c29, #-80]"
     elsif X86
     elsif X86_WIN
@@ -786,9 +786,9 @@ macro restoreCalleeSavesUsedByLLInt()
         emit "ldp x25, x26, [x29, #-32]"
         emit "ldp x27, x28, [x29, #-16]"
     elsif ARM64_CAPS
+        emit "ldr c26, [c29, #-16]"
+        emit "ldp c24, c25, [c29, #-48]"
         emit "ldp c22, c23, [c29, #-80]"
-        emit "ldr c26, [c29, #-48]"
-        emit "ldp c24, c25, [c29, #-32]"
     elsif X86
     elsif X86_WIN
     elsif X86_64

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -124,7 +125,7 @@ public:
     void storeCell(T cell, Address address)
     {
 #if USE(JSVALUE64)
-        store64(cell, address);
+        storePtr(cell, address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         store32(cell, address.withOffset(PayloadOffset));
         store32(TrustedImm32(JSValue::CellTag), address.withOffset(TagOffset));
@@ -134,7 +135,7 @@ public:
     void loadCell(Address address, GPRReg gpr)
     {
 #if USE(JSVALUE64)
-        load64(address, gpr);
+        loadPtr(address, gpr); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         load32(address.withOffset(PayloadOffset), gpr);
 #endif
@@ -143,7 +144,7 @@ public:
     void storeValue(JSValueRegs regs, Address address)
     {
 #if USE(JSVALUE64)
-        store64(regs.gpr(), address);
+        storePtr(regs.gpr(), address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         store32(regs.payloadGPR(), address.withOffset(PayloadOffset));
         store32(regs.tagGPR(), address.withOffset(TagOffset));
@@ -153,7 +154,7 @@ public:
     void storeValue(JSValueRegs regs, BaseIndex address)
     {
 #if USE(JSVALUE64)
-        store64(regs.gpr(), address);
+        storePtr(regs.gpr(), address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         store32(regs.payloadGPR(), address.withOffset(PayloadOffset));
         store32(regs.tagGPR(), address.withOffset(TagOffset));
@@ -163,17 +164,65 @@ public:
     void storeValue(JSValueRegs regs, void* address)
     {
 #if USE(JSVALUE64)
-        store64(regs.gpr(), address);
+        storePtr(regs.gpr(), address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         store32(regs.payloadGPR(), bitwise_cast<void*>(bitwise_cast<uintptr_t>(address) + PayloadOffset));
         store32(regs.tagGPR(), bitwise_cast<void*>(bitwise_cast<uintptr_t>(address) + TagOffset));
 #endif
     }
-    
+
+    void storeValue(TrustedImm64 imm, Address address)
+    {
+#if USE(JSVALUE64)
+        storePtr(imm, address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
+#else
+        RELEASE_ASSERT_NOT_REACHED(); // not implemented
+#endif
+    }
+
+    void storeValue(Imm64 imm, Address address)
+    {
+#if USE(JSVALUE64)
+        if (shouldBlind(imm) && haveScratchRegisterForBlinding()) {
+            RegisterID scratchRegister = scratchRegisterForBlinding();
+            loadRotationBlindedConstant(rotationBlindConstant(imm), scratchRegister);
+            storePtr(scratchRegister, address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
+        } else {
+            storeValue(imm.asTrustedImm64(), address);
+	}
+#else
+        RELEASE_ASSERT_NOT_REACHED(); // not implemented
+#endif
+    }
+
+    void storeValue(TrustedImmPtr imm, Address address)
+    {
+#if USE(JSVALUE64)
+        storePtr(imm, address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
+#else
+        RELEASE_ASSERT_NOT_REACHED(); // not implemented
+#endif
+    }
+
+    void storeValue(ImmPtr imm, Address address)
+    {
+#if USE(JSVALUE64)
+        if (shouldBlind(imm) && haveScratchRegisterForBlinding()) {
+            RegisterID scratchRegister = scratchRegisterForBlinding();
+            loadRotationBlindedConstant(rotationBlindConstant(imm), scratchRegister);
+            storePtr(scratchRegister, address); // TODO: support JSHEAP_CHERI_OFFSET_REFS
+        } else {
+            storeValue(imm.asTrustedImmPtr(), address);
+	}
+#else
+        RELEASE_ASSERT_NOT_REACHED(); // not implemented
+#endif
+    }
+
     void loadValue(Address address, JSValueRegs regs)
     {
 #if USE(JSVALUE64)
-        load64(address, regs.gpr());
+        loadPtr(address, regs.gpr()); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         if (address.base == regs.payloadGPR()) {
             load32(address.withOffset(TagOffset), regs.tagGPR());
@@ -188,7 +237,7 @@ public:
     void loadValue(BaseIndex address, JSValueRegs regs)
     {
 #if USE(JSVALUE64)
-        load64(address, regs.gpr());
+        loadPtr(address, regs.gpr()); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         if (address.base == regs.payloadGPR() || address.index == regs.payloadGPR()) {
             // We actually could handle the case where the registers are aliased to both
@@ -208,7 +257,7 @@ public:
     void loadValue(void* address, JSValueRegs regs)
     {
 #if USE(JSVALUE64)
-        load64(address, regs.gpr());
+        loadPtr(address, regs.gpr()); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 #else
         move(TrustedImmPtr(address), regs.payloadGPR());
         loadValue(Address(regs.payloadGPR()), regs);
@@ -379,7 +428,7 @@ public:
     {
 #if USE(JSVALUE64)
 #if CPU(ARM64)
-        pushPair(GPRInfo::numberTagRegister, GPRInfo::notCellMaskRegister);
+        pushPair64(GPRInfo::numberTagRegister, GPRInfo::notCellMaskRegister);
 #else
         push(GPRInfo::numberTagRegister);
         push(GPRInfo::notCellMaskRegister);
@@ -397,7 +446,7 @@ public:
     {
 #if USE(JSVALUE64)
 #if CPU(ARM64)
-        popPair(GPRInfo::numberTagRegister, GPRInfo::notCellMaskRegister);
+        popPair64(GPRInfo::numberTagRegister, GPRInfo::notCellMaskRegister);
 #else
         pop(GPRInfo::notCellMaskRegister);
         pop(GPRInfo::numberTagRegister);
@@ -507,7 +556,7 @@ public:
         ASSERT(frameSize % stackAlignmentBytes() == 0);
         if (frameSize <= 128) {
             for (unsigned offset = 0; offset < frameSize; offset += sizeof(CPURegister))
-                storePtr(TrustedImm32(0), Address(currentTop, -8 - offset));
+                storePtr(TrustedImmPtr(nullptr), Address(currentTop, -8 - offset));
         } else {
             constexpr unsigned storeBytesPerIteration = stackAlignmentBytes();
             constexpr unsigned storesPerIteration = storeBytesPerIteration / sizeof(CPURegister);
@@ -515,7 +564,10 @@ public:
             move(currentTop, temp);
             Label zeroLoop = label();
             subPtr(TrustedImm32(storeBytesPerIteration), temp);
-#if CPU(ARM64)
+#if CPU(ARM64_CAPS)
+            static_assert(storesPerIteration == 1, "clearStackFrame() for ARM64 assumes stack is 16 byte aligned");
+            storeZeroPtr(temp);
+#elif CPU(ARM64)
             static_assert(storesPerIteration == 2, "clearStackFrame() for ARM64 assumes stack is 16 byte aligned");
             storePair64(ARM64Registers::zr, ARM64Registers::zr, temp);
 #else
@@ -576,13 +628,13 @@ public:
     void emitFunctionPrologue()
     {
         tagReturnAddress();
-        pushPair(framePointerRegister, linkRegister);
+        pushPairPtr(framePointerRegister, linkRegister);
         move(stackPointerRegister, framePointerRegister);
     }
 
     void emitFunctionEpilogueWithEmptyFrame()
     {
-        popPair(framePointerRegister, linkRegister);
+        popPairPtr(framePointerRegister, linkRegister);
     }
 
     void emitFunctionEpilogue()
@@ -622,7 +674,7 @@ public:
 
     void emitFunctionEpilogueWithEmptyFrame()
     {
-        popPair(framePointerRegister, returnAddressRegister);
+        popPairPtr(framePointerRegister, returnAddressRegister);
     }
 
     void emitFunctionEpilogue()
@@ -1893,7 +1945,7 @@ public:
         Jump empty = branchTest32(Zero, inlineCapacity);
         Label loop = label();
         sub32(TrustedImm32(1), inlineCapacity);
-        storeTrustedValue(JSValue(), BaseIndex(baseGPR, inlineCapacity, TimesEight, JSObject::offsetOfInlineStorage()));
+        storeTrustedValue(JSValue(), BaseIndex(baseGPR, inlineCapacity, timesValue(), JSObject::offsetOfInlineStorage()));
         branchTest32(NonZero, inlineCapacity).linkTo(loop, this);
         empty.link(this);
     }

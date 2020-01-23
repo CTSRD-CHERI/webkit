@@ -306,7 +306,7 @@ namespace JSC {
         ARM64EHash hash() const { return m_hash; }
 #endif
 
-#if !CPU(ARM64) // If we were to define this on arm64e, we'd need a way to update the hash as we write directly into the buffer.
+#if !CPU(ARM64) || CPU(ARM64_CAPS) // If we were to define this on arm64e, we'd need a way to update the hash as we write directly into the buffer.
         void* data() const { return m_storage.buffer(); }
 #endif
 

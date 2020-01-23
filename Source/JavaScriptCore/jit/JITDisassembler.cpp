@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -163,7 +164,7 @@ void JITDisassembler::dumpDisassembly(PrintStream& out, LinkBuffer& linkBuffer, 
 {
     CodeLocationLabel<DisassemblyPtrTag> fromLocation = linkBuffer.locationOf<DisassemblyPtrTag>(from);
     CodeLocationLabel<DisassemblyPtrTag> toLocation = linkBuffer.locationOf<DisassemblyPtrTag>(to);
-    disassemble(fromLocation, toLocation.dataLocation<uintptr_t>() - fromLocation.dataLocation<uintptr_t>(), "        ", out);
+    disassemble(fromLocation, toLocation.dataLocation<const char *>() - fromLocation.dataLocation<const char *>(), "        ", out);
 }
 
 } // namespace JSC

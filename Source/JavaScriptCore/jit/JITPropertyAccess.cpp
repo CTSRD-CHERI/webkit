@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -282,7 +283,7 @@ JIT::JumpList JIT::emitGenericContiguousPutByVal(Op bytecode, PatchableJump& bad
     switch (indexingShape) {
     case Int32Shape:
         slowCases.append(branchIfNotInt32(regT3));
-        store64(regT3, BaseIndex(regT2, regT1, TimesEight));
+        storeValue(JSValueRegs(regT3), BaseIndex(regT2, regT1, timesValue()));
         break;
     case DoubleShape: {
         Jump notInt = branchIfNotInt32(regT3);
@@ -293,11 +294,11 @@ JIT::JumpList JIT::emitGenericContiguousPutByVal(Op bytecode, PatchableJump& bad
         move64ToDouble(regT3, fpRegT0);
         slowCases.append(branchIfNaN(fpRegT0));
         ready.link(this);
-        storeDouble(fpRegT0, BaseIndex(regT2, regT1, TimesEight));
+        storeDouble(fpRegT0, BaseIndex(regT2, regT1, timesValue()));
         break;
     }
     case ContiguousShape:
-        store64(regT3, BaseIndex(regT2, regT1, TimesEight));
+        storeValue(JSValueRegs(regT3), BaseIndex(regT2, regT1, timesValue()));
         emitWriteBarrier(bytecode.m_base.offset(), value, ShouldFilterValue);
         break;
     default:
@@ -334,11 +335,11 @@ JIT::JumpList JIT::emitArrayStoragePutByVal(Op bytecode, PatchableJump& badType)
     loadPtr(Address(regT0, JSObject::butterflyOffset()), regT2);
     slowCases.append(branch32(AboveOrEqual, regT1, Address(regT2, ArrayStorage::vectorLengthOffset())));
 
-    Jump empty = branchTest64(Zero, BaseIndex(regT2, regT1, TimesEight, ArrayStorage::vectorOffset()));
+    Jump empty = branchTest64(Zero, BaseIndex(regT2, regT1, timesValue(), ArrayStorage::vectorOffset()));
 
     Label storeResult(this);
     emitGetVirtualRegister(value, regT3);
-    store64(regT3, BaseIndex(regT2, regT1, TimesEight, ArrayStorage::vectorOffset()));
+    storeValue(JSValueRegs(regT3), BaseIndex(regT2, regT1, timesValue(), ArrayStorage::vectorOffset()));
     emitWriteBarrier(bytecode.m_base.offset(), value, ShouldFilterValue);
     Jump end = jump();
     
@@ -919,7 +920,7 @@ void JIT::emit_op_get_from_scope(const Instruction* currentInstruction)
             loadPtr(Address(base, JSObject::butterflyOffset()), scratch);
             neg32(offset);
             signExtend32ToPtr(offset, offset);
-            load64(BaseIndex(scratch, offset, TimesEight, (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)), result);
+            loadValue(BaseIndex(scratch, offset, timesValue(), (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)), JSValueRegs(result));
             break;
         }
         case GlobalVar:
@@ -1061,7 +1062,7 @@ void JIT::emit_op_put_to_scope(const Instruction* currentInstruction)
             loadPtr(Address(regT0, JSObject::butterflyOffset()), regT0);
             loadPtr(operandSlot, regT1);
             negPtr(regT1);
-            storePtr(regT2, BaseIndex(regT0, regT1, TimesEight, (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)));
+            storeValue(JSValueRegs(regT2), BaseIndex(regT0, regT1, timesValue(), (firstOutOfLineOffset - 2) * sizeof(EncodedJSValue)));
             emitWriteBarrier(m_codeBlock->globalObject(), value, ShouldFilterValue);
             break;
         }
@@ -1181,7 +1182,7 @@ void JIT::emit_op_get_from_arguments(const Instruction* currentInstruction)
     int index = bytecode.m_index;
     
     emitGetVirtualRegister(arguments, regT0);
-    load64(Address(regT0, DirectArguments::storageOffset() + index * sizeof(WriteBarrier<Unknown>)), regT0);
+    loadValue(Address(regT0, DirectArguments::storageOffset() + index * sizeof(WriteBarrier<Unknown>)), JSValueRegs(regT0));
     emitValueProfilingSite(bytecode.metadata(m_codeBlock));
     emitPutVirtualRegister(dst);
 }
@@ -1531,7 +1532,7 @@ JIT::JumpList JIT::emitDoubleLoad(const Instruction*, PatchableJump& badType)
     badType = patchableBranch32(NotEqual, indexing, TrustedImm32(DoubleShape));
     loadPtr(Address(base, JSObject::butterflyOffset()), scratch);
     slowCases.append(branch32(AboveOrEqual, property, Address(scratch, Butterfly::offsetOfPublicLength())));
-    loadDouble(BaseIndex(scratch, property, TimesEight), fpRegT0);
+    loadDouble(BaseIndex(scratch, property, timesValue()), fpRegT0);
     slowCases.append(branchIfNaN(fpRegT0));
 
     return slowCases;
@@ -1558,7 +1559,7 @@ JIT::JumpList JIT::emitContiguousLoad(const Instruction*, PatchableJump& badType
     badType = patchableBranch32(NotEqual, indexing, TrustedImm32(expectedShape));
     loadPtr(Address(base, JSObject::butterflyOffset()), scratch);
     slowCases.append(branch32(AboveOrEqual, property, Address(scratch, Butterfly::offsetOfPublicLength())));
-    loadValue(BaseIndex(scratch, property, TimesEight), result);
+    loadValue(BaseIndex(scratch, property, timesValue()), JSValueRegs(result));
     slowCases.append(branchIfEmpty(result));
 
     return slowCases;
@@ -1588,7 +1589,7 @@ JIT::JumpList JIT::emitArrayStorageLoad(const Instruction*, PatchableJump& badTy
     loadPtr(Address(base, JSObject::butterflyOffset()), scratch);
     slowCases.append(branch32(AboveOrEqual, property, Address(scratch, ArrayStorage::vectorLengthOffset())));
 
-    loadValue(BaseIndex(scratch, property, TimesEight, ArrayStorage::vectorOffset()), result);
+    loadValue(BaseIndex(scratch, property, timesValue(), ArrayStorage::vectorOffset()), JSValueRegs(result));
     slowCases.append(branchIfEmpty(result));
 
     return slowCases;
@@ -1619,7 +1620,7 @@ JIT::JumpList JIT::emitDirectArgumentsGetByVal(const Instruction*, PatchableJump
     slowCases.append(branch32(AboveOrEqual, property, scratch2));
     slowCases.append(branchTestPtr(NonZero, Address(base, DirectArguments::offsetOfMappedArguments())));
 
-    loadValue(BaseIndex(base, property, TimesEight, DirectArguments::storageOffset()), result);
+    loadValue(BaseIndex(base, property, timesValue(), DirectArguments::storageOffset()), JSValueRegs(result));
     
     return slowCases;
 }
@@ -1656,12 +1657,12 @@ JIT::JumpList JIT::emitScopedArgumentsGetByVal(const Instruction*, PatchableJump
     loadPtr(Address(scratch, ScopedArgumentsTable::offsetOfArguments()), scratch);
     load32(BaseIndex(scratch, property, TimesFour), scratch);
     slowCases.append(branch32(Equal, scratch, TrustedImm32(ScopeOffset::invalidOffset)));
-    loadValue(BaseIndex(scratch2, scratch, TimesEight, JSLexicalEnvironment::offsetOfVariables()), result);
+    loadValue(BaseIndex(scratch2, scratch, timesValue(), JSLexicalEnvironment::offsetOfVariables()), JSValueRegs(result));
     Jump done = jump();
     overflowCase.link(this);
     sub32(property, scratch2);
     neg32(scratch2);
-    loadValue(BaseIndex(scratch3, scratch2, TimesEight), result);
+    loadValue(BaseIndex(scratch3, scratch2, timesValue()), JSValueRegs(result));
     slowCases.append(branchIfEmpty(result));
     done.link(this);
     

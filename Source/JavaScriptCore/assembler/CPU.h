@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -105,7 +105,11 @@ constexpr bool is32Bit()
 
 constexpr bool isAddress64Bit()
 {
+#if defined(__CHERI_PURE_CAPABILITY__)
+    return sizeof(void*) == 16;
+#else
     return sizeof(void*) == 8;
+#endif
 }
 
 constexpr bool isAddress32Bit()

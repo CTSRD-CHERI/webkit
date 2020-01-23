@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Apple Inc. All rights reserved.
  * Copyright (C) 2014 Saam Barati. <saambarati1@gmail.com>
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -84,7 +85,7 @@ void BasicBlockLocation::dumpData() const
 #if USE(JSVALUE64)
 void BasicBlockLocation::emitExecuteCode(CCallHelpers& jit) const
 {
-    static_assert(sizeof(UCPURegister) == 8, "Assuming size_t is 64 bits on 64 bit platforms.");
+    static_assert(sizeof(m_executionCount) == 8, "Assuming size_t is 64 bits on 64 bit platforms.");
     jit.add64(CCallHelpers::TrustedImm32(1), CCallHelpers::AbsoluteAddress(&m_executionCount));
 }
 #else

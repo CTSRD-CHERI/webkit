@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -118,7 +119,7 @@ JIT::compileSetupFrame(const Op& bytecode, CallLinkInfo* info)
     
     // Initialize 'this'.
     emitGetVirtualRegister(thisValue, regT0);
-    store64(regT0, Address(regT1, CallFrame::thisArgumentOffset() * static_cast<int>(sizeof(Register))));
+    storeValue(JSValueRegs(regT0), Address(regT1, CallFrame::thisArgumentOffset() * static_cast<int>(sizeof(Register))));
 
     addPtr(TrustedImm32(sizeof(CallerFrameAndPC)), regT1, stackPointerRegister);
 }
@@ -161,7 +162,7 @@ void JIT::compileCallEvalSlowCase(const Instruction* instruction, Vector<SlowCas
 
     addPtr(TrustedImm32(registerOffset * sizeof(Register) + sizeof(CallerFrameAndPC)), callFrameRegister, stackPointerRegister);
 
-    load64(Address(stackPointerRegister, sizeof(Register) * CallFrameSlot::callee - sizeof(CallerFrameAndPC)), regT0);
+    loadValue(Address(stackPointerRegister, sizeof(Register) * CallFrameSlot::callee - sizeof(CallerFrameAndPC)), JSValueRegs(regT0));
     emitDumbVirtualCall(vm(), m_codeBlock->globalObject(), info);
     addPtr(TrustedImm32(stackPointerOffsetFor(m_codeBlock) * sizeof(Register)), callFrameRegister, stackPointerRegister);
     checkStackPointerAlignment();
@@ -231,7 +232,7 @@ void JIT::compileOpCall(const Instruction* instruction, unsigned callLinkInfoInd
     store32(TrustedImm32(locationBits), Address(callFrameRegister, CallFrameSlot::argumentCount * static_cast<int>(sizeof(Register)) + TagOffset));
 
     emitGetVirtualRegister(callee, regT0); // regT0 holds callee.
-    store64(regT0, Address(stackPointerRegister, CallFrameSlot::callee * static_cast<int>(sizeof(Register)) - sizeof(CallerFrameAndPC)));
+    storeValue(JSValueRegs(regT0), Address(stackPointerRegister, CallFrameSlot::callee * static_cast<int>(sizeof(Register)) - sizeof(CallerFrameAndPC)));
 
     if (compileCallEval(bytecode)) {
         return;

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -432,7 +433,7 @@ void CallFrameShuffler::prepareForTailCall()
         m_newFrameBase);
     done.link(&m_jit);
 
-    m_jit.addPtr(GPRInfo::callFrameRegister, m_newFrameBase);
+    m_jit.addPtr(GPRInfo::callFrameRegister, m_newFrameBase, m_newFrameBase);
     m_jit.subPtr(
         MacroAssembler::TrustedImm32(
             (m_alignedNewFrameSize + m_newFrameOffset) * sizeof(Register)), 

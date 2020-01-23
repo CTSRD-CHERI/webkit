@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,7 +50,11 @@ using namespace ARM64Registers;
 // The following are offsets for Probe::State fields accessed
 // by the ctiMasmProbeTrampoline stub.
 #if CPU(ADDRESS64)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define PTR_SIZE 16
+#else
 #define PTR_SIZE 8
+#endif
 #else
 #define PTR_SIZE 4
 #endif
@@ -61,7 +66,12 @@ using namespace ARM64Registers;
 
 #define PROBE_FIRST_GPREG_OFFSET (4 * PTR_SIZE)
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define GPREG_SIZE 16
+#else
 #define GPREG_SIZE 8
+#endif
+
 #define PROBE_CPU_X0_OFFSET (PROBE_FIRST_GPREG_OFFSET + (0 * GPREG_SIZE))
 #define PROBE_CPU_X1_OFFSET (PROBE_FIRST_GPREG_OFFSET + (1 * GPREG_SIZE))
 #define PROBE_CPU_X2_OFFSET (PROBE_FIRST_GPREG_OFFSET + (2 * GPREG_SIZE))

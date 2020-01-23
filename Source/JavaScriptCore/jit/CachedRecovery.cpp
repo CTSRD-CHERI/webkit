@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +35,10 @@ namespace JSC {
 // because it would otherwise use up GPRs.  Two in JSVALUE32_64.
 bool CachedRecovery::loadsIntoFPR() const
 {
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    /* arbitrary JS values can't be loaded to FPR if they are capabilities */
+    return (recovery().technique() == DoubleDisplacedInJSStack);
+#else
     switch (recovery().technique()) {
     case DoubleDisplacedInJSStack:
     case DisplacedInJSStack:
@@ -45,6 +50,7 @@ bool CachedRecovery::loadsIntoFPR() const
     default:
         return false;
     }
+#endif
 }
 
 // Integers, booleans and cells can be loaded into GPRs

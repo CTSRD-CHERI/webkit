@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -576,6 +577,14 @@ ALWAYS_INLINE void JIT::emitGetVirtualRegister(int src, RegisterID dst)
 
     if (m_codeBlock->isConstantRegisterIndex(src)) {
         JSValue value = m_codeBlock->getConstant(src);
+
+#if CPU(ARM64_CAPS)
+        if (value.isCell()) {
+            move(ImmPtr(JSValue::encode(value)), dst);
+            return;
+        }
+#endif
+
         if (!value.isNumber())
             move(TrustedImm64(JSValue::encode(value)), dst);
         else
@@ -583,7 +592,7 @@ ALWAYS_INLINE void JIT::emitGetVirtualRegister(int src, RegisterID dst)
         return;
     }
 
-    load64(addressFor(src), dst);
+    loadPtr(addressFor(src), dst); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 }
 
 ALWAYS_INLINE void JIT::emitGetVirtualRegister(int src, JSValueRegs dst)
@@ -614,7 +623,7 @@ ALWAYS_INLINE bool JIT::isOperandConstantInt(int src)
 
 ALWAYS_INLINE void JIT::emitPutVirtualRegister(int dst, RegisterID from)
 {
-    store64(from, addressFor(dst));
+    storePtr(from, addressFor(dst)); // TODO: support JSHEAP_CHERI_OFFSET_REFS
 }
 
 ALWAYS_INLINE void JIT::emitPutVirtualRegister(int dst, JSValueRegs from)
