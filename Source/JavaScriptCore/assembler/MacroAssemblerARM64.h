@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,8 +66,13 @@ protected:
 
     static constexpr size_t INSTRUCTION_SIZE = 4;
 
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+    // 1 instruction to load the pointer + 1 call instruction.
+    static constexpr ptrdiff_t REPATCH_OFFSET_CALL_TO_LOAD = - 2 * INSTRUCTION_SIZE;
+#else
     // N instructions to load the pointer + 1 call instruction.
     static constexpr ptrdiff_t REPATCH_OFFSET_CALL_TO_POINTER = -((Assembler::MAX_POINTER_BITS / 16 + 1) * INSTRUCTION_SIZE);
+#endif
 
 public:
     MacroAssemblerARM64()
@@ -3189,12 +3195,15 @@ public:
 
     ALWAYS_INLINE Call call(PtrTag)
     {
-        AssemblerLabel pointerLabel = m_assembler.label();
-        moveWithFixedWidth(TrustedImmPtr(nullptr), getCachedDataTempRegisterIDAndInvalidate());
+        AssemblerLabel label = moveWithFixedWidth(TrustedImmPtr(nullptr), getCachedDataTempRegisterIDAndInvalidate());
         invalidateAllTempRegisters();
         m_assembler.blr(dataTempRegister);
         AssemblerLabel callLabel = m_assembler.label();
-        ASSERT_UNUSED(pointerLabel, Assembler::getDifferenceBetweenLabels(callLabel, pointerLabel) == REPATCH_OFFSET_CALL_TO_POINTER);
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        ASSERT_UNUSED(label, Assembler::getDifferenceBetweenLabels(callLabel, label) == REPATCH_OFFSET_CALL_TO_LOAD);
+#else
+        ASSERT_UNUSED(label, Assembler::getDifferenceBetweenLabels(callLabel, label) == REPATCH_OFFSET_CALL_TO_POINTER);
+#endif
         return Call(callLabel, Call::Linkable);
     }
 
@@ -3405,22 +3414,19 @@ public:
 
     ALWAYS_INLINE DataLabelPtr moveWithPatch(TrustedImmPtr imm, RegisterID dest)
     {
-        DataLabelPtr label(this);
-        moveWithFixedWidth(imm, dest);
+        DataLabelPtr label(moveWithFixedWidth(imm, dest));
         return label;
     }
 
     ALWAYS_INLINE Jump branchPtrWithPatch(RelationalCondition cond, RegisterID left, DataLabelPtr& dataLabel, TrustedImmPtr initialRightValue = TrustedImmPtr(nullptr))
     {
-        dataLabel = DataLabelPtr(this);
-        moveWithPatch(initialRightValue, getCachedDataTempRegisterIDAndInvalidate());
+        dataLabel = DataLabelPtr(moveWithPatch(initialRightValue, getCachedDataTempRegisterIDAndInvalidate()));
         return branch64(cond, left, dataTempRegister);
     }
 
     ALWAYS_INLINE Jump branchPtrWithPatch(RelationalCondition cond, Address left, DataLabelPtr& dataLabel, TrustedImmPtr initialRightValue = TrustedImmPtr(nullptr))
     {
-        dataLabel = DataLabelPtr(this);
-        moveWithPatch(initialRightValue, getCachedDataTempRegisterIDAndInvalidate());
+        dataLabel = DataLabelPtr(moveWithPatch(initialRightValue, getCachedDataTempRegisterIDAndInvalidate()));
         return branch64(cond, left, dataTempRegister);
     }
 
@@ -3526,7 +3532,14 @@ public:
 
     static void reemitInitialMoveWithPatch(void* address, void* value)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        Assembler::resetPatchablePointerLoad(static_cast<int*>(address),
+                                             dataTempRegister,
+                                             true);
+        Assembler::setPointer(static_cast<int*>(address), value, RegisterID::zr, false);
+#else
         Assembler::setPointer(static_cast<int*>(address), value, dataTempRegister, true);
+#endif
     }
 
     // Miscellaneous operations:
@@ -3969,13 +3982,21 @@ public:
     template<PtrTag callTag, PtrTag destTag>
     static void repatchCall(CodeLocationCall<callTag> call, CodeLocationLabel<destTag> destination)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        Assembler::repatchPointer(call.dataLabelPtrAtOffset(REPATCH_OFFSET_CALL_TO_LOAD).dataLocation(), destination.executableAddress());
+#else
         Assembler::repatchPointer(call.dataLabelPtrAtOffset(REPATCH_OFFSET_CALL_TO_POINTER).dataLocation(), destination.executableAddress());
+#endif
     }
 
     template<PtrTag callTag, PtrTag destTag>
     static void repatchCall(CodeLocationCall<callTag> call, FunctionPtr<destTag> destination)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        Assembler::repatchPointer(call.dataLabelPtrAtOffset(REPATCH_OFFSET_CALL_TO_LOAD).dataLocation(), destination.executableAddress());
+#else
         Assembler::repatchPointer(call.dataLabelPtrAtOffset(REPATCH_OFFSET_CALL_TO_POINTER).dataLocation(), destination.executableAddress());
+#endif
     }
 
 protected:
@@ -4154,14 +4175,30 @@ protected:
         m_assembler.movk<32>(dest, getHalfword(value, 1), 16);
     }
 
-    void moveWithFixedWidth(TrustedImmPtr imm, RegisterID dest)
+    AssemblerLabel moveWithFixedWidth(TrustedImmPtr imm, RegisterID dest)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        intptr_t value = reinterpret_cast<intptr_t>(imm.m_value);
+        Jump skipData = jump();
+        m_assembler.align(sizeof(intptr_t));
+        m_assembler.emitPointer(value);
+        skipData.link(this);
+        int literalOffset = -static_cast<int>(sizeof(intptr_t));
+        AssemblerLabel ldrLabel = m_assembler.label();
+        m_assembler.ldr_literal<64>(dest, literalOffset);
+        return ldrLabel;
+#else
+        AssemblerLabel label = m_assembler.label();
+
         intptr_t value = reinterpret_cast<intptr_t>(imm.m_value);
         m_assembler.movz<64>(dest, getHalfword(value, 0));
         m_assembler.movk<64>(dest, getHalfword(value, 1), 16);
         m_assembler.movk<64>(dest, getHalfword(value, 2), 32);
         if (Assembler::MAX_POINTER_BITS > 48)
             m_assembler.movk<64>(dest, getHalfword(value, 3), 48);
+
+        return label;
+#endif
     }
 
     void signExtend32ToPtrWithFixedWidth(int32_t value, RegisterID dest)
@@ -4590,9 +4627,13 @@ protected:
     template<PtrTag tag>
     static void linkCall(void* code, Call call, FunctionPtr<tag> function)
     {
-        if (!call.isFlagSet(Call::Near))
+        if (!call.isFlagSet(Call::Near)) {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            Assembler::linkPointer(code, call.m_label.labelAtOffset(REPATCH_OFFSET_CALL_TO_LOAD), function.executableAddress());
+#else
             Assembler::linkPointer(code, call.m_label.labelAtOffset(REPATCH_OFFSET_CALL_TO_POINTER), function.executableAddress());
-        else if (call.isFlagSet(Call::Tail))
+#endif
+        } else if (call.isFlagSet(Call::Tail))
             Assembler::linkJump(code, call.m_label, function.template retaggedExecutableAddress<NoPtrTag>());
         else
             Assembler::linkCall(code, call.m_label, function.template retaggedExecutableAddress<NoPtrTag>());

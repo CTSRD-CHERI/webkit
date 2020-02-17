@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -196,18 +197,32 @@ void LinkBuffer::copyCompactAndLinkCode(MacroAssembler& macroAssembler, void* ow
                 target = codeOutData + jumpsToLink[i].to() - offset; // Compensate for what we have collapsed so far
             else
                 target = codeOutData + jumpsToLink[i].to() - executableOffsetFor(jumpsToLink[i].to());
-                
+
+            intptr_t newJumpFrom = writePtr;
+
             JumpLinkType jumpLinkType = MacroAssembler::computeJumpType(jumpsToLink[i], codeOutData + writePtr, target);
             // Compact branch if we can...
             if (MacroAssembler::canCompact(jumpsToLink[i].type())) {
-                // Step back in the write stream
                 int32_t delta = MacroAssembler::jumpSizeDelta(jumpsToLink[i].type(), jumpLinkType);
                 if (delta) {
-                    writePtr -= delta;
-                    recordLinkOffsets(m_assemblerStorage, jumpsToLink[i].from() - delta, readPtr, readPtr - writePtr);
+                    newJumpFrom = writePtr - delta;
+
+                    recordLinkOffsets(m_assemblerStorage, jumpsToLink[i].from() - delta, readPtr, readPtr - newJumpFrom);
+
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+#if CPU(ARM64E) && ENABLE(FAST_JIT_PERMISSIONS)
+                    Assembler::fillNops<memcpy>(outData + newJumpFrom, delta);
+#else
+                    Assembler::fillNops<performJITMemcpy>(outData + newJumpFrom, delta);
+#endif
+#else
+                    // Step back in the write stream
+                    writePtr = newJumpFrom;
+#endif
                 }
             }
-            jumpsToLink[i].setFrom(writePtr);
+
+            jumpsToLink[i].setFrom(newJumpFrom);
         }
     } else {
         if (!ASSERT_DISABLED) {

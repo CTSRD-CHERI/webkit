@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2018 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -468,6 +469,11 @@ public:
 
         DataLabelPtr(AbstractMacroAssemblerType* masm)
             : m_label(masm->m_assembler.label())
+        {
+        }
+
+        DataLabelPtr(AssemblerLabel label)
+            : m_label(label)
         {
         }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,10 +75,17 @@ namespace JSC {
             : m_buffer(m_inlineBuffer)
             , m_capacity(InlineCapacity)
         {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            ASSERT(WTF::isPointerAligned(m_buffer));
+#endif
         }
 
         AssemblerData(size_t initialCapacity)
         {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            initialCapacity = __builtin_align_up(initialCapacity, sizeof(uintptr_t));
+#endif
+
             if (initialCapacity <= InlineCapacity) {
                 m_capacity = InlineCapacity;
                 m_buffer = m_inlineBuffer;
@@ -85,6 +93,10 @@ namespace JSC {
                 m_capacity = initialCapacity;
                 m_buffer = static_cast<char*>(fastMalloc(m_capacity));
             }
+
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            ASSERT(WTF::isPointerAligned(m_buffer));
+#endif
         }
 
         AssemblerData(AssemblerData&& other)
@@ -132,17 +144,23 @@ namespace JSC {
         void grow(unsigned extraCapacity = 0)
         {
             m_capacity = m_capacity + m_capacity / 2 + extraCapacity;
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            m_capacity = __builtin_align_up(m_capacity, sizeof(uintptr_t));
+#endif
             if (isInlineBuffer()) {
                 m_buffer = static_cast<char*>(fastMalloc(m_capacity));
                 memcpy(m_buffer, m_inlineBuffer, InlineCapacity);
             } else
                 m_buffer = static_cast<char*>(fastRealloc(m_buffer, m_capacity));
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            ASSERT(WTF::isPointerAligned(m_buffer));
+#endif
         }
 
     private:
         bool isInlineBuffer() const { return m_buffer == m_inlineBuffer; }
         char* m_buffer;
-        char m_inlineBuffer[InlineCapacity];
+        char m_inlineBuffer[InlineCapacity] __attribute__((aligned(sizeof(uintptr_t))));
         unsigned m_capacity;
     };
 
@@ -203,6 +221,9 @@ namespace JSC {
 #endif
         void putIntUnchecked(int32_t value) { putIntegralUnchecked(value); }
         void putInt(int32_t value) { putIntegral(value); }
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        void putPointer(intptr_t value) { putIntegral(value); }
+#endif
 
         size_t codeSize() const
         {
@@ -304,7 +325,11 @@ namespace JSC {
         void putIntegralUnchecked(IntegralType value)
         {
 #if CPU(ARM64)
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+            static_assert(sizeof(value) == 4 || sizeof(value) == sizeof(uintptr_t), "");
+#else
             static_assert(sizeof(value) == 4, "");
+#endif
 #if CPU(ARM64E)
             m_hash.update(value);
 #endif

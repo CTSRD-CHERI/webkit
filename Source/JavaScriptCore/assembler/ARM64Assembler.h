@@ -2687,6 +2687,19 @@ public:
 
     static void setPointer(int* address, void* valuePtr, RegisterID rd, bool flush)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        ASSERT(!flush);
+        ASSERT(rd == RegisterID::zr);
+
+        ASSERT(WTF::isPointerAligned(address));
+        int loadOffset;
+        uintptr_t value = reinterpret_cast<uintptr_t>(valuePtr);
+        RegisterID rt;
+        MemOpSize size;
+        bool expected = disassembleLoadLiteral(address, size, rt, loadOffset);
+        ASSERT(expected && size == MemOpSize_64);
+        performJITMemcpy((char *) address + loadOffset, &value, sizeof(value));
+#else
         uintptr_t value = reinterpret_cast<uintptr_t>(valuePtr);
         int buffer[3];
         buffer[0] = moveWideImediate(Datasize_64, MoveWideOp_Z, 0, getHalfword(value, 0), rd);
@@ -2697,7 +2710,20 @@ public:
 
         if (flush)
             cacheFlush(address, sizeof(int) * 3);
+#endif
     }
+
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+    static void resetPatchablePointerLoad(int* address, RegisterID rt, bool flush)
+    {
+        int loadOffset = -static_cast<int>(sizeof(intptr_t));
+        uint32_t ldr = loadRegisterLiteral(LdrLiteralOp_64BIT, false, loadOffset >> 2, rt);
+        performJITMemcpy(address, &ldr, sizeof(ldr));
+        if (flush) {
+            cacheFlush(address, sizeof(ldr));
+        }
+    }
+#endif
 
     static void repatchInt32(void* where, int32_t value)
     {
@@ -2955,6 +2981,27 @@ public:
         }
     }
 
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+    static void assertPointerLoadTo(void *address, RegisterID expectedRt)
+    {
+        MemOpSize size;
+        RegisterID rt;
+        int loadOffset;
+        bool expected = disassembleLoadLiteral(address, size, rt, loadOffset);
+        ASSERT(expected && size == MemOpSize_64 && rt == expectedRt);
+    }
+
+    static void emitPointerLiteralLoad(void *emitAt, void *loadFrom, RegisterID dest)
+    {
+        ptrdiff_t offset = (char *) loadFrom - (char *) emitAt;
+        *(uint32_t*)emitAt = loadRegisterLiteral(LdrLiteralOp_64BIT,
+                                                 false,
+                                                 offset >> 2,
+                                                 dest);
+        assertPointerLoadTo(emitAt, dest);
+    }
+#endif
+
 protected:
     template<Datasize size>
     static bool checkMovk(int insn, int _hw, RegisterID _rd)
@@ -2975,6 +3022,10 @@ protected:
 
     static void linkPointer(int* address, void* valuePtr, bool flush = false)
     {
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+        UNUSED_PARAM(flush);
+        setPointer(address, valuePtr, RegisterID::zr, false);
+#else
         Datasize sf;
         MoveWideOp opc;
         int hw;
@@ -2986,6 +3037,7 @@ protected:
         ASSERT(checkMovk<Datasize_64>(address[2], 2, rd));
 
         setPointer(address, valuePtr, rd, flush);
+#endif
     }
 
     template<BranchType type, CopyFunction copy = performJITMemcpy>
@@ -3181,6 +3233,19 @@ protected:
         return (insn & 0x3b000000) == 0x39000000;
     }
 
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+    static bool disassembleLoadLiteral(void* address, MemOpSize& size, RegisterID& rt, int& loadOffset)
+    {
+        int insn = *static_cast<int*>(address);
+        int opc = (insn >> 30) & 1;
+        size = static_cast<MemOpSize>(MemOpSize_32 + opc);
+        int32_t imm = (insn >> 5) & 0x7ffff;
+        loadOffset = (((imm << 13) >> 13) << 2);
+        rt = disassembleXOrZr(insn & 0x1f);
+        return (insn & 0xbf000000) == 0x18000000;
+    }
+#endif
+
     static bool disassembleMoveWideImediate(void* address, Datasize& sf, MoveWideOp& opc, int& hw, uint16_t& imm16, RegisterID& rd)
     {
         int insn = *static_cast<int*>(address);
@@ -3257,6 +3322,16 @@ protected:
         m_buffer.putInt(instruction);
     }
 
+#if ENABLE(JIT_ARM64_EMBED_POINTERS_AS_ALIGNED_LITERALS)
+public:
+    ALWAYS_INLINE void emitPointer(intptr_t value)
+    {
+        ASSERT(m_buffer.isAligned(sizeof(value)));
+        m_buffer.putPointer(value);
+    }
+#endif
+
+protected:
     ALWAYS_INLINE static int addSubtractExtendedRegister(Datasize sf, AddOp op, SetFlags S, RegisterID rm, ExtendType option, int imm3, RegisterID rn, RegisterID rd)
     {
         ASSERT(imm3 < 5);
