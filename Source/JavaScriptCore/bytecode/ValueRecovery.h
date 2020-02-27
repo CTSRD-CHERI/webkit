@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011, 2013, 2015 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -425,6 +426,10 @@ public:
 private:
     ValueRecoveryTechnique m_technique;
     union UnionType {
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+        const UnionType &get() const { return *this; }
+#endif
+
         MacroAssembler::RegisterID gpr;
         MacroAssembler::FPRegisterID fpr;
 #if USE(JSVALUE32_64)
@@ -437,8 +442,18 @@ private:
         EncodedJSValue constant;
         unsigned nodeID;
     };
+
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+    UnionType m_source;
+#else
     Packed<UnionType> m_source;
+#endif
 };
+
+#if defined(__CHERI_PURE_CAPABILITY__) && !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+static_assert(alignof(ValueRecovery) == sizeof(void *));
+#else
 static_assert(alignof(ValueRecovery) == 1);
+#endif
 
 } // namespace JSC
