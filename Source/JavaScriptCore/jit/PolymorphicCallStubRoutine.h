@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2018 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,7 +60,11 @@ public:
     void clearCallLinkInfo();
     
 private:
+#ifdef __CHERI_PURE_CAPABILITY__
+    PlainPtr<CallLinkInfo> m_callLinkInfo;
+#else
     PackedPtr<CallLinkInfo> m_callLinkInfo;
+#endif
 };
 
 class PolymorphicCallCase {
