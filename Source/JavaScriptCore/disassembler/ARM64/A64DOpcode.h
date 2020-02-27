@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
  * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020 Brett F. Gutstein. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -120,23 +121,27 @@ protected:
         bufferPrintf("   %-8.8s", instructionName);
     }
 
-    void appendRegisterName(unsigned registerNumber, bool is64Bit = true);
-    void appendSPOrRegisterName(unsigned registerNumber, bool is64Bit = true)
+    void appendRegisterName(unsigned registerNumber, bool is64Bit = true, bool isCapability = false);
+    void appendSPOrRegisterName(unsigned registerNumber, bool is64Bit = true, bool isCapability = false)
     {
+        ASSERT(!isCapability || is64Bit);
+
         if (registerNumber == 31) {
-            bufferPrintf(is64Bit ? "sp" : "wsp");
+            bufferPrintf(is64Bit ? (isCapability ? "csp" : "sp") : "wsp");
             return;
         }
-        appendRegisterName(registerNumber, is64Bit);
+        appendRegisterName(registerNumber, is64Bit, isCapability);
     }
 
-    void appendZROrRegisterName(unsigned registerNumber, bool is64Bit = true)
+    void appendZROrRegisterName(unsigned registerNumber, bool is64Bit = true, bool isCapability = false)
     {
+        ASSERT(!isCapability || is64Bit);
+
         if (registerNumber == 31) {
-            bufferPrintf(is64Bit ? "xzr" : "wzr");
+            bufferPrintf(is64Bit ? (isCapability ? "czr" : "xzr") : "wzr");
             return;
         }
-        appendRegisterName(registerNumber, is64Bit);
+        appendRegisterName(registerNumber, is64Bit, isCapability);
     }
 
     void appendFPRegisterName(unsigned registerNumber, unsigned registerSize);
@@ -266,6 +271,38 @@ public:
     unsigned shift() { return (m_opcode >> 22) & 0x3; }
     int immediate6() { return (static_cast<int>((m_opcode >> 10) & 0x3f) << 26) >> 26; }
 };
+
+#if CPU(ARM64_CAPS)
+class A64DOpcodeCAddSubImmediate : public A64DOpcodeAddSubtract {
+public:
+    static constexpr uint32_t mask = 0xff000000;
+    static constexpr uint32_t pattern = 0x02000000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCAddSubImmediate, thisObj);
+
+    const char* opName();
+    const char* format();
+
+    bool isMovSP() { return (!sBit() && !immed12() && ((rd() == 31) || rn() == 31)); }
+    unsigned shift() { return (m_opcode >> 22) & 0x1; }
+    unsigned sBit() { return (m_opcode >> 23) & 0x1; }
+    unsigned immed12() { return (m_opcode >> 10) & 0xfff; }
+};
+
+class A64DOpcodeCAddExtendedRegister: public A64DOpcodeAddSubtract {
+public:
+    static constexpr uint32_t mask = 0xffe00000;
+    static constexpr uint32_t pattern = 0xc2a00000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCAddExtendedRegister, thisObj);
+
+    const char* opName();
+    const char* format();
+
+    unsigned shift() { return (m_opcode >> 10) & 0x7; }
+    unsigned option() { return (m_opcode >> 13) & 0x7; }
+};
+#endif
 
 class A64DOpcodeBitfield : public A64DOpcode {
 private:
@@ -619,7 +656,136 @@ protected:
     unsigned opc() { return (m_opcode >> 22) & 0x3; }
     unsigned opNumber() { return (size() <<3 ) | (vBit() << 2) | opc(); }
     bool is64BitRT() { return ((opNumber() & 0x17) == 0x02) || ((opNumber() & 0x1e) == 0x18); }
+
+#if CPU(ARM64_CAPS)
+    void appendSPOrRegisterName(unsigned registerNumber, bool is64Bit = true, bool isCapability = true)
+    {
+        ASSERT(is64Bit);
+
+        return A64DOpcode::appendSPOrRegisterName(registerNumber, true, isCapability);
+    }
+#endif
 };
+
+#if CPU(ARM64_CAPS)
+class A64DOpcodeCLoadStore : public A64DOpcode {
+protected:
+    void appendSPOrRegisterName(unsigned registerNumber)
+    {
+        return A64DOpcode::appendSPOrRegisterName(registerNumber, true, true);
+    }
+};
+
+class A64DOpcodeCLoadLiteral : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xffc00000;
+    static constexpr uint32_t pattern = 0x82000000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadLiteral, thisObj);
+
+    const char* format();
+
+    const char* opName()
+    {
+        return "ldr";
+    }
+
+    int immediate17() { return (static_cast<int>((m_opcode >> 5) & 0x1ffff) << 17) >> 17; }
+};
+
+class A64DOpcodeCLoadStoreRegisterPairPostIndex : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff800000;
+    static constexpr uint32_t pattern = 0x22800000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStoreRegisterPairPostIndex, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    unsigned rt2() { return (m_opcode >> 10) & 0x1f; }
+    int immediate7() { return (static_cast<int>((m_opcode >> 15) & 0x7f) << 25) >> 25; }
+    int lBit() { return (m_opcode >> 22) & 0x1; }
+};
+
+class A64DOpcodeCLoadStoreRegisterPairPreIndex : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff800000;
+    static constexpr uint32_t pattern = 0x62800000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStoreRegisterPairPreIndex, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    unsigned rt2() { return (m_opcode >> 10) & 0x1f; }
+    int immediate7() { return (static_cast<int>((m_opcode >> 15) & 0x7f) << 25) >> 25; }
+    int lBit() { return (m_opcode >> 22) & 0x1; }
+};
+
+class A64DOpcodeCLoadStoreRegisterPairSignedOffset : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff800000;
+    static constexpr uint32_t pattern = 0x82800000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStoreRegisterPairSignedOffset, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    unsigned rt2() { return (m_opcode >> 10) & 0x1f; }
+    int immediate7() { return (static_cast<int>((m_opcode >> 15) & 0x7f) << 25) >> 25; }
+    int lBit() { return (m_opcode >> 22) & 0x1; }
+};
+
+class A64DOpcodeCLoadStoreUnsignedImmediate : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff800000;
+    static constexpr uint32_t pattern = 0xc2000000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStoreUnsignedImmediate, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    int immediate12() { return (static_cast<int>((m_opcode >> 10) & 0xfff) << 20) >> 20; }
+    int lBit() { return (m_opcode >> 22) & 0x1; }
+};
+
+class A64DOpcodeCLoadStorePrePostIndex : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff200400;
+    static constexpr uint32_t pattern = 0xa2000400;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStorePrePostIndex, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    int immediate9() { return (static_cast<int>((m_opcode >> 12) & 0x1ff) << 23) >> 23; }
+    // XXXBFG in the spec, what's labeled as opc actually seems to be the lBit; the actual
+    // opcode bits are unlabeled.
+    unsigned opc() { return (m_opcode >> 10) & 0x3; }
+    int lBit() { return (m_opcode >> 22) & 0x3; }
+};
+
+class A64DOpcodeCLoadStoreRegisterOffset : public A64DOpcodeCLoadStore {
+public:
+    static constexpr uint32_t mask = 0xff200c00;
+    static constexpr uint32_t pattern = 0xa2200800;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeCLoadStoreRegisterOffset, thisObj);
+
+    const char* format();
+    const char* opName();
+
+    unsigned option() { return (m_opcode >> 13) & 0x7; }
+    int sBit() { return (m_opcode >> 12) & 0x1; }
+    // XXXBFG in the spec, what's labeled as opc actually seems to be the lBit
+    // the actual opcode bits are unlabeled and fixed for register offset
+    int lBit() { return (m_opcode >> 22) & 0x3; }
+};
+#endif
 
 class A64DOpcodeLoadStoreExclusive : public A64DOpcodeLoadStore {
 private:
@@ -855,6 +1021,24 @@ public:
     unsigned mBit() { return (m_opcode >> 10) & 1; }
     unsigned rm() { return rd(); }
 };
+
+#if CPU(ARM64_CAPS)
+class A64DOpcodeUnconditionalBranchCRegister : public A64DOpcode {
+private:
+    static const char* const s_opNames[3];
+
+public:
+    static constexpr uint32_t mask = 0xffff9c1f;
+    static constexpr uint32_t pattern = 0xc2c21000;
+
+    DEFINE_STATIC_FORMAT(A64DOpcodeUnconditionalBranchCRegister, thisObj);
+
+    const char* format();
+
+    const char* opName() { ASSERT(opc() <= 3); return s_opNames[opc()]; }
+    unsigned opc() { return (m_opcode >> 13) & 0x3; }
+};
+#endif
 
 } } // namespace JSC::ARM64Disassembler
 

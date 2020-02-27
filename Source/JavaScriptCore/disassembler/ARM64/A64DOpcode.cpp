@@ -1,5 +1,7 @@
 /*
  * Copyright (C) 2012, 2016 Apple Inc. All rights reserved.
+ * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020 Brett F. Gutstein. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,6 +67,18 @@ struct OpcodeGroupInitializer {
 { groupIndex, groupClass::mask, groupClass::pattern, groupClass::format }
 
 static const OpcodeGroupInitializer opcodeGroupList[] = {
+#if CPU(ARM64_CAPS)
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadLiteral),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStoreUnsignedImmediate),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStorePrePostIndex),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStoreRegisterOffset),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStoreRegisterPairPostIndex),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStoreRegisterPairPreIndex),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCLoadStoreRegisterPairSignedOffset),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCAddSubImmediate),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeCAddExtendedRegister),
+    OPCODE_GROUP_ENTRY(0x02, A64DOpcodeUnconditionalBranchCRegister),
+#endif
     OPCODE_GROUP_ENTRY(0x08, A64DOpcodeLoadStoreRegisterPair),
     OPCODE_GROUP_ENTRY(0x08, A64DOpcodeLoadStoreExclusive),
     OPCODE_GROUP_ENTRY(0x09, A64DOpcodeLoadStoreRegisterPair),
@@ -182,19 +196,21 @@ const char* A64DOpcode::format()
     return m_formatBuffer;
 }
 
-void A64DOpcode::appendRegisterName(unsigned registerNumber, bool is64Bit)
+void A64DOpcode::appendRegisterName(unsigned registerNumber, bool is64Bit, bool isCapability)
 {
+    ASSERT(!isCapability || is64Bit);
+
     if (registerNumber == 29) {
-        bufferPrintf(is64Bit ? "fp" : "wfp");
+        bufferPrintf(is64Bit ? (isCapability ? "cfp" : "fp") : "wfp");
         return;
     }
 
     if (registerNumber == 30) {
-        bufferPrintf(is64Bit ? "lr" : "wlr");
+        bufferPrintf(is64Bit ? (isCapability ? "clr" : "lr") : "wlr");
         return;
     }
 
-    bufferPrintf("%c%u", is64Bit ? 'x' : 'w', registerNumber);
+    bufferPrintf("%c%u", is64Bit ? (isCapability ? 'c' : 'x') : 'w', registerNumber);
 }
 
 void A64DOpcode::appendFPRegisterName(unsigned registerNumber, unsigned registerSize)
@@ -288,6 +304,72 @@ const char* A64DOpcodeAddSubtractShiftedRegister::format()
 
     return m_formatBuffer;
 }
+
+#if CPU(ARM64_CAPS)
+const char* A64DOpcodeCAddSubImmediate::opName() {
+    if (sBit())
+        return "sub";
+    return "add";
+}
+
+const char* A64DOpcodeCAddSubImmediate::format()
+{
+    if (isMovSP())
+        appendInstructionName("mov");
+    else
+        appendInstructionName(opName());
+    appendSPOrRegisterName(rd());
+    appendSeparator();
+
+    appendSPOrRegisterName(rn());
+
+    if (!isMovSP()) {
+        appendSeparator();
+        appendUnsignedImmediate(immed12());
+        if (shift()) {
+            appendSeparator();
+            appendString("lsl ");
+            appendUnsignedImmediate(12 * shift());
+        }
+    }
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCAddExtendedRegister::opName() {
+    return "add";
+}
+
+const char* A64DOpcodeCAddExtendedRegister::format()
+{
+    ASSERT(shift() < 5);
+
+    appendInstructionName(opName());
+    appendSPOrRegisterName(rd());
+    appendSeparator();
+
+    appendSPOrRegisterName(rn());
+    appendSeparator();
+
+    appendRegisterName(rm(), true, false);
+
+    if ((option() & 0x3) == 0x3) {
+        if (shift()) {
+            appendSeparator();
+            appendString("lsl ");
+            appendUnsignedImmediate(shift());
+        }
+    } else {
+        appendSeparator();
+        appendString(optionName());
+        if (shift()) {
+            appendUnsignedImmediate(shift());
+        }
+    }
+
+    return m_formatBuffer;
+}
+#endif
 
 const char* const A64DOpcodeBitfield::s_opNames[3] = { "sbfm", "bfm", "ubfm" };
 const char* const A64DOpcodeBitfield::s_extendPseudoOpNames[3][3] = {
@@ -1044,6 +1126,209 @@ const char* A64DOpcodeSystemSync::format()
     return m_formatBuffer;
 }
 
+#if CPU(ARM64_CAPS)
+const char* A64DOpcodeCLoadLiteral::format()
+{
+    appendInstructionName(opName());
+    appendRegisterName(rt(), true, true);
+    appendSeparator();
+    appendCharacter('[');
+    appendString("pc");
+    appendSeparator();
+    appendSignedImmediate(immediate17() << 4);
+    appendCharacter(']');
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairPostIndex::opName()
+{
+    if (lBit())
+        return "ldp";
+    return "stp";
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairPostIndex::format()
+{
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+    appendSeparator();
+    appendZROrRegisterName(rt2(), true, true);
+
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+
+    int offset = immediate7() << 4;
+
+    appendCharacter(']');
+    appendSeparator();
+    appendSignedImmediate(offset);
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairPreIndex::opName()
+{
+    if (lBit())
+        return "ldp";
+    return "stp";
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairPreIndex::format()
+{
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+    appendSeparator();
+    appendZROrRegisterName(rt2(), true, true);
+
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+
+    int offset = immediate7() << 4;
+
+    appendSeparator();
+    appendSignedImmediate(offset);
+    appendString("]!");
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairSignedOffset::opName()
+{
+    if (lBit())
+        return "ldp";
+    return "stp";
+}
+
+const char* A64DOpcodeCLoadStoreRegisterPairSignedOffset::format()
+{
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+    appendSeparator();
+    appendZROrRegisterName(rt2(), true, true);
+
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+
+    int offset = immediate7() << 4;
+
+    appendSeparator();
+    appendSignedImmediate(offset);
+    appendCharacter(']');
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStoreUnsignedImmediate::opName()
+{
+    if (lBit())
+        return "ldr";
+    return "str";
+}
+
+const char* A64DOpcodeCLoadStoreUnsignedImmediate::format()
+{
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+
+    if (immediate12()) {
+        appendSeparator();
+        appendUnsignedImmediate(immediate12() << 4);
+    }
+
+    appendCharacter(']');
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStorePrePostIndex::opName()
+{
+    if (lBit())
+        return "ldr";
+    return "str";
+}
+
+const char* A64DOpcodeCLoadStorePrePostIndex::format()
+{
+    // pre- and post-index only
+    ASSERT(opc() == 0x3 || opc() == 0x1);
+    // not sure what other values do
+    ASSERT(lBit() < 0x2);
+
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+
+    int offset = immediate9() << 4;
+
+    if (opc() == 0x3) {
+        appendSeparator();
+        appendSignedImmediate(offset);
+        appendString("]!");
+    } else {
+        appendCharacter(']');
+        appendSeparator();
+        appendSignedImmediate(offset);
+    }
+
+    return m_formatBuffer;
+}
+
+const char* A64DOpcodeCLoadStoreRegisterOffset::opName()
+{
+    if (lBit())
+        return "ldr";
+    return "str";
+}
+
+const char* A64DOpcodeCLoadStoreRegisterOffset::format()
+{
+    // not sure what other values do
+    ASSERT(lBit() < 0x2);
+    // code generation should guarantee this
+    ASSERT(option() & 0x2);
+
+    appendInstructionName(opName());
+    appendZROrRegisterName(rt(), true, true);
+    appendSeparator();
+    appendCharacter('[');
+    appendSPOrRegisterName(rn());
+    if (rm() != 31) {
+        appendSeparator();
+        appendRegisterName(rm(), (option() & 0x1) == 0x1, false);
+
+        unsigned shift = sBit() ? 4 : 0;
+
+        if ((option() & 0x1) == 0x1) {
+            if (shift) {
+                appendSeparator();
+                appendString("lsl ");
+                appendUnsignedImmediate(shift);
+            }
+        } else {
+            appendSeparator();
+            appendString(optionName());
+            if (shift)
+                appendUnsignedImmediate(shift);
+        }
+    }
+
+    appendCharacter(']');
+
+    return m_formatBuffer;
+}
+#endif
+
 const char* const A64DOpcodeLoadStoreExclusive::s_opNames[64] = {
     "stxrb", "stlxrb", 0, 0, "ldxrb", "ldaxrb", 0, 0,
     0, "stlrb", 0, 0, 0, "ldarb", 0, 0,
@@ -1557,6 +1842,21 @@ const char* A64DOpcodeUnconditionalBranchRegister::format()
         appendRegisterName(rn());
     return m_formatBuffer;
 }
+
+#if CPU(ARM64_CAPS)
+const char* const A64DOpcodeUnconditionalBranchCRegister::s_opNames[3] = { "br", "blr", "ret" };
+
+const char* A64DOpcodeUnconditionalBranchCRegister::format()
+{
+    if (opc() == 3)
+        return A64DOpcode::format();
+
+    appendInstructionName(opName());
+    appendRegisterName(rn(), true, true);
+
+    return m_formatBuffer;
+}
+#endif
 
 } } // namespace JSC::ARM64Disassembler
 
