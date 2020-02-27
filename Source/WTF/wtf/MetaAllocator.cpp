@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011-2018 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2020 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -108,9 +108,9 @@ void MetaAllocatorHandle::shrink(size_t newSizeInBytes)
     size_t freeSize = sizeInBytes - newSizeInBytes;
     uintptr_t freeEnd = freeStart + freeSize;
     
-    uintptr_t firstCompletelyFreePage = (freeStart + m_allocator->m_pageSize - 1) & ~(m_allocator->m_pageSize - 1);
+    uintptr_t firstCompletelyFreePage = __builtin_align_up(freeStart, m_allocator->m_pageSize);
     if (firstCompletelyFreePage < freeEnd)
-        m_allocator->decrementPageOccupancy(reinterpret_cast<void*>(firstCompletelyFreePage), freeSize - (firstCompletelyFreePage - freeStart));
+        m_allocator->decrementPageOccupancy(reinterpret_cast<void*>(firstCompletelyFreePage), freeSize - ((char *) firstCompletelyFreePage - (char *) freeStart));
 
     m_allocator->addFreeSpaceFromReleasedHandle(MetaAllocator::FreeSpacePtr(freeStart), freeSize);
 
@@ -238,13 +238,13 @@ MetaAllocator::FreeSpacePtr MetaAllocator::findAndRemoveFreeSpace(size_t sizeInB
         // fewer committed pages and fewer failures in general.
         
         uintptr_t nodeStartAsInt = node->m_start.untaggedPtr<uintptr_t>();
-        uintptr_t firstPage = nodeStartAsInt >> m_logPageSize;
-        uintptr_t lastPage = (nodeStartAsInt + nodeSizeInBytes - 1) >> m_logPageSize;
+        uintptr_t firstPage = __builtin_align_down(nodeStartAsInt, m_pageSize);
+        uintptr_t lastPage = __builtin_align_down(nodeStartAsInt + nodeSizeInBytes - 1, m_pageSize);
 
-        uintptr_t lastPageForLeftAllocation = (nodeStartAsInt + sizeInBytes - 1) >> m_logPageSize;
-        uintptr_t firstPageForRightAllocation = (nodeStartAsInt + nodeSizeInBytes - sizeInBytes) >> m_logPageSize;
+        uintptr_t lastPageForLeftAllocation = __builtin_align_down(nodeStartAsInt + sizeInBytes - 1, m_pageSize);
+        uintptr_t firstPageForRightAllocation = __builtin_align_down(nodeStartAsInt + nodeSizeInBytes - sizeInBytes, m_pageSize);
         
-        if (lastPageForLeftAllocation - firstPage + 1 <= lastPage - firstPageForRightAllocation + 1) {
+        if ((char *) lastPageForLeftAllocation - (char *) firstPage + 1 <= (char *) lastPage - (char *) firstPageForRightAllocation + 1) {
             // Allocate in the left side of the returned chunk, and slide the node to the right.
             result = node->m_start;
             
@@ -396,20 +396,20 @@ void MetaAllocator::addFreeSpace(FreeSpacePtr start, size_t sizeInBytes)
 
 void MetaAllocator::incrementPageOccupancy(void* address, size_t sizeInBytes)
 {
-    uintptr_t firstPage = uintptr_t(address) >> m_logPageSize;
-    uintptr_t lastPage = (uintptr_t(address) + sizeInBytes - 1) >> m_logPageSize;
+    uintptr_t firstPage = __builtin_align_down(uintptr_t(address), m_pageSize);
+    uintptr_t lastPage = __builtin_align_down(uintptr_t(address) + sizeInBytes - 1, m_pageSize);
 
     uintptr_t currentPageStart = 0;
     size_t count = 0;
     auto flushNeedPages = [&] {
         if (!currentPageStart)
             return;
-        notifyNeedPage(reinterpret_cast<void*>(currentPageStart << m_logPageSize), count);
+        notifyNeedPage(reinterpret_cast<void*>(currentPageStart), count);
         currentPageStart = 0;
         count = 0;
     };
     
-    for (uintptr_t page = firstPage; page <= lastPage; ++page) {
+    for (uintptr_t page = firstPage; page <= lastPage; page += m_pageSize) {
         auto result = m_pageOccupancyMap.add(page, 1);
         if (result.isNewEntry) {
             m_bytesCommitted += m_pageSize;
@@ -426,20 +426,20 @@ void MetaAllocator::incrementPageOccupancy(void* address, size_t sizeInBytes)
 
 void MetaAllocator::decrementPageOccupancy(void* address, size_t sizeInBytes)
 {
-    uintptr_t firstPage = reinterpret_cast<uintptr_t>(address) >> m_logPageSize;
-    uintptr_t lastPage = (reinterpret_cast<uintptr_t>(address) + sizeInBytes - 1) >> m_logPageSize;
+    uintptr_t firstPage = __builtin_align_down(reinterpret_cast<uintptr_t>(address), m_pageSize);
+    uintptr_t lastPage = __builtin_align_down(reinterpret_cast<uintptr_t>(address) + sizeInBytes - 1, m_pageSize);
 
     uintptr_t currentPageStart = 0;
     size_t count = 0;
     auto flushFreePages = [&] {
         if (!currentPageStart)
             return;
-        notifyPageIsFree(reinterpret_cast<void*>(currentPageStart << m_logPageSize), count);
+        notifyPageIsFree(reinterpret_cast<void*>(currentPageStart), count);
         currentPageStart = 0;
         count = 0;
     };
     
-    for (uintptr_t page = firstPage; page <= lastPage; ++page) {
+    for (uintptr_t page = firstPage; page <= lastPage; page += m_pageSize) {
         HashMap<uintptr_t, size_t>::iterator iter = m_pageOccupancyMap.find(page);
         ASSERT(iter != m_pageOccupancyMap.end());
         if (!--(iter->value)) {
@@ -457,7 +457,7 @@ void MetaAllocator::decrementPageOccupancy(void* address, size_t sizeInBytes)
 bool MetaAllocator::isInAllocatedMemory(const AbstractLocker&, void* address)
 {
     ASSERT(m_lock.isLocked());
-    uintptr_t page = reinterpret_cast<uintptr_t>(address) >> m_logPageSize;
+    uintptr_t page = __builtin_align_down(reinterpret_cast<uintptr_t>(address), m_pageSize);
     return m_pageOccupancyMap.contains(page);
 }
 
