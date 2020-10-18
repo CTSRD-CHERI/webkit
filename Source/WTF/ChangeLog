@@ -1,3 +1,17 @@
+2020-10-18  David Kilzer  <ddkilzer@apple.com>
+
+        Fix -Wdeprecated-copy warnings in WTF and JavaScriptCore
+        <https://webkit.org/b/217855>
+        <rdar://problem/67716914>
+
+        Reviewed by Darin Adler.
+
+        * wtf/Identified.h:
+        (WTF::IdentifiedBase::Identifier):
+        - Change to default since compiler will generate the same code.
+        (WTF::IdentifiedBase::operator=): Add.
+        - Add default copy assignment operator to keep it protected.
+
 2020-04-21  Charlie Turner  <cturner@igalia.com>
 
         [Clang 10] Fix warning: definition of implicit copy assignment operator for 'PageBlock' is deprecated because it has a user-declared copy constructor
