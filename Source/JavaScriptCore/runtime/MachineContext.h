@@ -181,7 +181,11 @@ static inline void*& stackPointerImpl(mcontext_t& machineContext)
 #elif CPU(ARM)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.__gregs[_REG_SP]);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_capregs.cap_sp);
+#else
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_gpregs.gp_sp);
+#endif
 #elif CPU(MIPS)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_regs[29]);
 #else
@@ -328,7 +332,11 @@ static inline void*& framePointerImpl(mcontext_t& machineContext)
 #elif CPU(ARM)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.__gregs[_REG_FP]);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_capregs.cap_x[29]);
+#else
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_gpregs.gp_x[29]);
+#endif
 #elif CPU(MIPS)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_regs[30]);
 #else
@@ -475,7 +483,11 @@ static inline void*& instructionPointerImpl(mcontext_t& machineContext)
 #elif CPU(ARM)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.__gregs[_REG_PC]);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_capregs.cap_elr);
+#else
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_gpregs.gp_elr);
+#endif
 #elif CPU(MIPS)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_pc);
 #else
@@ -632,7 +644,11 @@ inline void*& argumentPointer<1>(mcontext_t& machineContext)
 #elif CPU(ARM)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.__gregs[_REG_R1]);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_capregs.cap_x[1]);
+#else
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_gpregs.gp_x[1]);
+#endif
 #elif CPU(MIPS)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_regs[5]);
 #else
@@ -749,7 +765,11 @@ inline void*& llintInstructionPointer(mcontext_t& machineContext)
 #elif CPU(ARM)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.__gregs[_REG_R8]);
 #elif CPU(ARM64)
+#ifdef __CHERI_PURE_CAPABILITY__
+    return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_capregs.cap_x[4]);
+#else
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_gpregs.gp_x[4]);
+#endif
 #elif CPU(MIPS)
     return reinterpret_cast<void*&>((uintptr_t&) machineContext.mc_regs[12]);
 #else
