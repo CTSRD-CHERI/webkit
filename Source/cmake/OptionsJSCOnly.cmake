@@ -36,11 +36,13 @@ set(ENABLE_WEBCORE OFF)
 set(ENABLE_WEBKIT_LEGACY OFF)
 set(ENABLE_WEBKIT OFF)
 
-if (WIN32)
-    set(ENABLE_API_TESTS OFF)
-else ()
-    set(ENABLE_API_TESTS ON)
-endif ()
+# XXXBFG: only enable API tests if the option set explicitly; cheribuild can't
+# build them right now.
+#if (WIN32)
+    #set(ENABLE_API_TESTS OFF)
+#else ()
+    #set(ENABLE_API_TESTS ON)
+#endif ()
 
 if (WTF_CPU_ARM OR WTF_CPU_MIPS)
     SET_AND_EXPOSE_TO_BUILD(USE_CAPSTONE TRUE)
