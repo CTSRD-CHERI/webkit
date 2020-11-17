@@ -194,6 +194,30 @@ NO_RETURN_WITH_VALUE static void jscExit(int status)
     exit(status);
 }
 
+#if ENABLE(C_LOOP)
+#define CHERI_VERSION_BACKEND "cloop"
+#elif ENABLE(ASSEMBLER) && !ENABLE(JIT)
+#define CHERI_VERSION_BACKEND "tier 1 (llint)"
+#elif ENABLE(JIT)
+#define CHERI_VERSION_BACKEND "tier 2 (baseline jit)"
+#else
+#define CHERI_VERSION_BACKEND "unknown backend"
+#endif
+
+#if ENABLE(JSHEAP_CHERI_OFFSET_REFS)
+#define CHERI_VERSION_HEAP_OFFSET "heap-offsets"
+#else
+#define CHERI_VERSION_HEAP_OFFSET ""
+#endif
+
+#ifdef __CHERI_PURE_CAPABILITY__
+#define CHERI_VERSION_FLAVOR "purecap"
+#elif __has_feature(capabilities)
+#define CHERI_VERSION_FLAVOR "hybrid"
+#else
+#define CHERI_VERSION_FLAVOR ""
+#endif
+
 class Masquerader : public JSNonFinalObject {
 public:
     Masquerader(VM& vm, Structure* structure)
@@ -2696,7 +2720,7 @@ static void runInteractive(GlobalObject* globalObject)
     if (!directoryName)
         return;
     SourceOrigin sourceOrigin(resolvePath(directoryName.value(), ModuleName("interpreter")));
-    
+
     bool shouldQuit = false;
     while (!shouldQuit) {
 #if HAVE(READLINE) && !RUNNING_FROM_XCODE
@@ -2989,6 +3013,8 @@ void CommandLine::parseArguments(int argc, char** argv)
 template<typename Func>
 int runJSC(const CommandLine& options, bool isWorker, const Func& func)
 {
+    printf("CHERI-jsc " CHERI_VERSION_FLAVOR " " CHERI_VERSION_BACKEND " " CHERI_VERSION_HEAP_OFFSET " \n");
+
     Worker worker(Workers::singleton());
     
     VM& vm = VM::create(LargeHeap).leakRef();
