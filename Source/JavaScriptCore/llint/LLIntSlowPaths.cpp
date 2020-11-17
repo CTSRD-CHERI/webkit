@@ -235,7 +235,7 @@ extern "C" SlowPathReturnType llint_trace_operand(CallFrame* callFrame, const In
         &Thread::current(),
         callFrame->codeBlock(),
         globalObject,
-        static_cast<intptr_t>(callFrame->codeBlock()->bytecodeOffset(pc)),
+        static_cast<size_t>(callFrame->codeBlock()->bytecodeOffset(pc)),
         pc->opcodeID(),
         fromWhere,
         operand);
@@ -261,7 +261,7 @@ extern "C" SlowPathReturnType llint_trace_value(CallFrame* callFrame, const Inst
         &Thread::current(),
         callFrame->codeBlock(),
         callFrame,
-        static_cast<intptr_t>(callFrame->codeBlock()->bytecodeOffset(pc)),
+        static_cast<size_t>(callFrame->codeBlock()->bytecodeOffset(pc)),
         pc->opcodeID(),
         fromWhere,
         operand.offset(),
@@ -331,7 +331,7 @@ LLINT_SLOW_PATH_DECL(trace)
             &Thread::current(),
             codeBlock,
             callFrame,
-            static_cast<intptr_t>(codeBlock->bytecodeOffset(pc)),
+            static_cast<size_t>(codeBlock->bytecodeOffset(pc)),
             pc->name(),
             pc);
     if (opcodeID == op_enter) {
