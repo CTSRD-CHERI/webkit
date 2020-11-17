@@ -176,7 +176,7 @@ PCToCodeOriginMap::PCToCodeOriginMap(PCToCodeOriginMapBuilder&& builder, LinkBuf
     void* lastPCValue = nullptr;
     auto buildPCTable = [&] (void* pcValue) {
         RELEASE_ASSERT(pcValue > lastPCValue);
-        uintptr_t delta = bitwise_cast<uintptr_t>(pcValue) - bitwise_cast<uintptr_t>(lastPCValue);
+        uintptr_t delta = bitwise_cast<uintptr_t>(pcValue) - static_cast<ptraddr_t>(bitwise_cast<uintptr_t>(lastPCValue));
         RELEASE_ASSERT(delta != sentinelPCDelta);
         lastPCValue = pcValue;
         if (delta > std::numeric_limits<uint8_t>::max()) {
@@ -191,7 +191,7 @@ PCToCodeOriginMap::PCToCodeOriginMap(PCToCodeOriginMapBuilder&& builder, LinkBuf
     DeltaCompressionBuilder codeOriginCompressor((sizeof(intptr_t) + sizeof(int8_t) + sizeof(int8_t) + sizeof(InlineCallFrame*)) * builder.m_codeRanges.size());
     CodeOrigin lastCodeOrigin(BytecodeIndex(0));
     auto buildCodeOriginTable = [&] (const CodeOrigin& codeOrigin) {
-        intptr_t delta = static_cast<intptr_t>(codeOrigin.bytecodeIndex().offset()) - static_cast<intptr_t>(lastCodeOrigin.bytecodeIndex().offset());
+        ptrdiff_t delta = static_cast<ptraddr_t>(codeOrigin.bytecodeIndex().offset()) - static_cast<ptraddr_t>(lastCodeOrigin.bytecodeIndex().offset());
         lastCodeOrigin = codeOrigin;
         if (delta > std::numeric_limits<int8_t>::max() || delta < std::numeric_limits<int8_t>::min() || delta == sentinelBytecodeDelta) {
             codeOriginCompressor.write<int8_t>(sentinelBytecodeDelta);

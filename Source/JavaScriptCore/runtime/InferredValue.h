@@ -258,7 +258,7 @@ void InferredValue<JSCellType>::notifyWriteSlow(VM& vm, JSCell* owner, JSCellTyp
     case ClearWatchpoint:
         ASSERT(decodeState(m_data) != IsInvalidated);
         m_data = (WTF::Pointer::clearLowBits<ValueClearMask>(bitwise_cast<uintptr_t>(value))
-                  | encodeState(IsWatched));
+                  | static_cast<ptraddr_t>(encodeState(IsWatched)));
         vm.heap.writeBarrier(owner, value);
         return;
 

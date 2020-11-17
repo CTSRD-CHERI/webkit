@@ -53,13 +53,7 @@ public:
                        || (std::is_same<PointerT, intptr_t>::value),
                        "The argument should be a pointer value");
 
-        // See https://github.com/CTSRD-CHERI/clang/issues/189
-#pragma clang diagnostic push
-#ifdef __CHERI_PURE_CAPABILITY__
-#pragma clang diagnostic ignored "-Wcheri-bitwise-operations"
-#endif
-        PointerT result = (PointerT) (((uintptr_t) ptr) & clearingMask);
-#pragma clang diagnostic pop
+        PointerT result = (PointerT) (((uintptr_t) ptr) & static_cast<ptraddr_t>(clearingMask));
 
         // Bitwise operations on __uintcap_t always operate on the offset field
 #ifdef __CHERI_PURE_CAPABILITY__

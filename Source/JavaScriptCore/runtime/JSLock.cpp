@@ -201,7 +201,7 @@ void JSLock::unlock(intptr_t unlockCount)
     if (unlockCount == m_lockCount)
         willReleaseLock();
 
-    m_lockCount -= unlockCount;
+    m_lockCount -= static_cast<ptraddr_t>(unlockCount);
 
     if (!m_lockCount) {
         m_hasOwnerThread = false;

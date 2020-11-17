@@ -48,7 +48,7 @@ public:
 
         unsigned hash() const
         {
-            return m_globalVariableID + m_sourceID + m_start + m_end;
+            return static_cast<ptraddr_t>(m_globalVariableID) + static_cast<ptraddr_t>(m_sourceID) + m_start + m_end;
         }
 
         GlobalVariableID m_globalVariableID;

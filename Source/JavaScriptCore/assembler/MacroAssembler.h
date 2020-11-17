@@ -1326,9 +1326,9 @@ public:
     
     RotatedImmPtr rotationBlindConstant(ImmPtr imm)
     {
-        uint8_t rotation = generateRotationSeed(sizeof(void*) * 8);
+        uint8_t rotation = generateRotationSeed(sizeof(ptraddr_t) * 8);
         uintptr_t value = imm.asTrustedImmPtr().asIntptr();
-        value = (value << rotation) | (value >> (sizeof(void*) * 8 - rotation));
+        value = (value << rotation) | static_cast<ptraddr_t>((value >> (sizeof(ptraddr_t) * 8 - rotation)));
         return RotatedImmPtr(value, rotation);
     }
     

@@ -82,7 +82,7 @@ bool VMInspector::verifyCell(VM& vm, JSCell* cell)
         AUDIT_VERIFY(action, verifier, blockHandle.contains(cell), cell, cell->type(), blockStartAddress, blockHandle.end());
 
         uintptr_t cellAddress = reinterpret_cast<uintptr_t>(cell);
-        uintptr_t cellOffset = cellAddress - blockStartAddress;
+        ptrdiff_t cellOffset = cellAddress - static_cast<ptraddr_t>(blockStartAddress);
         allocatorCellSize = block.cellSize();
         bool cellIsProperlyAligned = !(cellOffset % allocatorCellSize);
         AUDIT_VERIFY(action, verifier, cellIsProperlyAligned, cell, cell->type(), allocatorCellSize);

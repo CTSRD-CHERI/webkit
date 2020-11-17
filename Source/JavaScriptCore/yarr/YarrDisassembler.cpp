@@ -143,7 +143,7 @@ void YarrDisassembler::dumpDisassembly(PrintStream& out, const char* prefix, Lin
 {
     CodeLocationLabel<DisassemblyPtrTag> fromLocation = linkBuffer.locationOf<DisassemblyPtrTag>(from);
     CodeLocationLabel<DisassemblyPtrTag> toLocation = linkBuffer.locationOf<DisassemblyPtrTag>(to);
-    disassemble(fromLocation, toLocation.dataLocation<uintptr_t>() - fromLocation.dataLocation<uintptr_t>(), prefix, out);
+    disassemble(fromLocation, toLocation.dataLocation<uintptr_t>() - static_cast<ptraddr_t>(fromLocation.dataLocation<uintptr_t>()), prefix, out);
 }
 
 }} // namespace Yarr namespace JSC

@@ -72,7 +72,8 @@ public:
     
     unsigned hash() const
     {
-        return WTF::IntHash<uintptr_t>::hash(bitwise_cast<uintptr_t>(m_prototype) ^ bitwise_cast<uintptr_t>(m_executable) ^ bitwise_cast<uintptr_t>(m_classInfo) ^ bitwise_cast<uintptr_t>(m_globalObject)) + m_inlineCapacity;
+        return WTF::IntHash<ptraddr_t>::hash(static_cast<ptraddr_t>(bitwise_cast<uintptr_t>(m_prototype)) ^ static_cast<ptraddr_t>(bitwise_cast<uintptr_t>(m_executable)) ^
+           static_cast<ptraddr_t>(bitwise_cast<uintptr_t>(m_classInfo)) ^ static_cast<ptraddr_t>(bitwise_cast<uintptr_t>(m_globalObject))) + m_inlineCapacity;
     }
     
 private:
