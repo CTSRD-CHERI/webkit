@@ -27,7 +27,11 @@
 
 #include <wtf/Platform.h>
 
+#ifdef __cplusplus
 #include <cstring> // for strrchr()
+#else
+#include <string.h>
+#endif
 
 /*
    no namespaces because this file has to be includable from C and Objective-C
@@ -445,13 +449,14 @@ WTF_EXPORT_PRIVATE NO_RETURN_DUE_TO_CRASH void WTFCrashWithSecurityImplication(v
 #endif
 #endif
 
-
+#ifdef __cplusplus
 template<int s, int t> struct check_size {
   static_assert(s == t, "wrong size");
   enum {
      value = 1
   };
 };
+#endif
 
 /* FATAL */
 
