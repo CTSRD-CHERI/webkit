@@ -207,6 +207,7 @@ void testSimple()
     }), 42);
 }
 
+#ifndef __CHERI_PURE_CAPABILITY__
 void testGetEffectiveAddress(size_t pointer, ptrdiff_t length, int32_t offset, CCallHelpers::Scale scale)
 {
     CHECK_EQ(compileAndRun<size_t>([=] (CCallHelpers& jit) {
@@ -218,6 +219,7 @@ void testGetEffectiveAddress(size_t pointer, ptrdiff_t length, int32_t offset, C
         jit.ret();
     }), pointer + offset + (static_cast<size_t>(1) << static_cast<int>(scale)) * length);
 }
+#endif
 
 // branchTruncateDoubleToInt32(), when encountering Infinity, -Infinity or a
 // Nan, should either yield 0 in dest or fail.
@@ -1285,8 +1287,10 @@ void run(const char* filter)
     };
 
     RUN(testSimple());
+#ifndef __CHERI_PURE_CAPABILITY__
     RUN(testGetEffectiveAddress(0xff00, 42, 8, CCallHelpers::TimesEight));
     RUN(testGetEffectiveAddress(0xff00, -200, -300, CCallHelpers::TimesEight));
+#endif
     RUN(testBranchTruncateDoubleToInt32(0, 0));
     RUN(testBranchTruncateDoubleToInt32(42, 42));
     RUN(testBranchTruncateDoubleToInt32(42.7, 42));
