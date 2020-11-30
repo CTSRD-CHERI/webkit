@@ -3384,13 +3384,21 @@ protected:
     static int xOrSp(RegisterID reg)
     {
         ASSERT(!isZr(reg));
-        ASSERT(!isIOS() || reg != ARM64Registers::x18);
+#ifdef __CHERI_PURE_CAPABILITY__
+        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+#else
+        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+#endif
         return reg;
     }
     static int xOrZr(RegisterID reg)
     {
         ASSERT(!isSp(reg));
-        ASSERT(!isIOS() || reg != ARM64Registers::x18);
+#ifdef __CHERI_PURE_CAPABILITY__
+        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+#else
+        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+#endif
         return reg & 31;
     }
     static FPRegisterID xOrZrAsFPR(RegisterID reg) { return static_cast<FPRegisterID>(xOrZr(reg)); }
