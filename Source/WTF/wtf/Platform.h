@@ -1014,7 +1014,7 @@
 #endif
 
 /* Use __builtin_frame_address(1) to get CallFrame* */
-#if COMPILER(GCC_COMPATIBLE) && (CPU(ARM64) || CPU(X86_64))
+#if COMPILER(GCC_COMPATIBLE) && (CPU(ARM64) || CPU(X86_64)) && !CPU(ARM64_CAPS)
 #define USE_BUILTIN_FRAME_ADDRESS 1
 #endif
 
