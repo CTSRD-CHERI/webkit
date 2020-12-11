@@ -92,6 +92,19 @@ void * _ReturnAddress(void);
 #pragma intrinsic(_ReturnAddress)
 
 #define OUR_RETURN_ADDRESS _ReturnAddress()
+#elif defined(__CHERI_PURE_CAPABILITY__)
+#include <cheri/cheric.h>
+#include <cheri/cherireg.h>
+// If the return address is a sentry pointing to some JITed code, rederive the
+// capability so that it can be used to repatch calls.
+static void *unseal_return_address(void *address)
+{
+    if ((cheri_gettype(address) == CHERI_OTYPE_SENTRY) && cheri_gettag(address) && isJITPC(address)) {
+        address = cheri_setaddress(startOfFixedExecutableMemoryPool(), cheri_getaddress(address));
+    }
+    return address;
+}
+#define OUR_RETURN_ADDRESS unseal_return_address(__builtin_return_address(0))
 #else
 #define OUR_RETURN_ADDRESS __builtin_return_address(0)
 #endif
