@@ -54,10 +54,13 @@ inline void emitPointerValidation(CCallHelpers& jit, GPRReg pointerGPR, TagType 
     CCallHelpers::Jump isNonZero = jit.branchTestPtr(CCallHelpers::NonZero, pointerGPR);
     jit.abortWithReason(TGInvalidPointer);
     isNonZero.link(&jit);
+    // CHERI: Don't try to dereference sentries
+#ifndef __CHERI_PURE_CAPABILITY__
     jit.pushToSave(pointerGPR);
     jit.untagPtr(tag, pointerGPR);
     jit.load8(pointerGPR, pointerGPR);
     jit.popToRestore(pointerGPR);
+#endif
 }
 
 // We will jump here if the JIT code tries to make a call, but the
