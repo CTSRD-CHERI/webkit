@@ -1965,8 +1965,11 @@ extern "C" SlowPathReturnType llint_throw_stack_overflow_error(VM* vm, ProtoCall
 #if ENABLE(C_LOOP)
 extern "C" SlowPathReturnType llint_stack_check_at_vm_entry(VM* vm, Register* newTopOfStack)
 {
+    // CHERI: SlowPathReturnType uses void* to hold values that fit into CPU
+    // registers. Cast through intptr_t to avoid a purecap provenance warning.
     bool success = vm->ensureStackCapacityFor(newTopOfStack);
-    return encodeResult(reinterpret_cast<void*>(success), 0);
+    void* success_enc = reinterpret_cast<void*>(static_cast<intptr_t>(success));
+    return encodeResult(success_enc, 0);
 }
 #endif
 
