@@ -112,6 +112,8 @@ if (DEBUG_FISSION)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gdb-index")
 endif ()
 
+option(USE_APPLE_ICU "Use Apple's internal ICU" ${APPLE})
+
 # Enable the usage of OpenMP.
 #  - At this moment, OpenMP is only used as an alternative implementation
 #    to native threads for the parallelization of the SVG filters.
