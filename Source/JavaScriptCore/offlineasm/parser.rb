@@ -398,14 +398,19 @@ class Parser
 
         if @tokens[@idx] == "^"
             @idx += 1
-	    compressedBaseFlag = Immediate.new(codeOrigin, 1)
+            # only use alternate-base instructions if the build flag is set
+            if $options.has_key?(:jsheap_cheri_offset_refs)
+                compressedBaseFlag = Immediate.new(codeOrigin, 1)
+            else
+                compressedBaseFlag = Immediate.new(codeOrigin, 0)
+            end
         else
             compressedBaseFlag = Immediate.new(codeOrigin, 0)
         end
 
         if @tokens[@idx] == "]"
             @idx += 1
-	    raise "Absolute address can't be compressed" unless not compressedBaseFlag
+            raise "Absolute address can't be compressed" unless not compressedBaseFlag
             return AbsoluteAddress.new(codeOrigin, offset)
         end
         a = parseVariable

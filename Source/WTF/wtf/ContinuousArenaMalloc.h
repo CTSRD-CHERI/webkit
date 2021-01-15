@@ -84,15 +84,24 @@ public:
 #endif
     }
 
+#if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
     template<class T> ALWAYS_INLINE static T *cast(size_t non_cap_ptr) {
-#ifdef __CHERI_PURE_CAPABILITY__
-        static_assert(sizeof(T *) > sizeof(non_cap_ptr));
-        return (T *) capabilityFromPointer(non_cap_ptr);
-#else
-        static_assert(sizeof(T *) == sizeof(non_cap_ptr));
-        return (T *) non_cap_ptr;
-#endif
+        ASSERT(s_Initialized);
+
+        if (non_cap_ptr == 0) {
+            return nullptr;
+        }
+
+        char *ddc_cap;
+        asm("mrs %0, ddc" : "=C"(ddc_cap));
+        ASSERT(ddc_cap == s_Start);
+
+        ASSERT(cheri_getaddress(s_Start) <= non_cap_ptr);
+        ASSERT(cheri_getaddress(s_End) > non_cap_ptr);
+
+        return reinterpret_cast<T *>(cheri_setaddress(s_Start, non_cap_ptr));
     }
+#endif
 
     template<class T> ALWAYS_INLINE static size_t cast(T *ptr) {
         size_t ret;
@@ -110,23 +119,6 @@ public:
 
 
 private:
-#ifdef __CHERI_PURE_CAPABILITY__
-    ALWAYS_INLINE static void* capabilityFromPointer(size_t non_cap_ptr)
-    {
-      ASSERT(s_Initialized);
-
-      char *ddc_cap;
-      asm("mrs %0, ddc" : "=C"(ddc_cap));
-      ASSERT(ddc_cap == s_Start);
-
-      ASSERT(non_cap_ptr == 0 || __builtin_cheri_address_get(ddc_cap) <= non_cap_ptr);
-      ASSERT(non_cap_ptr == 0 || __builtin_cheri_address_get(s_End) > non_cap_ptr);
-
-      return __builtin_cheri_offset_increment(ddc_cap,
-                   non_cap_ptr - __builtin_cheri_address_get(ddc_cap));
-    }
-#endif
-
     static void* internalAllocateAligned(size_t alignment, size_t size);
     static void* internalReallocate(void *p, size_t size);
     static void internalFree(void* ptr);

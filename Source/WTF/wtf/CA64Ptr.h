@@ -28,13 +28,13 @@
 
 #include <wtf/ContinuousArenaMalloc.h>
 
-#if USE(CONTINUOUS_ARENA)
+#if USE(CONTINUOUS_ARENA) && defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
 
 namespace WTF {
 
-// The purpose of this class is to provide continuous arena pointer with
-// behavior transparent regarding whether CHERI is enabled or not - the pointer
-// should anyway be 64-bit and be dereferenceable.
+// This class transparently provides capabilities to the continuous heap arena
+// using DDC when CHERI is enabled but 64-bit integers are being used to offset
+// into the heap.
 
 template <typename T> class CA64Ptr {
     WTF_MAKE_FAST_ALLOCATED;
@@ -46,61 +46,38 @@ public:
         *this = ptr;
     }
 
-    T* get() const {
-#ifdef __CHERI_PURE_CAPABILITY__
-        return WTF::ContinuousArenaMalloc::cast<T>(m_ptrAsInt64);
-#else
-        return reinterpret_cast<void *>(m_ptrAsInt64);
-#endif
-    }
+    T* get() const { return WTF::ContinuousArenaMalloc::cast<T>(m_ptr); }
 
-    T* tryGet() const {
-#ifdef __CHERI_PURE_CAPABILITY__
-        if (WTF::ContinuousArenaMalloc::isWithin(m_ptrAsInt64)) {
-            return WTF::ContinuousArenaMalloc::cast<T>(m_ptrAsInt64);
-        } else {
-            return nullptr;
-        }
-#else
-        return get();
-#endif
-    }
+    T* tryGet() const { return get(); }
 
+    void clear() { m_ptr = 0; }
 
-    void clear() {
-#ifdef __CHERI_PURE_CAPABILITY__
-        m_ptrAsInt64 = WTF::ContinuousArenaMalloc::cast(static_cast<void *>(nullptr));
-#else
-        m_ptrAsInt64 = reinterpret_cast<uint64_t>(nullptr);
-#endif
-    }
-
-    T& operator*() const { ASSERT(m_ptrAsInt64); return *get(); }
+    T& operator*() const { ASSERT(m_ptr); return *get(); }
     ALWAYS_INLINE T* operator->() const { return get(); }
 
     operator T*() const { return get(); }
 
-    bool operator!() const { return !m_ptrAsInt64; }
+    bool operator!() const { return !m_ptr; }
 
-    explicit operator bool() const { return !!m_ptrAsInt64; }
+    explicit operator bool() const { return !!m_ptr; }
 
     CA64Ptr& operator=(T*);
 
     void swap(CA64Ptr&);
 
 private:
-    uint64_t m_ptrAsInt64;
+    uint64_t m_ptr;
 };
 
 template<typename T> inline CA64Ptr<T>& CA64Ptr<T>::operator=(T* optr)
 {
-    m_ptrAsInt64 = (uint64_t) (uintptr_t) optr;
+    m_ptr = (uint64_t)(uintptr_t)optr;
     return *this;
 }
 
 template<class T> inline void CA64Ptr<T>::swap(CA64Ptr& o)
 {
-    std::swap(m_ptrAsInt64, o.m_ptrAsInt64);
+    std::swap(m_ptr, o.m_ptr);
 }
 
 template<class T> inline void swap(CA64Ptr<T>& a, CA64Ptr<T>& b)

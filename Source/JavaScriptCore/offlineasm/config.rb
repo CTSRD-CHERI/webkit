@@ -95,3 +95,5 @@ def shouldEnableDebugAnnotations()
 end
 
 $enableDebugAnnotations = shouldEnableDebugAnnotations()
+
+$options = {}

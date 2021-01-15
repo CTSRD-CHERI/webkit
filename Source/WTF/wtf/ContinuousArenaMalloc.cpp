@@ -103,7 +103,7 @@ void ContinuousArenaMalloc::initialize(void) {
 void ContinuousArenaMalloc::initializePerThread()
 {
     ASSERT(s_Initialized);
-#ifdef __CHERI_PURE_CAPABILITY__
+#if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
     asm volatile("msr ddc, %0" :: "C"(s_Start));
 #endif
 }

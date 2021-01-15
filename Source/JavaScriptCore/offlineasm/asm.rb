@@ -334,7 +334,6 @@ offsetsFile = ARGV.shift
 outputFlnm = ARGV.shift
 $cheriCapSize = ARGV.shift.to_i
 
-$options = {}
 OptionParser.new do |opts|
     opts.banner = "Usage: asm.rb asmFile offsetsFile outputFileName cheriCapSize [--assembler=<ASM>] [--jsheap_cheri_offset_refs]"
     # This option is currently only used to specify the masm assembler
