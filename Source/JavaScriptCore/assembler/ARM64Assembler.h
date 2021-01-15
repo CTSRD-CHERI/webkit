@@ -3387,7 +3387,7 @@ protected:
 #ifdef __CHERI_PURE_CAPABILITY__
         ASSERT(!isIOS() || reg != ARM64Registers::c18);
 #else
-        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+        ASSERT(!isIOS() || reg != ARM64Registers::x18);
 #endif
         return reg;
     }
@@ -3397,7 +3397,7 @@ protected:
 #ifdef __CHERI_PURE_CAPABILITY__
         ASSERT(!isIOS() || reg != ARM64Registers::c18);
 #else
-        ASSERT(!isIOS() || reg != ARM64Registers::c18);
+        ASSERT(!isIOS() || reg != ARM64Registers::x18);
 #endif
         return reg & 31;
     }

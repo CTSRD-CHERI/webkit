@@ -597,8 +597,8 @@ void testProbeReadsArgumentRegisters()
     compileAndRun<void>([&] (CCallHelpers& jit) {
         emitFunctionPrologue(jit);
 
-        jit.pushPair(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
-        jit.pushPair(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
+        jit.pushPairPtr(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
+        jit.pushPairPtr(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
 
         jit.move(CCallHelpers::TrustedImm32(testWord32(0)), GPRInfo::argumentGPR0);
         jit.convertInt32ToDouble(GPRInfo::argumentGPR0, FPRInfo::fpRegT0);
@@ -628,8 +628,8 @@ void testProbeReadsArgumentRegisters()
             CHECK_EQ(cpu.fpr(FPRInfo::fpRegT1), testWord32(1));
         });
 
-        jit.popPair(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
-        jit.popPair(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
+        jit.popPairPtr(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
+        jit.popPairPtr(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
 
         emitFunctionEpilogue(jit);
         jit.ret();
@@ -646,8 +646,8 @@ void testProbeWritesArgumentRegisters()
     compileAndRun<void>([&] (CCallHelpers& jit) {
         emitFunctionPrologue(jit);
 
-        jit.pushPair(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
-        jit.pushPair(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
+        jit.pushPairPtr(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
+        jit.pushPairPtr(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
 
         // Pre-initialize with non-expected values.
 #if USE(JSVALUE64)
@@ -690,8 +690,8 @@ void testProbeWritesArgumentRegisters()
             CHECK_EQ(cpu.fpr<uint64_t>(FPRInfo::fpRegT1), testWord64(1));
         });
 
-        jit.popPair(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
-        jit.popPair(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
+        jit.popPairPtr(GPRInfo::argumentGPR2, GPRInfo::argumentGPR3);
+        jit.popPairPtr(GPRInfo::argumentGPR0, GPRInfo::argumentGPR1);
 
         emitFunctionEpilogue(jit);
         jit.ret();
