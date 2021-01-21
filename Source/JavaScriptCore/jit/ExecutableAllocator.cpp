@@ -38,6 +38,11 @@
 #include <wtf/SystemTracing.h>
 #include <wtf/WorkQueue.h>
 
+#ifdef __CHERI_PURE_CAPABILITY__
+#include <cheri/cheric.h>
+#include <cheri/cherireg.h>
+#endif
+
 #if OS(DARWIN)
 #include <mach/mach_time.h>
 #include <sys/mman.h>
@@ -219,8 +224,24 @@ public:
 
     virtual ~FixedVMPoolExecutableAllocator();
 
-    void* memoryStart() { return untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.startExecutableMemory); }
-    void* memoryEnd() { return untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.endExecutableMemory); }
+    void* memoryStart() {
+#ifdef __CHERI_PURE_CAPABILITY__
+        return cheri_clearperm(
+            untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.startExecutableMemory),
+            CHERI_PERM_STORE);
+#else
+        return untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.startExecutableMemory);
+#endif
+    }
+    void* memoryEnd() {
+#ifdef __CHERI_PURE_CAPABILITY__
+        return cheri_clearperm(
+            untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.endExecutableMemory),
+            CHERI_PERM_STORE);
+#else
+        return untagCodePtr<ExecutableMemoryPtrTag>(g_jscConfig.endExecutableMemory);
+#endif
+    }
     bool isJITPC(void* pc) { return memoryStart() <= pc && pc < memoryEnd(); }
 
 protected:
@@ -503,6 +524,7 @@ RefPtr<ExecutableMemoryHandle> ExecutableAllocator::allocate(size_t sizeInBytes,
     void* resultEnd = result->end().untaggedPtr();
     RELEASE_ASSERT(start <= resultStart && resultStart < end);
     RELEASE_ASSERT(start < resultEnd && resultEnd <= end);
+    // CHERI: W^X perms on allocated cap is enforced in wtf/MetaAllocator.cpp
     return result;
 }
 

@@ -37,6 +37,11 @@
 #include <wtf/MetaAllocatorHandle.h>
 #include <wtf/MetaAllocator.h>
 
+#ifdef __CHERI_PURE_CAPABILITY__
+#include <cheri/cheric.h>
+#include <cheri/cherireg.h>
+#endif
+
 #if OS(IOS_FAMILY)
 #include <libkern/OSCacheControl.h>
 #endif
@@ -125,6 +130,16 @@ static ALWAYS_INLINE void* performJITMemcpy(void *dst, const void *src, size_t n
 #endif
     if (isJITPC(dst)) {
         RELEASE_ASSERT(reinterpret_cast<uint8_t*>(dst) + n <= endOfFixedExecutableMemoryPool());
+
+#ifdef __CHERI_PURE_CAPABILITY__
+        // CHERI: Rederive to get write permission.
+        if (cheri_gettag(dst) && ((cheri_getperm(dst) & CHERI_PERM_EXECUTE) != 0) &&
+            cheri_getaddress(dst) >= cheri_getbase(dst) &&
+            (cheri_getaddress(dst) + n) < cheri_gettop(dst))
+        {
+            dst = cheri_setaddress(g_jscConfig.startExecutableMemory, cheri_getaddress(dst));
+        }
+#endif
 
         if (UNLIKELY(Options::dumpJITMemoryPath()))
             dumpJITMemory(dst, src, n);

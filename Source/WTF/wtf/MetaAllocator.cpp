@@ -34,6 +34,10 @@
 #include <wtf/FastMalloc.h>
 #include <wtf/ProcessID.h>
 
+#ifdef __CHERI_PURE_CAPABILITY__
+#include <cheri/cheric.h>
+#include <cheri/cherireg.h>
+#endif
 namespace WTF {
 
 MetaAllocator::~MetaAllocator()
@@ -190,7 +194,19 @@ RefPtr<MetaAllocatorHandle> MetaAllocator::allocate(size_t sizeInBytes, void* ow
     m_numAllocations++;
 #endif
 
-    auto handle = adoptRef(*new MetaAllocatorHandle(this, start.untaggedPtr(), sizeInBytes, ownerUID));
+    // CHERI: Don't allow allocated executable capabilities to be writable.
+    // JIT writes happen via the JIT memcpy, which will rederive a
+    // capability with store permission. XXX We can't currently bound
+    // executable capabilities to the allocation size because JITed code does
+    // immediate branches to code in other allocations. For now executable
+    // capability bounds are the entire JIT region.
+    void *startPtr = start.untaggedPtr();
+#ifdef __CHERI_PURE_CAPABILITY__
+    if ((cheri_getperm(startPtr) & CHERI_PERM_EXECUTE) != 0) {
+        startPtr = cheri_clearperm(startPtr, CHERI_PERM_STORE);
+    }
+#endif
+    auto handle = adoptRef(*new MetaAllocatorHandle(this, startPtr, sizeInBytes, ownerUID));
 
     if (UNLIKELY(!!m_tracker))
         m_tracker->notify(handle.ptr());
