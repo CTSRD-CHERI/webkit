@@ -465,7 +465,14 @@ inline void* MarkedBlock::Handle::cellAlign(void* p)
 
 inline MarkedBlock* MarkedBlock::blockFor(const void* p)
 {
-#if __has_builtin(__builtin_align_down)
+#ifdef __CHERI_PURE_CAPABILITY__
+    void *super = WTF::ContinuousArenaMalloc::rederive(const_cast<void*>(p));
+    // Do we need bounds here?
+    return reinterpret_cast<MarkedBlock*>(
+            cheri_setbounds(
+                __builtin_align_down(super, blockSize),
+                blockSize));
+#elif __has_builtin(__builtin_align_down)
     return reinterpret_cast<MarkedBlock*>(__builtin_align_down(const_cast<void*>(p), blockSize));
 #else
     return reinterpret_cast<MarkedBlock*>(reinterpret_cast<uintptr_t>(p) & blockMask);

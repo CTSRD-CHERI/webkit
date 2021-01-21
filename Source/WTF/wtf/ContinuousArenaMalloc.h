@@ -25,6 +25,10 @@
 #include <wtf/StdLibExtras.h>
 #include <wtf/ThreadingPrimitives.h>
 
+#if __has_feature(capabilities)
+#include <cheri/cheric.h>
+#endif
+
 #if USE(CONTINUOUS_ARENA)
 #include <malloc_np.h>
 
@@ -82,6 +86,17 @@ public:
 #else
         return ((size_t) s_Start <= non_cap_ptr && (size_t) s_End > non_cap_ptr);
 #endif
+    }
+
+    static void* rederive(void* p) {
+#if defined(__CHERI_PURE_CAPABILITY__)
+        if (cheri_gettag(p) && cheri_is_address_inbounds(p, cheri_getaddress(p)) &&
+            isWithin(cheri_getaddress(p)))
+        {
+            return cheri_setaddress(s_Start, cheri_getaddress(p));
+        }
+#endif
+        return p;
     }
 
 #if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)

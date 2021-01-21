@@ -33,20 +33,34 @@ namespace JSC {
 template<typename Func>
 ALWAYS_INLINE HeapCell* FreeList::allocate(const Func& slowPath)
 {
+    // TODO confirm this applies bounds to objects and butterflies
     unsigned remaining = m_remaining;
     if (remaining) {
         unsigned cellSize = m_cellSize;
         remaining -= cellSize;
         m_remaining = remaining;
-        return bitwise_cast<HeapCell*>(m_payloadEnd - remaining - cellSize);
+        HeapCell *ret = bitwise_cast<HeapCell*>(m_payloadEnd - remaining - cellSize);
+#ifdef __CHERI_PURE_CAPABILITY__
+        ret = cheri_setboundsexact(ret, cellSize);
+#endif
+        return ret;
     }
     
     FreeCell* result = head();
-    if (UNLIKELY(!result))
+    if (UNLIKELY(!result)) {
+        HeapCell *ret = slowPath();
+#ifdef __CHERI_PURE_CAPABILITY__
+        ret = cheri_setboundsexact(ret, m_cellSize);
+#endif
         return slowPath();
+    }
     
     m_scrambledHead = result->scrambledNext;
-    return bitwise_cast<HeapCell*>(result);
+    HeapCell *ret = bitwise_cast<HeapCell*>(result);
+#ifdef __CHERI_PURE_CAPABILITY__
+        ret = cheri_setboundsexact(ret, m_cellSize);
+#endif
+    return ret;
 }
 
 template<typename Func>
