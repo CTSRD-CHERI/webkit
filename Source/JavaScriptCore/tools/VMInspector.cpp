@@ -377,7 +377,8 @@ void VMInspector::dumpRegisters(CallFrame* callFrame)
     }
     VM& vm = codeBlock->vm();
     auto valueAsString = [&] (JSValue v) -> CString {
-        if (!v.isCell() || VMInspector::isValidCell(&vm.heap, reinterpret_cast<JSCell*>(JSValue::encode(v))))
+
+        if (!v.isCell() || VMInspector::isValidCell(&vm.heap, v.asCell()))
             return toCString(v);
         return "";
     };
