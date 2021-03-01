@@ -164,7 +164,7 @@ def usage
     exit 1
 end
 
-jscArg = nil
+@jscArg = nil
 
 GetoptLong.new(['--help', '-h', GetoptLong::NO_ARGUMENT],
                ['--jsc', '-j', GetoptLong::REQUIRED_ARGUMENT],
@@ -198,7 +198,7 @@ GetoptLong.new(['--help', '-h', GetoptLong::NO_ARGUMENT],
     when '--help'
         usage
     when '--jsc'
-        jscArg = arg
+        @jscArg = arg
     when '--no-copy'
         $doNotMessWithVMPath = true
     when '--output-dir'
@@ -292,7 +292,7 @@ if $remoteConfigFile
     end
 end
 
-unless jscArg
+unless @jscArg
     # If we're not provided a JSC path, try to come up with a sensible JSC path automagically.
     command = SCRIPTS_PATH.join("webkit-build-directory").to_s
     command += ($buildType == "release") ? " --release" : " --debug"
@@ -305,21 +305,21 @@ unless jscArg
     end
 
     output = output[0]
-    jscArg = Pathname.new(output).join("jsc")
-    jscArg = Pathname.new(output).join("JavaScriptCore.framework", "Resources", "jsc") if !File.file?(jscArg)
-    jscArg = Pathname.new(output).join("bin", "jsc") if !File.file?(jscArg) # Support CMake build.
-    if !File.file?(jscArg)
+    @jscArg = Pathname.new(output).join("jsc")
+    @jscArg = Pathname.new(output).join("JavaScriptCore.framework", "Resources", "jsc") if !File.file?(@jscArg)
+    @jscArg = Pathname.new(output).join("bin", "jsc") if !File.file?(@jscArg) # Support CMake build.
+    if !File.file?(@jscArg)
         $stderr.puts "Error: must specify --jsc <path>"
         exit 1
     end
 
-    puts "Using the following jsc path: #{jscArg}"
+    puts "Using the following jsc path: #{@jscArg}"
 end
 
 if $doNotMessWithVMPath
-    $jscPath = Pathname.new(jscArg)
+    $jscPath = Pathname.new(@jscArg)
 else
-    $jscPath = Pathname.new(jscArg).realpath
+    $jscPath = Pathname.new(@jscArg).realpath
 end
 
 $progressMeter = ($verbosity == 0 and $stdout.tty? and $remoteHosts.length <= 1)
@@ -1789,6 +1789,9 @@ def prepareBundle
                         | dependency |
                         FileUtils.cp_r $&, $jscPath.dirname if dependency =~ /#{WEBKIT_PATH}[^ ]*/
                     }
+                    # hack so the right library gets used
+                    FileUtils.cp_r Pathname.new(@jscArg).dirname.parent + "lib" + "libJavaScriptCore.so.1", $jscPath.dirname
+
                 rescue
                     $stderr.puts "Warning: unable to determine or copy library dependnecies of JSC."
                 end
