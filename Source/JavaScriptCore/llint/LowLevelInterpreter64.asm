@@ -1343,7 +1343,7 @@ llintOpWithReturn(op_is_cell_with_type, OpIsCellWithType, macro (size, get, disp
     getu(size, OpIsCellWithType, m_type, t0)
     get(m_operand, t1)
     loadConstantOrVariable(size, t1, t3)
-    btbnz t3, notCellMask, .notCellCase
+    btqnz t3, notCellMask, .notCellCase
     makecap t3
     printp t1
     printp t3
@@ -1359,7 +1359,7 @@ end)
 llintOpWithReturn(op_is_object, OpIsObject, macro (size, get, dispatch, return)
     get(m_operand, t1)
     loadConstantOrVariable(size, t1, t0)
-    btbnz t0, notCellMask, .opIsObjectNotCell
+    btqnz t0, notCellMask, .opIsObjectNotCell
     makecap t0
     cbaeq JSCell::m_type[^t0], ObjectType, t1
     orq ValueFalse, t1
