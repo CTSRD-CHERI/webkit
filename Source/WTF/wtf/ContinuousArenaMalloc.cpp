@@ -53,10 +53,12 @@ void ContinuousArenaMalloc::initialize(void) {
 
     ASSERT(area_start != MAP_FAILED);
 
+    /*
     void *area_start_remapped = mmap(area_start, k_AreaSize,
                                      PROT_NONE,
                                      MAP_GUARD | MAP_FIXED,
                                      -1, 0);
+    */
 
     ASSERT(area_start == area_start_remapped);
 
@@ -173,11 +175,14 @@ void* ContinuousArenaMalloc::extentAlloc(extent_hooks_t *extent_hooks,
         if (!isValidRange(s_Current, size)) {
             ret = NULL;
         } else {
+            ret = s_Current;
+            /*
             ret = mmap(s_Current,
                        size,
                        PROT_READ | PROT_WRITE,
                        MAP_ANON | MAP_PRIVATE | MAP_FIXED,
                        -1, 0);
+            */
 
             if (ret == MAP_FAILED) {
                 ret = NULL;
@@ -235,9 +240,11 @@ void ContinuousArenaMalloc::extentDestroy(extent_hooks_t *extent_hooks,
 
     ASSERT(isValidRange(addr, size));
 
+    /*
     void *ret = mmap(addr, size, PROT_NONE, MAP_GUARD | MAP_FIXED, -1, 0);
 
     ASSERT(ret == addr);
+    */
 }
 
 bool ContinuousArenaMalloc::extentCommit(extent_hooks_t *extent_hooks,
@@ -308,6 +315,7 @@ bool ContinuousArenaMalloc::extentPurgeLazy(extent_hooks_t *extent_hooks,
 
     ASSERT(isValidRange(start, length));
 
+    /*
     void *ret = mmap(start,
                      length,
                      PROT_READ | PROT_WRITE,
@@ -315,6 +323,7 @@ bool ContinuousArenaMalloc::extentPurgeLazy(extent_hooks_t *extent_hooks,
                      -1, 0);
 
     ASSERT(ret == start);
+    */
 
     return false;
 }
@@ -343,6 +352,7 @@ bool ContinuousArenaMalloc::extentPurgeForced(extent_hooks_t *extent_hooks,
 
     ASSERT(isValidRange(start, length));
 
+    /*
     void *ret = mmap(start,
                      length,
                      PROT_READ | PROT_WRITE,
@@ -350,6 +360,7 @@ bool ContinuousArenaMalloc::extentPurgeForced(extent_hooks_t *extent_hooks,
                      -1, 0);
 
     ASSERT(ret == start);
+    */
 
     return false;
 }
