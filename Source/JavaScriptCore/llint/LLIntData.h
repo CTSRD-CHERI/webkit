@@ -55,7 +55,7 @@ public:
 
 #if USE(JSVALUE64)
 #if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
-    // sizeof(CPURegister) == __SIZEOF_UINTCAP__
+    // sizeof(CPURegister) == __SIZEOF_INTCAP__
     // sizeof(Register) == 8
     static constexpr ptrdiff_t CallFrameHeaderSlots = (2 * __SIZEOF_INTCAP__ / 8) + 3;
 #else // !__CHERI_PURE_CAPABILITY__ || !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
