@@ -57,7 +57,7 @@ public:
 #if defined(__CHERI_PURE_CAPABILITY__) && ENABLE(JSHEAP_CHERI_OFFSET_REFS)
     // sizeof(CPURegister) == __SIZEOF_UINTCAP__
     // sizeof(Register) == 8
-    static constexpr ptrdiff_t CallFrameHeaderSlots = (2 * __SIZEOF_UINTCAP__ / 8) + 3;
+    static constexpr ptrdiff_t CallFrameHeaderSlots = (2 * __SIZEOF_INTCAP__ / 8) + 3;
 #else // !__CHERI_PURE_CAPABILITY__ || !ENABLE(JSHEAP_CHERI_OFFSET_REFS)
     // sizeof(CPURegister) == sizeof(Register), so the number of slots is fixed,
     // even though the slot size depends on __CHERI_PURE_CAPABILITY__.
