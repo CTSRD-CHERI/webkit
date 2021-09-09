@@ -38,14 +38,16 @@
 #endif
 
 #ifdef __CHERI_PURE_CAPABILITY__
-#if __UINTCAP_WIDTH__ == 128
+#ifndef __SIZEOF_INTCAP__
+#error __SIZEOF_INTCAP__ is undefined
+#elif __SIZEOF_INTCAP__ == 16
 #define OFFLINE_ASM_CHERI_128_PURECAP 1
 #define OFFLINE_ASM_CHERI_256_PURECAP 0
-#elif __UINTCAP_WIDTH__ == 256
+#elif __SIZEOF_INTCAP__ == 32
 #define OFFLINE_ASM_CHERI_128_PURECAP 0
 #define OFFLINE_ASM_CHERI_256_PURECAP 1
 #else
-#error __UINTCAP_WIDTH__ is undefined or an unsupported value
+#error __SIZEOF_INTCAP__ has an unsupported value
 #endif
 #else
 #define OFFLINE_ASM_CHERI_128_PURECAP 0
