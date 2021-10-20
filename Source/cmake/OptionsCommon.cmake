@@ -112,7 +112,13 @@ if (DEBUG_FISSION)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gdb-index")
 endif ()
 
-option(USE_APPLE_ICU "Use Apple's internal ICU" ${APPLE})
+if (CMAKE_CROSSCOMPILING)
+    # Don't use Apple's ICU when cross-compiling.
+    set(_apple_icu_default OFF)
+else()
+    set(_apple_icu_default ${APPLE})
+endif()
+option(USE_APPLE_ICU "Use Apple's internal ICU" ${_apple_icu_default})
 
 # Enable the usage of OpenMP.
 #  - At this moment, OpenMP is only used as an alternative implementation
