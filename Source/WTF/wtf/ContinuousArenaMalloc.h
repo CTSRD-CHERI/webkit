@@ -131,7 +131,13 @@ private:
     static void* internalReallocate(void *p, size_t size);
     static void internalFree(void* ptr);
 
+    // True iff [addr, addr+size) is a subset of or equal to [s_Start, s_End).
     static bool isValidRange(void *addr, size_t size);
+    // True iff [addr, addr+size) is a subset of or equal to [s_Start, s_Current).
+    static bool isAllocatedRange(void *addr, size_t size);
+    // True iff [addr, addr+size) is a subset of or equal to [s_Current, s_End).
+    static bool isAvailableRange(void *addr, size_t size);
+
     static void* extentAlloc(extent_hooks_t *extent_hooks,
                              void *new_addr,
                              size_t size,
