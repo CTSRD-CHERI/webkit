@@ -52,7 +52,7 @@ ALWAYS_INLINE HeapCell* FreeList::allocate(const Func& slowPath)
 #ifdef __CHERI_PURE_CAPABILITY__
         ret = cheri_setboundsexact(ret, m_cellSize);
 #endif
-        return slowPath();
+        return ret;
     }
     
     m_scrambledHead = result->scrambledNext;
