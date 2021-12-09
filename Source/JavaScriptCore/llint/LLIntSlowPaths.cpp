@@ -766,7 +766,7 @@ LLINT_SLOW_PATH_DECL(slow_path_get_by_id)
     const Identifier& ident = codeBlock->identifier(bytecode.m_property);
     JSValue baseValue = getOperand(callFrame, bytecode.m_base);
     LOG_CHERI("[slow_path_get_by_id]: %s\n", ident.utf8().data());
-    LOG_CHERI("   baseValue: %#p\n", baseValue.asCell());
+    LOG_CHERI("   baseValue: %#p\n", reinterpret_cast<void*>(baseValue.asEncodedJSValue()));
     LOG_CHERI("   baseValue.isCell(): %d\n", baseValue.isCell());
     LOG_CHERI("   baseValue.isObject(): %d\n", baseValue.isObject());
     LOG_CHERI("   codeBlock: %#p\n", codeBlock);
@@ -774,7 +774,9 @@ LLINT_SLOW_PATH_DECL(slow_path_get_by_id)
     PropertySlot slot(baseValue, PropertySlot::PropertySlot::InternalMethodType::Get);
 
     JSValue result = baseValue.get(globalObject, ident, slot);
-    LOG_CHERI("   result: %#p\n", result.asCell());
+    LOG_CHERI("   result: %#p\n", reinterpret_cast<void*>(result.asEncodedJSValue()));
+    LOG_CHERI("   result.isCell(): %d\n", result.isCell());
+    LOG_CHERI("   result.isObject(): %d\n", result.isObject());
     LLINT_CHECK_EXCEPTION();
     callFrame->uncheckedR(bytecode.m_dst) = result;
     
