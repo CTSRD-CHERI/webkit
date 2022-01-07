@@ -145,28 +145,17 @@ private:
                              bool *zero,
                              bool *commit,
                              unsigned arena_ind);
-    static bool extentDalloc(extent_hooks_t *extent_hooks,
-                             void *addr,
-                             size_t size,
-                             bool committed,
-                             unsigned arena_ind);
     static void extentDestroy(extent_hooks_t *extent_hooks,
                               void *addr,
                               size_t size,
                               bool committed,
                               unsigned arena_ind);
-    static bool extentCommit(extent_hooks_t *extent_hooks,
-                             void *addr,
-                             size_t size,
-                             size_t offset,
-                             size_t length,
-                             unsigned arena_ind);
-    static bool extentDecommit(extent_hooks_t *extent_hooks,
-                               void *addr,
-                               size_t size,
-                               size_t offset,
-                               size_t length,
-                               unsigned arena_ind);
+    static bool extentPurgeCommon(extent_hooks_t *extent_hooks,
+                                  void *addr,
+                                  size_t size,
+                                  size_t offset,
+                                  size_t length,
+                                  unsigned arena_ind);
     static bool extentPurgeLazy(extent_hooks_t *extent_hooks,
                                 void *addr,
                                 size_t size,
@@ -179,20 +168,6 @@ private:
                                   size_t offset,
                                   size_t length,
                                   unsigned arena_ind);
-    static bool extentSplit(extent_hooks_t *extent_hooks,
-                            void *addr,
-                            size_t size,
-                            size_t size_a,
-                            size_t size_b,
-                            bool committed,
-                            unsigned arena_ind);
-    static bool extentMerge(extent_hooks_t *extent_hooks,
-                            void *addr_a,
-                            size_t size_a,
-                            void *addr_b,
-                            size_t size_b,
-                            bool committed,
-                            unsigned arena_ind);
 
     static bool s_Initialized;
     static unsigned int s_arenaIndex;

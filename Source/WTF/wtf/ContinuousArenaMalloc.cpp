@@ -73,14 +73,14 @@ void ContinuousArenaMalloc::initialize(void) {
      * before the initialization is finished,
      * during the arenas.create operation */
     s_extentHooks.alloc = extentAlloc;
-    s_extentHooks.dalloc = extentDalloc;
+    s_extentHooks.dalloc = NULL;  // Opt out.
     s_extentHooks.destroy = extentDestroy;
-    s_extentHooks.commit = extentCommit;
-    s_extentHooks.decommit = extentDecommit;
+    s_extentHooks.commit = NULL;  // Opt out.
+    s_extentHooks.decommit = NULL;  // Opt out.
     s_extentHooks.purge_lazy = extentPurgeLazy;
     s_extentHooks.purge_forced = extentPurgeForced;
-    s_extentHooks.split = extentSplit;
-    s_extentHooks.merge = extentMerge;
+    s_extentHooks.split = NULL;  // Opt out.
+    s_extentHooks.merge = NULL;  // Opt out.
 
     extent_hooks_t *newHooksPtr = &s_extentHooks;
     size_t indexSize = sizeof(s_arenaIndex);
@@ -210,26 +210,6 @@ void* ContinuousArenaMalloc::extentAlloc(extent_hooks_t *extent_hooks,
     return ret;
 }
 
-bool ContinuousArenaMalloc::extentDalloc(extent_hooks_t *extent_hooks,
-                                         void *addr,
-                                         size_t size,
-                                         bool committed,
-                                         unsigned arena_ind)
-{
-    MutexLocker locker(s_Mutex);
-
-    LOG_CHERI("dalloc(%p, %p, %zu, %c, %u)\n",
-              extent_hooks,
-              addr,
-              size,
-              committed ? 'T' : 'F',
-              arena_ind);
-    ASSERT(isAllocatedRange(addr, size));
-
-    // opt-out from deallocation; jemalloc should re-use the area
-    return true;
-}
-
 void ContinuousArenaMalloc::extentDestroy(extent_hooks_t *extent_hooks,
                                           void *addr,
                                           size_t size,
@@ -252,50 +232,34 @@ void ContinuousArenaMalloc::extentDestroy(extent_hooks_t *extent_hooks,
     ASSERT(ret == addr);
 }
 
-bool ContinuousArenaMalloc::extentCommit(extent_hooks_t *extent_hooks,
-                                         void *addr,
-                                         size_t size,
-                                         size_t offset,
-                                         size_t length,
-                                         unsigned arena_ind)
+bool ContinuousArenaMalloc::extentPurgeCommon(extent_hooks_t *extent_hooks,
+                                              void *addr,
+                                              size_t size,
+                                              size_t offset,
+                                              size_t length,
+                                              unsigned arena_ind)
 {
-    MutexLocker locker(s_Mutex);
+    UNUSED_PARAM(extent_hooks);
+    UNUSED_PARAM(arena_ind);
 
-    LOG_CHERI("commit(%p, %p, %zu, %zu, %zu, %u)\n",
-              extent_hooks,
-              addr,
-              size,
-              offset,
-              length,
-              arena_ind);
-
-    // this function should never be called, since we always return committed memory and
-    // opt-out from decommit
-
-    ASSERT_NOT_REACHED();
-}
-
-bool ContinuousArenaMalloc::extentDecommit(extent_hooks_t *extent_hooks,
-                                           void *addr,
-                                           size_t size,
-                                           size_t offset,
-                                           size_t length,
-                                           unsigned arena_ind)
-{
-    MutexLocker locker(s_Mutex);
-
-    LOG_CHERI("decommit(%p, %p, %zu, %zu, %zu, %u)\n",
-              extent_hooks,
-              addr,
-              size,
-              offset,
-              length,
-              arena_ind);
+    ASSERT(s_Mutex->tryLock() == false);
 
     ASSERT(isAllocatedRange(addr, size));
 
-    // opt-out from decommit
-    return true;
+    char *start = reinterpret_cast<char *>(addr) + offset;
+    ASSERT(start >= reinterpret_cast<char *>(addr));
+    ASSERT((start + length) <= (reinterpret_cast<char *>(addr) + size));
+    ASSERT(isAllocatedRange(start, length));
+
+    void *ret = mmap(start,
+                     length,
+                     PROT_READ | PROT_WRITE,
+                     MAP_ANON | MAP_PRIVATE | MAP_FIXED,
+                     -1, 0);
+
+    ASSERT(ret == start);
+
+    return false;
 }
 
 bool ContinuousArenaMalloc::extentPurgeLazy(extent_hooks_t *extent_hooks,
@@ -315,22 +279,8 @@ bool ContinuousArenaMalloc::extentPurgeLazy(extent_hooks_t *extent_hooks,
               length,
               arena_ind);
 
-    ASSERT(isAllocatedRange(addr, size));
-
-    char *start = reinterpret_cast<char *>(addr) + offset;
-    ASSERT(start >= reinterpret_cast<char *>(addr));
-    ASSERT((start + length) <= (reinterpret_cast<char *>(addr) + size));
-    ASSERT(isAllocatedRange(start, length));
-
-    void *ret = mmap(start,
-                     length,
-                     PROT_READ | PROT_WRITE,
-                     MAP_ANON | MAP_PRIVATE | MAP_FIXED,
-                     -1, 0);
-
-    ASSERT(ret == start);
-
-    return false;
+    // For simplicity, just force all purges.
+    return extentPurgeCommon(extent_hooks, addr, size, offset, length, arena_ind);
 }
 
 bool ContinuousArenaMalloc::extentPurgeForced(extent_hooks_t *extent_hooks,
@@ -350,73 +300,7 @@ bool ContinuousArenaMalloc::extentPurgeForced(extent_hooks_t *extent_hooks,
               length,
               arena_ind);
 
-    ASSERT(isAllocatedRange(addr, size));
-
-    char *start = reinterpret_cast<char *>(addr) + offset;
-    ASSERT(start >= reinterpret_cast<char *>(addr));
-    ASSERT((start + length) <= (reinterpret_cast<char *>(addr) + size));
-    ASSERT(isAllocatedRange(start, length));
-
-    void *ret = mmap(start,
-                     length,
-                     PROT_READ | PROT_WRITE,
-                     MAP_ANON | MAP_PRIVATE | MAP_FIXED,
-                     -1, 0);
-
-    ASSERT(ret == start);
-
-    return false;
-}
-
-bool ContinuousArenaMalloc::extentSplit(extent_hooks_t *extent_hooks,
-                                        void *addr,
-                                        size_t size,
-                                        size_t size_a,
-                                        size_t size_b,
-                                        bool committed,
-                                        unsigned arena_ind)
-{
-    MutexLocker locker(s_Mutex);
-
-    LOG_CHERI("split(%p, %p, %zu, %zu, %zu, %c, %u)\n",
-              extent_hooks,
-              addr,
-              size,
-              size_a,
-              size_b,
-              committed ? 'T' : 'F',
-              arena_ind);
-
-    ASSERT(isAllocatedRange(addr, size));
-
-    // opt-out from splitting
-    return true;
-}
-
-bool ContinuousArenaMalloc::extentMerge(extent_hooks_t *extent_hooks,
-                                        void *addr_a,
-                                        size_t size_a,
-                                        void *addr_b,
-                                        size_t size_b,
-                                        bool committed,
-                                        unsigned arena_ind)
-{
-    MutexLocker locker(s_Mutex);
-
-    LOG_CHERI("merge(%p, %p, %zu, %p, %zu, %c, %u)\n",
-              extent_hooks,
-              addr_a,
-              size_a,
-              addr_b,
-              size_b,
-              committed ? 'T' : 'F',
-              arena_ind);
-
-    ASSERT(isAllocatedRange(addr_a, size_a));
-    ASSERT(isAllocatedRange(addr_b, size_b));
-
-    // opt-out from merging
-    return true;
+    return extentPurgeCommon(extent_hooks, addr, size, offset, length, arena_ind);
 }
 
 } // namespace WTF
