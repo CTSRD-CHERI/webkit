@@ -27,6 +27,7 @@
 #include <wtf/ContinuousArenaMalloc.h>
 
 #include <sys/mman.h>
+#include <cheriintrin.h>
 
 #if USE(CONTINUOUS_ARENA)
 
@@ -178,14 +179,25 @@ void* ContinuousArenaMalloc::extentAlloc(extent_hooks_t *extent_hooks,
     if (new_addr != NULL || size == 0) {
         ret = NULL;
     } else {
-        char *start = __builtin_align_up(s_Current, alignment);
+        // The masks have all bits set except for zero or more low-order bits,
+        // such that `& mask` aligns down to a multiple of a power of two.
+        ASSERT(hasOneBitSet(alignment));
+        size_t align_mask = -alignment;
+        size_t repr_mask = cheri_representable_alignment_mask(size);
+        size_t repr_size = cheri_representable_length(size);
 
-        // TODO: Pass `size` through round_representable_length.
-        if (!isAvailableRange(start, size)) {
-            ret = NULL;
-        } else {
+        ASSERT(hasZeroOrOneBitsSet(~repr_mask + 1));
+        ASSERT(repr_size >= size);
+
+        // We need to align up, not down, so we don't hand out memory that's
+        // already allocated.
+        size_t mask = align_mask & repr_mask;
+        size_t start_addr = (cheri_address_get(s_Current) + ~mask) & mask;
+        void *start = cheri_address_set(s_Current, start_addr);
+
+        if (isAvailableRange(start, repr_size)) {
             ret = mmap(start,
-                       size,
+                       repr_size,
                        PROT_READ | PROT_WRITE,
                        MAP_ANON | MAP_PRIVATE | MAP_FIXED,
                        -1, 0);
@@ -194,14 +206,18 @@ void* ContinuousArenaMalloc::extentAlloc(extent_hooks_t *extent_hooks,
                 ret = NULL;
             } else {
 #ifdef __CHERI_PURE_CAPABILITY__
-                ASSERT(__builtin_cheri_address_get(ret) == __builtin_cheri_address_get(start));
+                // We checked representability, so this should be exact.
+                ASSERT(cheri_address_get(ret) == cheri_address_get(start));
+                ASSERT(cheri_length_get(ret) == repr_size);
 #endif
 
                 *zero = true;
                 *commit = true;
 
-                s_Current = start + size;
+                s_Current = reinterpret_cast<char*>(start) + cheri_length_get(ret);
             }
+        } else {
+            ret = NULL;
         }
     }
 
