@@ -2,7 +2,7 @@
  *  Copyright (C) 1999-2000 Harri Porten (porten@kde.org)
  *  Copyright (C) 2004-2019 Apple Inc. All rights reserved.
  *  Copyright (C) 2006 Bjoern Graf (bjoern.graf@gmail.com)
- *  Copyright (C) 2019 Arm Ltd. All rights reserved.
+ *  Copyright (C) 2019-2022 Arm Ltd. All rights reserved.
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -202,6 +202,12 @@ NO_RETURN_WITH_VALUE static void jscExit(int status)
 #define CHERI_VERSION_BACKEND "tier 2 (baseline jit)"
 #else
 #define CHERI_VERSION_BACKEND "unknown backend"
+#endif
+
+#if ENABLE(MASM_PROBE)
+#define CHERI_VERSION_MASM_PROBE "masm-probe"
+#else
+#define CHERI_VERSION_MASM_PROBE ""
 #endif
 
 #if ENABLE(JSHEAP_CHERI_OFFSET_REFS)
@@ -3013,10 +3019,10 @@ void CommandLine::parseArguments(int argc, char** argv)
 template<typename Func>
 int runJSC(const CommandLine& options, bool isWorker, const Func& func)
 {
-    printf("CHERI-jsc " CHERI_VERSION_FLAVOR " " CHERI_VERSION_BACKEND " " CHERI_VERSION_HEAP_OFFSET " \n");
+    printf("CHERI-jsc " CHERI_VERSION_FLAVOR " " CHERI_VERSION_BACKEND " " CHERI_VERSION_MASM_PROBE " " CHERI_VERSION_HEAP_OFFSET " \n");
 
     Worker worker(Workers::singleton());
-    
+
     VM& vm = VM::create(LargeHeap).leakRef();
     int result;
     bool success = true;
