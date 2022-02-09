@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2003-2019 Apple Inc.  All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -540,7 +541,11 @@ template<int s, int t> struct check_size {
 #define RELEASE_LOG_STACKTRACE(channel) WTFReleaseLogStackTrace(&LOG_CHANNEL(channel))
 #endif
 
+#if __has_feature(capabilities)
 #define LOG_CHERI(...) WTFLogVerbose(strrchr("/" __FILE__, '/')+1, __LINE__, NULL, &CheriDebugLog, __VA_ARGS__)
+#else
+#define LOG_CHERI(...) ((void)0)
+#endif
 
 /* RELEASE_ASSERT */
 
