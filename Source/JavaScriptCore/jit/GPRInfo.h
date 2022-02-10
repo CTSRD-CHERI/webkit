@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020-2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -609,7 +609,7 @@ public:
 
 #if CPU(ARM64_CAPS)
     // These registers match the baseline JIT.
-    static constexpr GPRReg callFrameRegister = ARM64Registers::fp;
+    static constexpr GPRReg callFrameRegister = ARM64Registers::cfp;
     static constexpr GPRReg numberTagRegister = ARM64Registers::c22;
     static constexpr GPRReg notCellMaskRegister = ARM64Registers::c23;
     static constexpr GPRReg dataTempRegister = MacroAssembler::dataTempRegister;

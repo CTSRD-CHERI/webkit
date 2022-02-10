@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2019 Metrological Group B.V.
  * Copyright (C) 2019 Igalia S.L.
- * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020-2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,9 +79,9 @@
     macro(c27, "c27", 0, 1)                                     \
     macro(c28, "c28", 0, 1)                                     \
     /* Special. */                                              \
-    macro(fp,  "cfp", 0, 1)                                     \
-    macro(lr,  "clr", 1, 0)                                     \
-    macro(sp,  "csp", 0, 0)
+    macro(cfp, "cfp", 0, 1)                                     \
+    macro(clr, "clr", 1, 0)                                     \
+    macro(csp, "csp", 0, 0)
 #else
 #define FOR_EACH_GP_REGISTER(macro)                             \
     /* Parameter/result registers. */                           \
@@ -172,25 +172,40 @@
 #endif
 
 #if CPU(ARM64_CAPS)
-#define FOR_EACH_REGISTER_ALIAS(macro)            \
-    macro(cip0, "cip0", c16)                      \
-    macro(cip1, "cip1", c17)                      \
-    macro(c29,  "c29",  fp)                       \
-    macro(c30,  "c30",  lr)                       \
-    macro(zr,   "zr",   0x3f)
+#define FOR_EACH_REGISTER_ALIAS(macro)                                        \
+    macro(cip0, "cip0", c16)                                                  \
+    macro(cip1, "cip1", c17)                                                  \
+    macro(c29,  "c29",  cfp)                                                  \
+    macro(c30,  "c30",  clr)                                                  \
+    macro(czr,  "czr",  0x3f)                                                 \
+    /* These map to C registers on purecap, and X registers otherwise. */     \
+    macro(frame, "cfp", cfp)                                                  \
+    macro(link,  "clr", clr)                                                  \
+    macro(zr,    "czr", czr)                                                  \
+    macro(stack, "csp", csp)
+
+#define FOR_EACH_SP_REGISTER(macro)             \
+    macro(pcc,  "pcc")                          \
+    macro(nzcv, "nzcv")                         \
+    macro(fpsr, "fpsr")
 #else
-#define FOR_EACH_REGISTER_ALIAS(macro)          \
-    macro(ip0, "ip0", x16)                      \
-    macro(ip1, "ip1", x17)                      \
-    macro(x29, "x29", fp)                       \
-    macro(x30, "x30", lr)                       \
-    macro(zr,  "zr",  0x3f)
-#endif
+#define FOR_EACH_REGISTER_ALIAS(macro)                                        \
+    macro(ip0, "ip0", x16)                                                    \
+    macro(ip1, "ip1", x17)                                                    \
+    macro(x29, "x29", fp)                                                     \
+    macro(x30, "x30", lr)                                                     \
+    macro(xzr, "xzr", 0x3f)                                                   \
+    /* These map to C registers on purecap, and X registers otherwise. */     \
+    macro(frame, "fp", fp)                                                    \
+    macro(link,  "lr", lr)                                                    \
+    macro(zr,    "xzr", xzr)                                                  \
+    macro(stack, "sp", sp)
 
 #define FOR_EACH_SP_REGISTER(macro)             \
     macro(pc,   "pc")                           \
     macro(nzcv, "nzcv")                         \
     macro(fpsr, "fpsr")
+#endif
 
 #define FOR_EACH_FP_REGISTER(macro)             \
     /* Parameter/result registers. */           \

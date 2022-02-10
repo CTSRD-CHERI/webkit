@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020-2022 Arm Ltd. All rights reserved.
  * Copyright (C) 2020 Brett F. Gutstein. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -213,7 +213,7 @@ typedef enum : int8_t {
     InvalidFPRReg = -1,
 } FPRegisterID;
 
-static constexpr bool isSp(RegisterID reg) { return reg == sp; }
+static constexpr bool isSp(RegisterID reg) { return reg == stack; }
 static constexpr bool isZr(RegisterID reg) { return reg == zr; }
 
 } // namespace ARM64Registers
@@ -232,10 +232,14 @@ public:
 #else
     static constexpr RegisterID firstRegister() { return ARM64Registers::x0; }
 #endif
-    static constexpr RegisterID lastRegister() { return ARM64Registers::sp; }
+    static constexpr RegisterID lastRegister() { return ARM64Registers::stack; }
     static constexpr unsigned numberOfRegisters() { return lastRegister() - firstRegister() + 1; }
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+    static constexpr SPRegisterID firstSPRegister() { return ARM64Registers::pcc; }
+#else
     static constexpr SPRegisterID firstSPRegister() { return ARM64Registers::pc; }
+#endif
     static constexpr SPRegisterID lastSPRegister() { return ARM64Registers::fpsr; }
     static constexpr unsigned numberOfSPRegisters() { return lastSPRegister() - firstSPRegister() + 1; }
 
@@ -1664,7 +1668,7 @@ public:
         insn(dataProcessing1Source(DATASIZE, DataOp_RBIT, rn, rd));
     }
 
-    ALWAYS_INLINE void ret(RegisterID rn = ARM64Registers::lr)
+    ALWAYS_INLINE void ret(RegisterID rn = ARM64Registers::link)
     {
         insn(unconditionalBranchRegister(BranchType_RET, rn));
     }
@@ -3272,9 +3276,9 @@ protected:
         return reinterpret_cast<int*>(static_cast<char*>(code) + label.m_offset);
     }
 
-    static RegisterID disassembleXOrSp(int reg) { return reg == 31 ? ARM64Registers::sp : static_cast<RegisterID>(reg); }
+    static RegisterID disassembleXOrSp(int reg) { return reg == 31 ? ARM64Registers::stack : static_cast<RegisterID>(reg); }
     static RegisterID disassembleXOrZr(int reg) { return reg == 31 ? ARM64Registers::zr : static_cast<RegisterID>(reg); }
-    static RegisterID disassembleXOrZrOrSp(bool useZr, int reg) { return reg == 31 ? (useZr ? ARM64Registers::zr : ARM64Registers::sp) : static_cast<RegisterID>(reg); }
+    static RegisterID disassembleXOrZrOrSp(bool useZr, int reg) { return reg == 31 ? (useZr ? ARM64Registers::zr : ARM64Registers::stack) : static_cast<RegisterID>(reg); }
 
     static bool disassembleAddSubtractImmediate(void* address, Datasize& sf, AddOp& op, SetFlags& S, int& shift, int& imm12, RegisterID& rn, RegisterID& rd)
     {

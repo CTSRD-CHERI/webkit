@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020-2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -153,9 +153,9 @@ public:
         DoubleLessThanOrEqualOrUnordered = Assembler::ConditionLE,
     };
 
-    static constexpr RegisterID stackPointerRegister = ARM64Registers::sp;
-    static constexpr RegisterID framePointerRegister = ARM64Registers::fp;
-    static constexpr RegisterID linkRegister = ARM64Registers::lr;
+    static constexpr RegisterID stackPointerRegister = ARM64Registers::stack; // sp or csp
+    static constexpr RegisterID framePointerRegister = ARM64Registers::frame; // fp or cfp
+    static constexpr RegisterID linkRegister = ARM64Registers::link;          // lr or clr
 
     // FIXME: Get reasonable implementations for these
     static bool shouldBlindForSpecificArch(uint32_t value) { return value >= 0x00ffffff; }
@@ -165,7 +165,7 @@ public:
 
     void add32(RegisterID a, RegisterID b, RegisterID dest)
     {
-        ASSERT(a != ARM64Registers::sp && b != ARM64Registers::sp);
+        ASSERT(!isSp(a) && !isSp(b));
         m_assembler.add<32>(dest, a, b);
     }
 
@@ -239,15 +239,15 @@ public:
 
     void add64(RegisterID a, RegisterID b, RegisterID dest)
     {
-        ASSERT(a != ARM64Registers::sp || b != ARM64Registers::sp);
-        if (b == ARM64Registers::sp)
+        ASSERT(!isSp(a) && !isSp(b));
+        if (isSp(b))
             std::swap(a, b);
         m_assembler.add<64>(dest, a, b);
     }
 
     void add64(RegisterID src, RegisterID dest)
     {
-        if (src == ARM64Registers::sp)
+        if (isSp(src))
             m_assembler.add<64>(dest, src, dest);
         else
             m_assembler.add<64>(dest, dest, src);
@@ -356,7 +356,7 @@ public:
 
     void addPtr(RegisterID src, RegisterID dest)
     {
-        if (src == ARM64Registers::sp)
+        if (isSp(src))
             m_assembler.add<PtrSizeBits>(dest, src, dest);
         else
             m_assembler.add<PtrSizeBits>(dest, dest, src);
@@ -364,8 +364,8 @@ public:
 
     void addPtr(RegisterID left, RegisterID right, RegisterID dest)
     {
-        ASSERT(left != ARM64Registers::sp || left != ARM64Registers::sp);
-        if (right == ARM64Registers::sp)
+        ASSERT(!isSp(left) || !isSp(right));
+        if (isSp(right))
             std::swap(left, right);
         m_assembler.add<PtrSizeBits>(dest, left, right);
     }
@@ -2496,7 +2496,7 @@ public:
     template<int datasize>
     void popPair(RegisterID dest1, RegisterID dest2)
     {
-        m_assembler.ldp<datasize>(dest1, dest2, ARM64Registers::sp, PairPostIndex(datasize * 2 / BitsInByte));
+        m_assembler.ldp<datasize>(dest1, dest2, ARM64Registers::stack, PairPostIndex(datasize * 2 / BitsInByte));
     }
 
     void popPairPtr(RegisterID src1, RegisterID src2)
@@ -2512,7 +2512,7 @@ public:
     template<int datasize>
     void pushPair(RegisterID src1, RegisterID src2)
     {
-        m_assembler.stp<datasize>(src1, src2, ARM64Registers::sp, PairPreIndex(-static_cast<int>(datasize * 2 / BitsInByte)));
+        m_assembler.stp<datasize>(src1, src2, ARM64Registers::stack, PairPreIndex(-static_cast<int>(datasize * 2 / BitsInByte)));
     }
 
     void pushPairPtr(RegisterID src1, RegisterID src2)
@@ -2527,12 +2527,12 @@ public:
 
     void popToRestore(RegisterID dest)
     {
-        m_assembler.ldr<PtrSizeBits>(dest, ARM64Registers::sp, PostIndex(16));
+        m_assembler.ldr<PtrSizeBits>(dest, ARM64Registers::stack, PostIndex(16));
     }
 
     void pushToSave(RegisterID src)
     {
-        m_assembler.str<PtrSizeBits>(src, ARM64Registers::sp, PreIndex(-16));
+        m_assembler.str<PtrSizeBits>(src, ARM64Registers::stack, PreIndex(-16));
     }
     
     void pushToSaveImmediateWithoutTouchingRegisters(TrustedImm32 imm)
@@ -2884,8 +2884,8 @@ public:
 
     Jump branch64(RelationalCondition cond, RegisterID left, RegisterID right)
     {
-        if (right == ARM64Registers::sp) {
-            if (cond == Equal && left != ARM64Registers::sp) {
+        if (right == ARM64Registers::stack) {
+            if (cond == Equal && left != ARM64Registers::stack) {
                 // CMP can only use SP for the left argument, since we are testing for equality, the order
                 // does not matter here.
                 std::swap(left, right);

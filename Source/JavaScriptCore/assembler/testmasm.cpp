@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017-2019 Apple Inc. All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -144,7 +145,10 @@ bool isSpecialGPR(MacroAssembler::RegisterID id)
 {
     if (isPC(id) || isSP(id) || isFP(id))
         return true;
-#if CPU(ARM64)
+#if CPU(ARM64_CAPS)
+    if (id == ARM64Registers::c18)
+        return true;
+#elif CPU(ARM64)
     if (id == ARM64Registers::x18)
         return true;
 #elif CPU(MIPS)

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +39,7 @@ void executeProbe(State* state)
     Context context(state);
 #if CPU(ARM64)
     auto& cpu = context.cpu;
-    void* originalLR = cpu.gpr<void*>(ARM64Registers::lr);
+    void* originalLR = cpu.gpr<void*>(ARM64Registers::link);
     void* originalPC = cpu.pc();
 #elif CPU(MIPS)
     auto& cpu = context.cpu;
@@ -52,7 +53,7 @@ void executeProbe(State* state)
 
 #if CPU(ARM64)
     // The ARM64 probe trampoline does not support changing both lr and pc.
-    RELEASE_ASSERT(originalPC == cpu.pc() || originalLR == cpu.gpr<void*>(ARM64Registers::lr));
+    RELEASE_ASSERT(originalPC == cpu.pc() || originalLR == cpu.gpr<void*>(ARM64Registers::link));
 #elif CPU(MIPS)
     // The MIPS probe trampoline does not support changing both ra and pc.
     RELEASE_ASSERT(originalPC == cpu.pc() || originalRA == cpu.gpr<void*>(MIPSRegisters::ra));

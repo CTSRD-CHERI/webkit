@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -110,6 +111,8 @@ inline void*& CPUState::pc()
 {
 #if CPU(X86) || CPU(X86_64)
     return *reinterpret_cast<void**>(&spr(X86Registers::eip));
+#elif CPU(ARM64_CAPS)
+    return *reinterpret_cast<void**>(&spr(ARM64Registers::pcc));
 #elif CPU(ARM64)
     return *reinterpret_cast<void**>(&spr(ARM64Registers::pc));
 #elif CPU(ARM_THUMB2)
@@ -125,8 +128,8 @@ inline void*& CPUState::fp()
 {
 #if CPU(X86) || CPU(X86_64)
     return *reinterpret_cast<void**>(&gpr(X86Registers::ebp));
-#elif CPU(ARM64)
-    return *reinterpret_cast<void**>(&gpr(ARM64Registers::fp));
+#elif CPU(ARM64) // Includes ARM64_CAPS
+    return *reinterpret_cast<void**>(&gpr(ARM64Registers::frame));
 #elif CPU(ARM_THUMB2)
     return *reinterpret_cast<void**>(&gpr(ARMRegisters::fp));
 #elif CPU(MIPS)
@@ -140,8 +143,8 @@ inline void*& CPUState::sp()
 {
 #if CPU(X86) || CPU(X86_64)
     return *reinterpret_cast<void**>(&gpr(X86Registers::esp));
-#elif CPU(ARM64)
-    return *reinterpret_cast<void**>(&gpr(ARM64Registers::sp));
+#elif CPU(ARM64) // Includes ARM64_CAPS
+    return *reinterpret_cast<void**>(&gpr(ARM64Registers::stack));
 #elif CPU(ARM_THUMB2)
     return *reinterpret_cast<void**>(&gpr(ARMRegisters::sp));
 #elif CPU(MIPS)
