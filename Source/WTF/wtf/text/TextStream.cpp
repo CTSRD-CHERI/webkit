@@ -106,7 +106,7 @@ TextStream& TextStream::operator<<(double d)
     return *this;
 }
 
-#ifdef __CHERI__
+#if __has_feature(capabilities)
 TextStream& TextStream::operator<<(__intcap_t i)
 {
     m_text.appendNumber(__builtin_cheri_address_get(i));
