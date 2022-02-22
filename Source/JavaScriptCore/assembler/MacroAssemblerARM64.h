@@ -1684,6 +1684,16 @@ public:
         m_assembler.stnp<64>(src1, src2, dest, offset.m_value);
     }
 
+    void storePairCap(RegisterID src1, RegisterID src2, RegisterID dest)
+    {
+        storePairCap(src1, src2, dest, TrustedImm32(0));
+    }
+
+    void storePairCap(RegisterID src1, RegisterID src2, RegisterID dest, TrustedImm32 offset)
+    {
+        m_assembler.stp<128>(src1, src2, dest, offset.m_value);
+    }
+
     void store32(RegisterID src, ImplicitAddress address)
     {
         if (tryStoreWithOffset<32>(src, address.base, address.offset))

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013-2019 Apple Inc. All rights reserved.
- * Copyright (C) 2020 Arm Ltd. All rights reserved.
+ * Copyright (C) 2020-2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,16 +26,12 @@
 
 #include "config.h"
 
-#if ENABLE(ASSEMBLER) && CPU(ARM64)
+#if ENABLE(ASSEMBLER) && CPU(ARM64) && !CPU(ARM64_CAPS)
+// For Morello purecap (ARM64_CAPS), see MacroAssemblerARM64Caps.cpp.
 #include "MacroAssembler.h"
 
 #include "ProbeContext.h"
 #include <wtf/InlineASM.h>
-
-#if OS(LINUX)
-#include <asm/hwcap.h>
-#include <sys/auxv.h>
-#endif
 
 namespace JSC {
 
@@ -50,11 +46,7 @@ using namespace ARM64Registers;
 // The following are offsets for Probe::State fields accessed
 // by the ctiMasmProbeTrampoline stub.
 #if CPU(ADDRESS64)
-#if defined(__CHERI_PURE_CAPABILITY__)
-#define PTR_SIZE 16
-#else
 #define PTR_SIZE 8
-#endif
 #else
 #define PTR_SIZE 4
 #endif
@@ -66,11 +58,7 @@ using namespace ARM64Registers;
 
 #define PROBE_FIRST_GPREG_OFFSET (4 * PTR_SIZE)
 
-#if defined(__CHERI_PURE_CAPABILITY__)
-#define GPREG_SIZE 16
-#else
 #define GPREG_SIZE 8
-#endif
 
 #define PROBE_CPU_X0_OFFSET (PROBE_FIRST_GPREG_OFFSET + (0 * GPREG_SIZE))
 #define PROBE_CPU_X1_OFFSET (PROBE_FIRST_GPREG_OFFSET + (1 * GPREG_SIZE))
@@ -553,36 +541,6 @@ void MacroAssembler::probe(Probe::Function function, void* arg)
 }
 
 #endif // ENABLE(MASM_PROBE)
-
-void MacroAssemblerARM64::collectCPUFeatures()
-{
-#if OS(LINUX)
-    static std::once_flag onceKey;
-    std::call_once(onceKey, [] {
-        // A register for describing ARM64 CPU features are only accessible in kernel mode.
-        // Thus, some kernel support is necessary to collect CPU features. In Linux, the
-        // kernel passes CPU feature flags in AT_HWCAP auxiliary vector which is passed
-        // when the process starts. While this may pose a bit conservative information
-        // (for example, the Linux kernel may add a flag for a feature after the feature
-        // is shipped and implemented in some CPUs. In that case, even if the CPU has
-        // that feature, the kernel does not tell it to users.), it is a stable approach.
-        // https://www.kernel.org/doc/Documentation/arm64/elf_hwcaps.txt
-        uint64_t hwcaps = getauxval(AT_HWCAP);
-
-#if !defined(HWCAP_JSCVT)
-#define HWCAP_JSCVT (1 << 13)
-#endif
-
-        s_jscvtCheckState = (hwcaps & HWCAP_JSCVT) ? CPUIDCheckState::Set : CPUIDCheckState::Clear;
-    });
-#elif HAVE(FJCVTZS_INSTRUCTION)
-    s_jscvtCheckState = CPUIDCheckState::Set;
-#else
-    s_jscvtCheckState = CPUIDCheckState::Clear;
-#endif
-}
-
-MacroAssemblerARM64::CPUIDCheckState MacroAssemblerARM64::s_jscvtCheckState = CPUIDCheckState::NotChecked;
 
 } // namespace JSC
 

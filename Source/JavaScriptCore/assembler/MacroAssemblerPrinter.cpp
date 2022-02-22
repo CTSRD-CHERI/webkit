@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,11 +64,13 @@ void printAllRegisters(PrintStream& out, Context& context)
 
     for (auto id = MacroAssembler::firstRegister(); id <= MacroAssembler::lastRegister(); id = nextID(id)) {
         intptr_t value = static_cast<intptr_t>(cpu.gpr(id));
-        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.gprName(id), value, value);
+        uintptr_t uvalue = static_cast<uintptr_t>(value);
+        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.gprName(id), uvalue, value);
     }
     for (auto id = MacroAssembler::firstSPRegister(); id <= MacroAssembler::lastSPRegister(); id = nextID(id)) {
         intptr_t value = static_cast<intptr_t>(cpu.spr(id));
-        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.sprName(id), value, value);
+        uintptr_t uvalue = static_cast<uintptr_t>(value);
+        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.sprName(id), uvalue, value);
     }
     #undef INTPTR_HEX_VALUE_FORMAT
 
