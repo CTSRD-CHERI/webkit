@@ -123,7 +123,7 @@ WTF_EXPORT_PRIVATE void printInternal(PrintStream&, unsigned long long);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, float);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, double);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, RawPointer);
-#ifdef __CHERI_PURE_CAPABILITY__
+#if __has_feature(capabilities)
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, __uintcap_t);
 WTF_EXPORT_PRIVATE void printInternal(PrintStream&, __intcap_t);
 #endif

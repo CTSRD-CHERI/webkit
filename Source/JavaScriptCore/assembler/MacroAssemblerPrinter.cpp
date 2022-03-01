@@ -33,6 +33,10 @@
 #include "MacroAssembler.h"
 #include <inttypes.h>
 
+#if __has_feature(capabilities)
+#include <cheriintrin.h>
+#endif
+
 namespace JSC {
 
 namespace Printer {
@@ -42,6 +46,24 @@ using RegisterID = MacroAssembler::RegisterID;
 using FPRegisterID = MacroAssembler::FPRegisterID;
 
 template<typename T> T nextID(T id) { return static_cast<T>(id + 1); }
+
+#if USE(JSVALUE32_64)
+    #define INTPTR_HEX_VALUE_FORMAT "0x%08" PRIxPTR
+#else
+    #define INTPTR_HEX_VALUE_FORMAT "0x%016" PRIxPTR
+#endif
+
+static void printIntptr(PrintStream& out, intptr_t value) {
+#if __CHERI_PURE_CAPABILITY__
+    // Hybrid builds don't record capabilities in the probe, so we print full
+    // capabilities only for purecap.
+    out.print(value, "  ", bitwise_cast<int64_t>(cheri_address_get(value)));
+#else
+    out.printf(INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR, static_cast<uintptr_t>(value), value);
+#endif
+}
+
+#undef INTPTR_HEX_VALUE_FORMAT
 
 void printAllRegisters(PrintStream& out, Context& context)
 {
@@ -56,23 +78,18 @@ void printAllRegisters(PrintStream& out, Context& context)
 
     INDENT; out.print("cpu: {\n");
 
-#if USE(JSVALUE32_64)
-    #define INTPTR_HEX_VALUE_FORMAT "0x%08" PRIxPTR
-#else
-    #define INTPTR_HEX_VALUE_FORMAT "0x%016" PRIxPTR
-#endif
-
     for (auto id = MacroAssembler::firstRegister(); id <= MacroAssembler::lastRegister(); id = nextID(id)) {
-        intptr_t value = static_cast<intptr_t>(cpu.gpr(id));
-        uintptr_t uvalue = static_cast<uintptr_t>(value);
-        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.gprName(id), uvalue, value);
+        INDENT;
+        out.printf("    %6s: ", cpu.gprName(id));
+        printIntptr(out, static_cast<intptr_t>(cpu.gpr(id)));
+        out.printf("\n");
     }
     for (auto id = MacroAssembler::firstSPRegister(); id <= MacroAssembler::lastSPRegister(); id = nextID(id)) {
-        intptr_t value = static_cast<intptr_t>(cpu.spr(id));
-        uintptr_t uvalue = static_cast<uintptr_t>(value);
-        INDENT; out.printf("    %6s: " INTPTR_HEX_VALUE_FORMAT "  %" PRIdPTR "\n", cpu.sprName(id), uvalue, value);
+        INDENT;
+        out.printf("    %6s: ", cpu.sprName(id));
+        printIntptr(out, static_cast<intptr_t>(cpu.spr(id)));
+        out.printf("\n");
     }
-    #undef INTPTR_HEX_VALUE_FORMAT
 
     for (auto id = MacroAssembler::firstFPRegister(); id <= MacroAssembler::lastFPRegister(); id = nextID(id)) {
         uint64_t u = bitwise_cast<uint64_t>(cpu.fpr(id));
@@ -95,9 +112,9 @@ void printPCRegister(PrintStream& out, Context& context)
 void printRegisterID(PrintStream& out, Context& context)
 {
     RegisterID regID = context.data.as<RegisterID>();
-    const char* name = CPUState::gprName(regID);
-    intptr_t value = context.probeContext.gpr(regID);
-    out.printf("%s:<%p %" PRIdPTR ">", name, bitwise_cast<void*>(value), value);
+    out.printf("%s:<", CPUState::gprName(regID));
+    printIntptr(out, context.probeContext.gpr(regID));
+    out.printf(">");
 }
 
 void printFPRegisterID(PrintStream& out, Context& context)
@@ -112,9 +129,9 @@ void printAddress(PrintStream& out, Context& context)
 {
     MacroAssembler::Address address = context.data.as<MacroAssembler::Address>();
     RegisterID regID = address.base;
-    const char* name = CPUState::gprName(regID);
-    intptr_t value = context.probeContext.gpr(regID);
-    out.printf("Address{base:%s:<%p %" PRIdPTR ">, offset:<0x%x %d>", name, bitwise_cast<void*>(value), value, address.offset, address.offset);
+    out.printf("Address{base:%s:<", CPUState::gprName(regID));
+    printIntptr(out, context.probeContext.gpr(regID));
+    out.printf(">, offset:<0x%x %d>", address.offset, address.offset);
 }
 
 void printMemory(PrintStream& out, Context& context)

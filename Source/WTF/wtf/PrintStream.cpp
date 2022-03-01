@@ -176,7 +176,7 @@ void printInternal(PrintStream& out, double value)
     out.printf("%lf", value);
 }
 
-#ifdef __CHERI_PURE_CAPABILITY__
+#if __has_feature(capabilities)
 void printInternal(PrintStream& out, __uintcap_t value)
 {
     int tag = __builtin_cheri_tag_get((const void *) value);
