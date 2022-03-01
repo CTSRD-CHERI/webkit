@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -153,9 +154,12 @@ inline PrintRecordList* makePrintRecordList(Arguments&&... arguments)
 // Some utility functions for specializing printers.
 
 void printConstCharString(PrintStream&, Context&);
-void printIntptr(PrintStream&, Context&);
-void printUintptr(PrintStream&, Context&);
 void printPointer(PrintStream&, Context&);
+
+template<typename T, typename = typename std::enable_if_t<std::is_integral<T>::value>>
+void printInt(PrintStream& out, Context& context) {
+    out.print(context.data.as<T>());
+}
 
 void setPrinter(PrintRecord&, CString&&);
 
@@ -182,18 +186,11 @@ struct Printer<RawPointer> : public PrintRecord {
     { }
 };
 
-template<typename T, typename = typename std::enable_if_t<std::is_integral<T>::value && std::numeric_limits<T>::is_signed>>
-void setPrinter(PrintRecord& record, T value, intptr_t = 0)
+template<typename T, typename = typename std::enable_if_t<std::is_integral<T>::value>>
+void setPrinter(PrintRecord& record, T value)
 {
     record.data.value = static_cast<uintptr_t>(value);
-    record.printer = printIntptr;
-}
-
-template<typename T, typename = typename std::enable_if_t<std::is_integral<T>::value && !std::numeric_limits<T>::is_signed>>
-void setPrinter(PrintRecord& record, T value, uintptr_t = 0)
-{
-    record.data.value = static_cast<uintptr_t>(value);
-    record.printer = printUintptr;
+    record.printer = printInt<T>;
 }
 
 template<typename T>

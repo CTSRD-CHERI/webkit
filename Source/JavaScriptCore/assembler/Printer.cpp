@@ -35,16 +35,6 @@ void printConstCharString(PrintStream& out, Context& context)
     out.print(str);
 }
 
-void printIntptr(PrintStream& out, Context& context)
-{
-    out.print(context.data.as<intptr_t>());
-}
-
-void printUintptr(PrintStream& out, Context& context)
-{
-    out.print(context.data.as<uintptr_t>());
-}
-
 void printPointer(PrintStream& out, Context& context)
 {
     out.print(RawPointer(context.data.as<const void*>()));
