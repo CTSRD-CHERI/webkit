@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012 Apple Inc. All rights reserved.
- * Copyright (C) 2019 Arm Ltd. All rights reserved.
+ * Copyright (C) 2019-2022 Arm Ltd. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -207,7 +207,11 @@ void printInternal(PrintStream& out, __intcap_t value)
 
 void printInternal(PrintStream& out, RawPointer value)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+    out.printf("%#lp", value.value());
+#else
     out.printf("%p", value.value());
+#endif
 }
 
 void dumpCharacter(PrintStream& out, char value)
