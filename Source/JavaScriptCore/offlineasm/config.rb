@@ -22,11 +22,11 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 
 buildProductsDirectory = ENV['BUILT_PRODUCTS_DIR'];
-if buildProductsDirectory and File.exists?(buildProductsDirectory)
+if buildProductsDirectory and File.exist?(buildProductsDirectory)
     $: << "#{buildProductsDirectory}/usr/local/include/WebKitAdditions/Scripts"
 end
 sdkRootDirectory = ENV['SDKROOT'];
-if sdkRootDirectory and File.exists?(sdkRootDirectory)
+if sdkRootDirectory and File.exist?(sdkRootDirectory)
     $: << "#{sdkRootDirectory}/usr/local/include/WebKitAdditions/Scripts"
 end
 
