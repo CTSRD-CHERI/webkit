@@ -67,7 +67,7 @@ private:
 #define GET_STACK_BOUNDED_POINTER_TO_VARIABLE(var) \
     __builtin_cheri_offset_increment( \
         currentStackPointer(), \
-        (vaddr_t) &(var) - __builtin_cheri_address_get(currentStackPointer()))
+        (ptraddr_t) &(var) - __builtin_cheri_address_get(currentStackPointer()))
 #else
 #define GET_STACK_BOUNDED_POINTER_TO_VARIABLE(var) \
     &(var)

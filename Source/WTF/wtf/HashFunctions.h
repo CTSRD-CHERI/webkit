@@ -129,14 +129,14 @@ namespace WTF {
 
         static unsigned hash(PtrType key) {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key));
+            return IntHash<ptraddr_t>::hash(reinterpret_cast<ptraddr_t>(key));
 #else
             return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key));
 #endif
         }
         static bool equal(PtrType a, PtrType b) {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return (vaddr_t)a == (vaddr_t)b;
+            return (ptraddr_t)a == (ptraddr_t)b;
 #else
             return a == b;
 #endif
@@ -150,14 +150,14 @@ namespace WTF {
 
         static unsigned hash(PtrType key) {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return IntHash<vaddr_t>::hash(reinterpret_cast<vaddr_t>(key));
+            return IntHash<ptraddr_t>::hash(reinterpret_cast<ptraddr_t>(key));
 #else
             return IntHash<uintptr_t>::hash(reinterpret_cast<uintptr_t>(key));
 #endif
         }
         static bool equal(PtrType a, PtrType b) {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return (vaddr_t)a == (vaddr_t)b;
+            return (ptraddr_t)a == (ptraddr_t)b;
 #else
             return a == b;
 #endif
@@ -181,8 +181,8 @@ namespace WTF {
     template<typename T> struct IntCapHash {
         typedef T IntCapType;
 
-        static unsigned hash(IntCapType key) { return IntHash<vaddr_t>::hash(static_cast<vaddr_t>(key)); }
-        static bool equal(IntCapType a, IntCapType b) { return (vaddr_t)(void*)a == (vaddr_t)(void*)b; }
+        static unsigned hash(IntCapType key) { return IntHash<ptraddr_t>::hash(static_cast<ptraddr_t>(key)); }
+        static bool equal(IntCapType a, IntCapType b) { return (ptraddr_t)(void*)a == (ptraddr_t)(void*)b; }
         static const bool safeToCompareToEmptyOrDeleted = true;
     };
     template<> struct IntHash<__uintcap_t> : public IntCapHash<__uintcap_t> {};

@@ -55,7 +55,7 @@ namespace JSC {
 
         bool containsAddress(Register* address) {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return ((vaddr_t)lowAddress() <= (vaddr_t)address && (vaddr_t)address < (vaddr_t)highAddress());
+            return ((ptraddr_t)lowAddress() <= (ptraddr_t)address && (ptraddr_t)address < (ptraddr_t)highAddress());
 #else
             return (lowAddress() <= address && address < highAddress());
 #endif

@@ -106,7 +106,7 @@ SUPPRESS_ASAN
 void ConservativeRoots::genericAddSpan(void* begin, void* end, MarkHook& markHook)
 {
 #ifdef __CHERI_PURE_CAPABILITY__
-    if ((vaddr_t)begin > (vaddr_t)end) { //XXXKG: end may not be a capability hence use address_get, otherwise we will get a tag violation
+    if ((ptraddr_t)begin > (ptraddr_t)end) { //XXXKG: end may not be a capability hence use address_get, otherwise we will get a tag violation
 #else
     if (begin > end) {
 #endif
@@ -123,7 +123,7 @@ void ConservativeRoots::genericAddSpan(void* begin, void* end, MarkHook& markHoo
     HeapVersion newlyAllocatedVersion = m_heap.objectSpace().newlyAllocatedVersion();
     for (HeapPtr<char>* it = static_cast<HeapPtr<char>*>(begin);
 #ifdef __CHERI_PURE_CAPABILITY__
-        (vaddr_t)it != (vaddr_t)static_cast<HeapPtr<char>*>(end);
+        (ptraddr_t)it != (ptraddr_t)static_cast<HeapPtr<char>*>(end);
 #else
         it != static_cast<HeapPtr<char>*>(end);
 #endif

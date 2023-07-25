@@ -229,7 +229,7 @@ private:
             char* result = reinterpret_cast<char*>(this) + size();
             //XXXKG: check alignment
 #ifdef __CHERI_PURE_CAPABILITY__
-            ASSERT(!((vaddr_t)result & (sizeof(__uintcap_t)-1)));
+            ASSERT(!((ptraddr_t)result & (sizeof(__uintcap_t)-1)));
 #else
             ASSERT(!(bitwise_cast<uintptr_t>(result) & 7));
 #endif

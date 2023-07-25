@@ -571,7 +571,7 @@ inline size_t MarkedBlock::Handle::size()
 inline size_t MarkedBlock::atomNumber(const void* p)
 {
 #ifdef __CHERI_PURE_CAPABILITY__
-    return ((vaddr_t)p - (vaddr_t)this) / atomSize;
+    return ((ptraddr_t)p - (ptraddr_t)this) / atomSize;
 #else
     return (reinterpret_cast<uintptr_t>(p) - reinterpret_cast<uintptr_t>(this)) / atomSize;
 #endif

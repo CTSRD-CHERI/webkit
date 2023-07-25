@@ -38,7 +38,7 @@ template <uint64_t mask>
 inline bool isAlignedTo(const void* pointer)
 {
 #ifdef __CHERI_PURE_CAPABILITY__
-    return !(reinterpret_cast<vaddr_t>(pointer) & mask);
+    return !(reinterpret_cast<ptraddr_t>(pointer) & mask);
 #else
     return !(reinterpret_cast<uintptr_t>(pointer) & mask);
 #endif

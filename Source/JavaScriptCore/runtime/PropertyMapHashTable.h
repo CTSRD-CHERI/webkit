@@ -91,7 +91,7 @@ class PropertyTable final : public JSCell {
         bool operator==(const ordered_iterator<T>& other)
         {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return (vaddr_t)m_valuePtr == (vaddr_t)other.m_valuePtr;
+            return (ptraddr_t)m_valuePtr == (ptraddr_t)other.m_valuePtr;
 #else
             return m_valuePtr == other.m_valuePtr;
 #endif
@@ -100,7 +100,7 @@ class PropertyTable final : public JSCell {
         bool operator!=(const ordered_iterator<T>& other)
         {
 #ifdef __CHERI_PURE_CAPABILITY__
-            return (vaddr_t)m_valuePtr != (vaddr_t)other.m_valuePtr;
+            return (ptraddr_t)m_valuePtr != (ptraddr_t)other.m_valuePtr;
 #else
             return m_valuePtr != other.m_valuePtr;
 #endif

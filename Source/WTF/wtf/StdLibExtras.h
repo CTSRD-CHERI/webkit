@@ -131,7 +131,7 @@ inline bool is8ByteAligned(void* p)
 {
     static_assert(sizeof(double) == 8, "");
 #ifdef __CHERI_PURE_CAPABILITY__
-    return !((vaddr_t)(p) & (sizeof(double) - 1));
+    return !((ptraddr_t)(p) & (sizeof(double) - 1));
 #else
     return !((uintptr_t)(p) & (sizeof(double) - 1));
 #endif
